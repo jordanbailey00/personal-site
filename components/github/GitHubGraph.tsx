@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
+import { getGitHubContributions } from "@/lib/github";
 
-// Generate fake contribution data for the graph aesthetic
+// Generate fake contribution data for the graph aesthetic ONLY as fallback
 function generateMockContributions() {
     const weeks = 52;
     const daysPerWeek = 7;
@@ -27,9 +28,11 @@ function generateMockContributions() {
     return data;
 }
 
-const mockData = generateMockContributions();
+export default async function GitHubGraph() {
+    // Await the real data, fall back to mock data neatly if missing/failed.
+    const realData = await getGitHubContributions();
+    const mapData = realData || generateMockContributions();
 
-export default function GitHubGraph() {
     // Intensity to opacity mapping to fit the dark theme
     const getIntensityClass = (level: number) => {
         switch (level) {
@@ -43,7 +46,7 @@ export default function GitHubGraph() {
     return (
         <div className="w-full overflow-x-auto pb-2 scrollbar-hide">
             <div className="flex gap-[3px] min-w-max">
-                {mockData.map((week, wIndex) => (
+                {mapData.map((week, wIndex) => (
                     <div key={wIndex} className="flex flex-col gap-[3px]">
                         {week.map((level, dIndex) => (
                             <div

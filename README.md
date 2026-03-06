@@ -15,9 +15,14 @@ This repository contains the source code for the "floating in space" cinematic p
 3. Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 ## Environment Variables
-Currently, no environment variables are strictly required to run the site with mock data. 
-However, you can add variables for future integrations (e.g., GitHub Personal Access Token) in a `.env.local` file:
+To enable the live GitHub contribution graph on the Home tab, you need to provide your GitHub credentials. If these are missing, the site will gracefully render a visually identical mock fallback.
+
+Create a `.env.local` file in the root:
 ```env
+# Your GitHub username (e.g., jordanbailey00)
+GITHUB_USERNAME=your_username
+
+# A GitHub Personal Access Token (PAT) with `read:user` scope
 GITHUB_TOKEN=your_personal_access_token_here
 ```
 

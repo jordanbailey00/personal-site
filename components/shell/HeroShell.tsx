@@ -1,10 +1,22 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useContext, useRef } from "react";
 import Starfield from "@/components/starfield/Starfield";
 import FloatingNav from "@/components/nav/FloatingNav";
 import { AnimatePresence, motion } from "motion/react";
 import { usePathname } from "next/navigation";
+import { LayoutRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
+
+function FrozenRouter({ children }: { children: ReactNode }) {
+    const context = useContext(LayoutRouterContext);
+    const frozen = useRef(context).current;
+
+    return (
+        <LayoutRouterContext.Provider value={frozen}>
+            {children}
+        </LayoutRouterContext.Provider>
+    );
+}
 
 export default function HeroShell({ children }: { children: ReactNode }) {
     const pathname = usePathname();
@@ -28,7 +40,7 @@ export default function HeroShell({ children }: { children: ReactNode }) {
                             transition={{ duration: 0.6, ease: "easeInOut" }}
                             className="w-full max-w-4xl"
                         >
-                            {children}
+                            <FrozenRouter>{children}</FrozenRouter>
                         </motion.div>
                     </AnimatePresence>
                 </div>
