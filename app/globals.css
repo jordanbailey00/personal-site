@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* 
   Tailwind CSS v4 replaces the @tailwind directives with a single import.

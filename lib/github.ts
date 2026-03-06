@@ -120,27 +120,54 @@ export async function getRepoData(owner: string, repo: string): Promise<ProjectD
       next: { revalidate: 3600 }
     });
 
+    // 4. Robust Header Image Extraction & Cleaning
     let headerImage: string | null = null;
+    let cleanedHtml = readmeHtml;
+
     if (readmeRawRes.ok) {
       const rawReadme = await readmeRawRes.text();
-      // Regex to find all images in markdown
-      const imgRegex = /!\[.*?\]\((.*?)\)/g;
+      // Patterns to detect images in both Markdown and HTML
+      const mdImgRegex = /!\[.*?\]\((.*?)\)/g;
+      const htmlImgRegex = /<img\s+[^>]*src=["']([^"']+)["'][^>]*>/gi;
+      const excludedPatterns = [
+        "img.shields.io", "badge", "github.com/actions/workflow-status",
+        "travis-ci.org", "circleci.com", "codecov.io", "sonarcloud.io"
+      ];
+
+      const allMatches: { url: string; index: number }[] = [];
       let match;
-      const excludedPatterns = ["img.shields.io", "badge", "github.com/actions/workflow-status", "travis-ci.org", "circleci.com"];
 
-      while ((match = imgRegex.exec(rawReadme)) !== null) {
-        const url = match[1];
-        const isExcluded = excludedPatterns.some(pattern => url.includes(pattern));
+      // Collect all Markdown images
+      while ((match = mdImgRegex.exec(rawReadme)) !== null) {
+        allMatches.push({ url: match[1], index: match.index });
+      }
 
+      // Collect all HTML images
+      while ((match = htmlImgRegex.exec(rawReadme)) !== null) {
+        allMatches.push({ url: match[1], index: match.index });
+      }
+
+      // Sort by appearance in README
+      allMatches.sort((a, b) => a.index - b.index);
+
+      for (const item of allMatches) {
+        const isExcluded = excludedPatterns.some(pattern => item.url.includes(pattern));
         if (!isExcluded) {
-          headerImage = url;
-          // Handle relative paths if necessary (GitHub raw content URL)
+          headerImage = item.url;
+          // Resolve relative paths
           if (!headerImage.startsWith("http")) {
-            headerImage = `https://raw.githubusercontent.com/${owner}/${repo}/master/${headerImage}`;
+            // Default to master/main - in a real app we might fetch the default branch name
+            headerImage = `https://raw.githubusercontent.com/${owner}/${repo}/master/${headerImage.replace(/^\.\//, "")}`;
           }
-          break; // Use the first non-excluded image
+          break; // Found the first meaningful hero image
         }
       }
+
+      // 5. Badge Stripping from HTML
+      // We'll use a regex to remove elements that look like badges or contain badge keywords
+      cleanedHtml = cleanedHtml
+        .replace(/<a\b[^>]*>\s*<img\b[^>]*src=["'][^"']*(?:shields\.io|badge|workflow-status)[^"']*["'][^>]*>\s*<\/a>/gi, "")
+        .replace(/<img\b[^>]*src=["'][^"']*(?:shields\.io|badge|workflow-status)[^"']*["'][^>]*>/gi, "");
     }
 
     return {
@@ -148,7 +175,7 @@ export async function getRepoData(owner: string, repo: string): Promise<ProjectD
       repoFullName: repoData.full_name,
       repoUrl: repoData.html_url,
       description: repoData.description || "",
-      readmeHtml,
+      readmeHtml: cleanedHtml,
       headerImage,
       topics: repoData.topics || [],
       homepage: repoData.homepage,
