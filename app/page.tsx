@@ -2,8 +2,11 @@ import ContentPanel from "@/components/panels/ContentPanel";
 import GitHubGraph from "@/components/github/GitHubGraph";
 import HubbleGallery from "@/components/gallery/HubbleGallery";
 import { profileData } from "@/content/profile";
+import { fetchHubbleImages } from "@/lib/nasa";
 
-export default function Home() {
+export default async function Home() {
+    const hubbleItems = await fetchHubbleImages(25);
+
     return (
         <div className="flex flex-col gap-8 sm:gap-12 pb-20">
 
@@ -32,7 +35,7 @@ export default function Home() {
                 <h2 className="mb-4 text-sm font-medium uppercase tracking-widest text-white/40">
                     Cosmic Observations
                 </h2>
-                <HubbleGallery />
+                <HubbleGallery initialItems={hubbleItems} />
             </section>
 
         </div>

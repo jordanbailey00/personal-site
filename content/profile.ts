@@ -1,8 +1,8 @@
 export const profileData = {
-    name: "Jordan Doe",
-    role: "Creative Developer & Designer",
+    name: "Jordan Bailey",
+    role: "Software Engineer",
     blurb:
-        "I'm a software engineer and designer exploring the intersection of web technologies, 3D graphics, and cinematic user experiences. Currently building aesthetic interfaces and experimental digital spaces.",
+        "Hello! My name is Jordan and I am a software engineer. I am currently an MSCS student at Georgia Tech. Interested in RL, simulations, space, and games.",
     socials: {
         github: "https://github.com",
         linkedin: "https://linkedin.com",

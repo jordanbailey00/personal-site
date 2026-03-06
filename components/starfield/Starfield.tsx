@@ -67,6 +67,17 @@ function StarSphere() {
           sizeAttenuation={true}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
+          onBeforeCompile={(shader) => {
+            shader.fragmentShader = shader.fragmentShader.replace(
+              `#include <clipping_planes_fragment>`,
+              `
+              vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+              float r = dot(cxy, cxy);
+              if (r > 1.0) discard;
+              #include <clipping_planes_fragment>
+              `
+            );
+          }}
         />
       </points>
     </group>
