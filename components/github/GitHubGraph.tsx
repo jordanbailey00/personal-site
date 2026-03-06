@@ -46,9 +46,9 @@ export default async function GitHubGraph() {
     return (
         <div className="w-full overflow-x-auto pb-2 scrollbar-hide">
             <div className="flex gap-[3px] min-w-max">
-                {mapData.map((week, wIndex) => (
+                {mapData.map((week: number[], wIndex: number) => (
                     <div key={wIndex} className="flex flex-col gap-[3px]">
-                        {week.map((level, dIndex) => (
+                        {week.map((level: number, dIndex: number) => (
                             <div
                                 key={dIndex}
                                 className={cn(
