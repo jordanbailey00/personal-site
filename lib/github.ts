@@ -70,16 +70,23 @@ export interface ProjectData {
 
 export async function getRepoData(owner: string, repo: string): Promise<ProjectData | null> {
   const token = process.env.GITHUB_TOKEN;
-  if (!token) return null;
+  if (!token) {
+    console.warn(`[getRepoData] GITHUB_TOKEN is missing. Skipping ${owner}/${repo}.`);
+    return null;
+  }
 
   try {
+    console.log(`[getRepoData] Fetching ${owner}/${repo}...`);
     // Fetch Repo Metadata
     const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
       headers: { Authorization: `token ${token}` },
       next: { revalidate: 3600 }
     });
 
-    if (!repoRes.ok) throw new Error("Failed to fetch repo metadata");
+    if (!repoRes.ok) {
+      console.error(`[getRepoData] Failed to fetch metadata for ${owner}/${repo}: ${repoRes.status}`);
+      return null;
+    }
     const repoData = await repoRes.json();
 
     // Fetch README (HTML version for rendering)
