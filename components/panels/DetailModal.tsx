@@ -28,7 +28,7 @@ export default function DetailModal({ isOpen, onClose, layoutId, children }: Det
                     {/* Modal Container */}
                     <motion.div
                         layoutId={layoutId}
-                        className="relative z-10 w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 shadow-2xl flex flex-col lg:flex-row"
+                        className="relative z-10 w-full max-w-6xl h-full max-h-[90vh] overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 shadow-2xl flex flex-col lg:flex-row"
                     >
                         <button
                             onClick={onClose}

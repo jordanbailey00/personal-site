@@ -124,7 +124,10 @@ export async function getRepoData(owner: string, repo: string): Promise<ProjectD
     let headerImage: string | null = null;
     let cleanedHtml = readmeHtml;
 
-    if (readmeRawRes.ok) {
+    // Byte World Override
+    if (owner === "jordanbailey00" && repo === "byte_world_ai") {
+      headerImage = "/byte_world_thumbnail.png";
+    } else if (readmeRawRes.ok) {
       const rawReadme = await readmeRawRes.text();
       // Patterns to detect images in both Markdown and HTML
       const mdImgRegex = /!\[.*?\]\((.*?)\)/g;
@@ -156,18 +159,40 @@ export async function getRepoData(owner: string, repo: string): Promise<ProjectD
           headerImage = item.url;
           // Resolve relative paths
           if (!headerImage.startsWith("http")) {
-            // Default to master/main - in a real app we might fetch the default branch name
             headerImage = `https://raw.githubusercontent.com/${owner}/${repo}/master/${headerImage.replace(/^\.\//, "")}`;
           }
           break; // Found the first meaningful hero image
         }
       }
+    }
 
-      // 5. Badge Stripping from HTML
-      // We'll use a regex to remove elements that look like badges or contain badge keywords
+    // 5. Advanced Cleaning: Strip badges, duplicates, and broken images
+    if (cleanedHtml) {
+      // Strip badges/shields
       cleanedHtml = cleanedHtml
         .replace(/<a\b[^>]*>\s*<img\b[^>]*src=["'][^"']*(?:shields\.io|badge|workflow-status)[^"']*["'][^>]*>\s*<\/a>/gi, "")
         .replace(/<img\b[^>]*src=["'][^"']*(?:shields\.io|badge|workflow-status)[^"']*["'][^>]*>/gi, "");
+
+      // If we have a hero image, find and remove its duplicate in the body
+      if (headerImage) {
+        // We match by the core filename or the URL if it's external
+        const imgNameMatch = headerImage.match(/\/([^\/?#]+)$/);
+        const fileName = imgNameMatch ? imgNameMatch[1] : headerImage;
+        const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        // Remove the image if it matches the filename in its src attribute
+        const duplicateImgRegex = new RegExp(`<img\\b[^>]*src=[^>]*${escapedFileName}[^>]*>`, "gi");
+        cleanedHtml = cleanedHtml.replace(duplicateImgRegex, "");
+
+        // Also remove if it's wrapped in a link
+        const wrappedDuplicateRegex = new RegExp(`<a\\b[^>]*>\\s*<img\\b[^>]*src=[^>]*${escapedFileName}[^>]*>\\s*<\\/a>`, "gi");
+        cleanedHtml = cleanedHtml.replace(wrappedDuplicateRegex, "");
+      }
+
+      // Final pass: strip potentially broken images (missing src or obviously invalid)
+      cleanedHtml = cleanedHtml.replace(/<img\b[^>]*src=["']\s*["'][^>]*>/gi, "");
+      // Remove any images that might have been broken by the extraction/path process
+      cleanedHtml = cleanedHtml.replace(/<img\b[^>]*src=["']\.\/?[^"']*["'][^>]*>/gi, "");
     }
 
     return {
