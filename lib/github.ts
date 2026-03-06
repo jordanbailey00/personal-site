@@ -123,14 +123,22 @@ export async function getRepoData(owner: string, repo: string): Promise<ProjectD
     let headerImage: string | null = null;
     if (readmeRawRes.ok) {
       const rawReadme = await readmeRawRes.text();
-      // Regex to find the first image in markdown
-      const imgRegex = /!\[.*?\]\((.*?)\)/;
-      const match = rawReadme.match(imgRegex);
-      if (match && match[1]) {
-        headerImage = match[1];
-        // Handle relative paths if necessary (GitHub raw content URL)
-        if (!headerImage.startsWith("http")) {
-          headerImage = `https://raw.githubusercontent.com/${owner}/${repo}/master/${headerImage}`;
+      // Regex to find all images in markdown
+      const imgRegex = /!\[.*?\]\((.*?)\)/g;
+      let match;
+      const excludedPatterns = ["img.shields.io", "badge", "github.com/actions/workflow-status", "travis-ci.org", "circleci.com"];
+
+      while ((match = imgRegex.exec(rawReadme)) !== null) {
+        const url = match[1];
+        const isExcluded = excludedPatterns.some(pattern => url.includes(pattern));
+
+        if (!isExcluded) {
+          headerImage = url;
+          // Handle relative paths if necessary (GitHub raw content URL)
+          if (!headerImage.startsWith("http")) {
+            headerImage = `https://raw.githubusercontent.com/${owner}/${repo}/master/${headerImage}`;
+          }
+          break; // Use the first non-excluded image
         }
       }
     }

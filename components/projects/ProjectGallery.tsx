@@ -70,35 +70,15 @@ export default function ProjectGallery({ projects }: ProjectGalleryProps) {
                 layoutId={selectedProject ? `project-${selectedProject.repoFullName}` : undefined}
             >
                 {selectedProject && (
-                    <>
-                        {/* Left Side: Header Image & Visuals */}
-                        <div className="relative flex-grow h-64 sm:h-80 lg:h-auto lg:w-[60%] bg-black flex items-center justify-center overflow-hidden border-b lg:border-b-0 lg:border-r border-white/5">
-                            {selectedProject.headerImage ? (
-                                <Image
-                                    src={selectedProject.headerImage}
-                                    alt={selectedProject.name}
-                                    fill
-                                    className="object-cover lg:object-contain opacity-80"
-                                    priority
-                                />
-                            ) : (
-                                <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 to-black flex items-center justify-center">
-                                    <Github className="w-24 h-24 text-white/5" />
-                                </div>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
-                            <div className="absolute bottom-8 left-8 right-8 z-10">
-                                <h2 className="text-3xl font-light text-white mb-2">{selectedProject.name}</h2>
-                                <p className="text-sm text-white/50 max-w-lg leading-relaxed">
-                                    {selectedProject.description}
-                                </p>
-                            </div>
-                        </div>
+                    <div className="flex flex-col w-full h-full bg-neutral-900/10">
+                        {/* Header Area */}
+                        <div className="flex flex-col gap-2 p-8 border-b border-white/5 bg-black/40">
+                            <h2 className="text-3xl font-light text-white">{selectedProject.name}</h2>
+                            <p className="text-sm text-white/50 max-w-2xl leading-relaxed">
+                                {selectedProject.description}
+                            </p>
 
-                        {/* Right Side: README & Content */}
-                        <div className="w-full lg:w-[40%] flex flex-col h-full overflow-hidden bg-neutral-900/30">
-                            {/* Actions Bar */}
-                            <div className="flex items-center gap-4 p-6 border-b border-white/5">
+                            <div className="flex items-center gap-4 mt-6">
                                 <a
                                     href={selectedProject.repoUrl}
                                     target="_blank"
@@ -119,52 +99,55 @@ export default function ProjectGallery({ projects }: ProjectGalleryProps) {
                                         App
                                     </a>
                                 )}
-                            </div>
-
-                            {/* Scrollable README Area */}
-                            <div className="flex-grow overflow-y-auto p-6 sm:p-8 custom-scrollbar">
-                                <div className="space-y-8">
-                                    {/* Stats / Meta */}
-                                    <div className="flex flex-wrap gap-4 pt-2">
-                                        <div className="flex items-center gap-2 text-[10px] text-white/40 uppercase tracking-widest font-bold">
-                                            <Calendar className="w-3 h-3" />
-                                            Updated: {new Date(selectedProject.lastUpdated).toLocaleDateString()}
-                                        </div>
-                                    </div>
-
-                                    {/* README Render */}
-                                    {selectedProject.readmeHtml ? (
-                                        <div
-                                            className="prose prose-invert prose-sm max-w-none 
-                                            prose-headings:font-light prose-headings:text-white/90
-                                            prose-p:text-white/60 prose-p:leading-relaxed
-                                            prose-a:text-white/40 prose-a:underline hover:prose-a:text-white/80
-                                            prose-strong:text-white/80
-                                            prose-code:text-white/70 prose-code:bg-white/5 prose-code:px-1 prose-code:rounded
-                                            prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/5
-                                            prose-img:rounded-xl prose-img:border prose-img:border-white/10 mt-8"
-                                            dangerouslySetInnerHTML={{ __html: selectedProject.readmeHtml }}
-                                        />
-                                    ) : (
-                                        <div className="text-sm text-white/30 italic">
-                                            No README content available for this repository.
-                                        </div>
-                                    )}
-
-                                    {selectedProject.topics.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 pt-8">
-                                            {selectedProject.topics.map((topic: string) => (
-                                                <div key={topic} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] text-white/40">
-                                                    <Tag className="w-3 h-3" />
-                                                    {topic}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                <div className="flex items-center gap-2 text-[10px] text-white/30 uppercase tracking-widest font-bold ml-auto">
+                                    <Calendar className="w-3 h-3" />
+                                    Updated: {new Date(selectedProject.lastUpdated).toLocaleDateString()}
                                 </div>
                             </div>
                         </div>
-                    </>
+
+                        {/* README Content Area */}
+                        <div className="flex-grow overflow-y-auto p-8 sm:p-12 custom-scrollbar">
+                            <div className="max-w-4xl mx-auto">
+                                {selectedProject.readmeHtml ? (
+                                    <div
+                                        className="prose prose-invert prose-base max-w-none 
+                                        prose-headings:font-light prose-headings:text-white/90
+                                        prose-p:text-white/60 prose-p:leading-relaxed
+                                        prose-a:text-white/40 prose-a:underline hover:prose-a:text-white/80
+                                        prose-strong:text-white/80
+                                        prose-ul:text-white/60 prose-ol:text-white/60
+                                        prose-li:my-1
+                                        prose-code:text-white/70 prose-code:bg-white/5 prose-code:px-1 prose-code:rounded
+                                        prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/5
+                                        prose-img:rounded-xl prose-img:border prose-img:border-white/10
+                                        
+                                        /* Hide Badges and Main Titles */
+                                        [&_h1]:hidden
+                                        [&_img[src*='shields.io']]:hidden
+                                        [&_img[src*='badge']]:hidden
+                                        [&_img[src*='workflow-status']]:hidden"
+                                        dangerouslySetInnerHTML={{ __html: selectedProject.readmeHtml }}
+                                    />
+                                ) : (
+                                    <div className="text-sm text-white/30 italic py-20 text-center">
+                                        No README content available for this repository.
+                                    </div>
+                                )}
+
+                                {selectedProject.topics.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 pt-12 border-t border-white/5 mt-12">
+                                        {selectedProject.topics.map((topic: string) => (
+                                            <div key={topic} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] text-white/40">
+                                                <Tag className="w-3 h-3" />
+                                                {topic}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 )}
             </DetailModal>
         </div>
