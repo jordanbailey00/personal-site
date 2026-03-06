@@ -40,11 +40,8 @@ The images rendered on the Home tab are currently mock objects pointing to high-
 - You can refresh or update the data inside `content/hubble.ts` by pasting in a valid JSON structure or updating the array of objects (`title`, `description`, `image` URL).
 - If you switch this to a live NASA API fetch later, you can swap out `hubbleData` in `HubbleGallery.tsx` for a server-side fetch inside the Home page component.
 
-### Wiring Real GitHub Data
-The `GitHubGraph.tsx` in `components/github` currently renders an aesthetic representation using a pseudo-random generator designed for the cinematic dark mode look.
-1. Fetch real user contribution data locally via the [GitHub GraphQL API](https://docs.github.com/en/graphql/reference/objects#contributionscollection).
-2. Pass the fetched density integer array (`0-4`) into the `mockData` mapping loop inside `GitHubGraph.tsx`. 
-3. The existing Tailwind classes for intensity (`getIntensityClass`) will automatically apply the matching soft-glow styles to the exact data.
+### Live GitHub Data Integration
+The `GitHubGraph.tsx` component automatically hooks into the GitHub GraphQL API to fetch user contribution metrics at build time. The real data is mapped to the internal `0-3` intensity scale to preserve the cinematic dark-mode look natively. Check the Environment Variables section for configuration options.
 
 ## Deployment
 This project has `next.config.ts` prepared with `output: 'export'` and unoptimized images enabled, meaning it is ready for static deployment via **GitHub Pages** using GitHub Actions. Simply push to `main` and configure GitHub Actions to deploy Next.js static exports.
