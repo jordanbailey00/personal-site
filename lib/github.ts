@@ -31,6 +31,7 @@ export async function getGitHubContributions() {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "User-Agent": "jordanbailey-portfolio"
       },
       body: JSON.stringify({ query, variables: { userName: username } }),
       next: { revalidate: 3600 },
@@ -79,12 +80,15 @@ export async function getRepoData(owner: string, repo: string): Promise<ProjectD
     console.log(`[getRepoData] Fetching ${owner}/${repo}...`);
     // Fetch Repo Metadata
     const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-      headers: { Authorization: `token ${token}` },
+      headers: {
+        Authorization: `token ${token}`,
+        "User-Agent": "jordanbailey-portfolio"
+      },
       next: { revalidate: 3600 }
     });
 
     if (!repoRes.ok) {
-      console.error(`[getRepoData] Failed to fetch metadata for ${owner}/${repo}: ${repoRes.status}`);
+      console.error(`[getRepoData] Failed to fetch metadata for ${owner}/${repo}: ${repoRes.status} ${repoRes.statusText}`);
       return null;
     }
     const repoData = await repoRes.json();
@@ -93,13 +97,16 @@ export async function getRepoData(owner: string, repo: string): Promise<ProjectD
     const readmeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
       headers: {
         Authorization: `token ${token}`,
-        Accept: "application/vnd.github.v3.html"
+        Accept: "application/vnd.github.v3.html",
+        "User-Agent": "jordanbailey-portfolio"
       },
       next: { revalidate: 3600 }
     });
 
     let readmeHtml = "";
-    if (readmeRes.ok) {
+    if (!readmeRes.ok) {
+      console.warn(`[getRepoData] Failed to fetch README HTML for ${owner}/${repo}: ${readmeRes.status}`);
+    } else {
       readmeHtml = await readmeRes.text();
     }
 
@@ -107,7 +114,8 @@ export async function getRepoData(owner: string, repo: string): Promise<ProjectD
     const readmeRawRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
       headers: {
         Authorization: `token ${token}`,
-        Accept: "application/vnd.github.v3.raw"
+        Accept: "application/vnd.github.v3.raw",
+        "User-Agent": "jordanbailey-portfolio"
       },
       next: { revalidate: 3600 }
     });
