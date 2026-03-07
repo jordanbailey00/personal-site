@@ -30,7 +30,7 @@ export default function HeroShell({ children }: { children: ReactNode }) {
                 <FloatingNav />
 
                 {/* Page transitions wrapper */}
-                <div className="w-full flex-grow flex items-center justify-center pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+                <div className="w-full flex-grow flex items-center justify-center pt-20 sm:pt-24 pb-12 px-4 sm:px-6 lg:px-8">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={pathname}

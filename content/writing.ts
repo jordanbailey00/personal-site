@@ -9,56 +9,62 @@ export interface WritingPost {
 
 export const writingData: WritingPost[] = [
     {
-        slug: "simulating-the-cosmos",
-        title: "Simulating the Cosmos: A Journey into Procedural Universe Generation",
-        date: "2024-03-01",
-        excerpt: "Exploring the intersection of astrophysics and noise functions to create believable, infinite starfields and planetary systems.",
+        slug: "celestial-drifters",
+        title: "Celestial Drifters: The Enigma of Oumuamua and Borisov",
+        date: "2024-11-12",
+        excerpt: "Analyzing the physics and unprecedented trajectories of the first two interstellar objects ever recorded in our solar system.",
         body: `
-# Simulating the Cosmos
+# Celestial Drifters
 
-Building a procedural universe is a daunting task that requires a delicate balance between scientific accuracy and computational efficiency. In this article, I dive into the methods I used to generate the starfield background for this portfolio, utilizing three.js and custom GLSL shaders.
+The arrival of 'Oumuamua in 2017 challenged our understanding of interstellar objects. Unlike any comet or asteroid witnessed before, its strange acceleration and tumbling rotation sparked intense debate within the astrophysical community.
 
-## The Power of Noise
-Uniform distribution often leads to "flat" looking space. By employing volumetric shell logic and size attenuation, we can create a sense of true depth.
+## The Interstellar Visitors
+While 'Oumuamua was a flat, potentially metallic shard, 2I/Borisov—detected in 2019—looked much more like a traditional comet. However, its hyperbolic trajectory confirmed it originated from beyond our sun's gravitational reach.
 
-## Future Horizons
-The next step is to integrate real NASA data—not just images, but orbital trajectories of known exoplanets—to bring a layer of reality to the simulation.
+## Unique Characteristics
+- **'Oumuamua**: Non-gravitational acceleration without visible outgassing.
+- **Borisov**: High carbon monoxide levels, suggesting a formation in an extremely cold environment.
+
+These objects are the keys to understanding the chemical composition of distant star systems without ever leaving our own.
         `,
-        tags: ["Space", "Simulations", "Graphics"]
+        tags: ["Astrophysics", "Space", "Interstellar"]
     },
     {
-        slug: "reinforcement-learning-in-games",
-        title: "Reinforcement Learning: Teaching Agents to Play and Win",
-        date: "2024-02-15",
-        excerpt: "An overview of Q-learning and proximal policy optimization in the context of creating intelligent NPCs for game environments.",
+        slug: "emergent-agency-rl",
+        title: "Emergent Agency: SOTA Reinforcement Learning in Game Engines",
+        date: "2025-01-05",
+        excerpt: "Bridging the gap between algorithms and high-fidelity simulations using PPO, SAC, and MuJoCo integrations.",
         body: `
-# Reinforcement Learning in Games
+# Emergent Agency
 
-Modern games are moving beyond simple state machines for NPCs. Reinforcement Learning (RL) allows agents to learn optimal behaviors through trial and error, leading to more dynamic and challenging gameplay experiences.
+Reinforcement Learning (RL) has moved beyond the grid-world. Today, we are training agents in high-fidelity 3D environments where physics, lighting, and complex mechanics dictate behavior.
 
-## Training the Agent
-I've been experimenting with Byte World AI, where agents must navigate a complex grid world to gather resources while avoiding hazards.
+## State-of-the-Art Algorithms
+Algorithms like Proximal Policy Optimization (PPO) and Soft Actor-Critic (SAC) have become the workhorses of the industry, allowing for stable training in continuous action spaces.
 
-## Key Learnings
-- Reward shaping is the hardest part.
-- Stability is a luxury.
-- The emergent behavior is often surprising and delightful.
+## High-Fidelity Simulations
+Integrating ML-Agents with Unity or MuJoCo for robotics simulations allows us to test agents in environments that mimic real-world physics. The resulting 'emergent behavior'—where an agent finds a solution its creators never imagined—remains the most fascinating aspect of the field.
+
+The future of game AI isn't scripted; it's learned.
         `,
-        tags: ["RL", "AI", "Games"]
+        tags: ["RL", "AI", "Game Dev"]
     },
     {
-        slug: "the-art-of-minimalist-portfolios",
-        title: "The Art of Minimalist Portfolios: Cinematic Shells",
-        date: "2024-01-20",
-        excerpt: "Why staying inside an immersive shell creates a more memorable user experience than standard multi-page sites.",
+        slug: "gell-mann-amnesia-ai",
+        title: "The Amnesia of Progress: Gell-Mann and the AI Information Paradox",
+        date: "2025-02-18",
+        excerpt: "Exploring the intersection of the Gell-Mann Amnesia Effect and the current state of AI-generated content on the internet.",
         body: `
-# Cinematic Shells
+# The Amnesia of Progress
 
-A portfolio shouldn't just be a resume—it should be an experience. By using a persistent shell with a 3D background, we maintain a consistent atmosphere across different content types.
+The Gell-Mann Amnesia Effect, coined by Michael Crichton, describes how we trust experts on topics we don't understand, even after seeing them fail on topics we do. In the age of Large Language Models, this effect is being hyper-charged.
 
-## Technical Implementation
-Using Next.js App Router and Framer Motion's AnimatePresence allows for seamless transitions that don't break the "immersion" of the starfield.
+## The LLM Feedback Loop
+As AI-generated content begins to dominate the internet, we risk entering a 'model collapse' where AI is trained on its own previous hallucinations. This creates a paradox where information becomes more available but less reliable.
+
+## Navigating the Noise
+To maintain information integrity, we must develop better verification systems and cognitive guards. We are entering an era where 'critical reading' is no longer just an academic skill, but a survival mechanism for the digital age.
         `,
-        tags: ["Web Design", "Next.js", "UX"]
+        tags: ["AI", "Epistemology", "Internet"]
     }
 ];

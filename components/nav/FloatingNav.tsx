@@ -31,7 +31,7 @@ export default function FloatingNav() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className="relative px-4 py-1.5 rounded-full text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                            className="relative px-2.5 sm:px-4 py-1.5 rounded-full text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                         >
                             <span className={cn(
                                 "relative z-10",

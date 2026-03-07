@@ -6,7 +6,7 @@ import HeroShell from "@/components/shell/HeroShell";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: "Personal Portfolio",
+    title: "Jordan Bailey",
     description: "A cinematic floating portfolio website.",
     icons: {
         icon: "/favicon.png",
