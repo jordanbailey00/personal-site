@@ -4,9 +4,9 @@ export const profileData = {
     blurb:
         "Hello! My name is Jordan and I am a software engineer. I am currently an MSCS student at Georgia Tech. Interested in RL, simulations, space, and games.",
     socials: {
-        github: "https://github.com",
-        linkedin: "https://linkedin.com",
-        twitter: "https://twitter.com",
-        email: "hello@example.com",
+        github: "https://github.com/jordanbailey00",
+        linkedin: "https://www.linkedin.com/in/jordanbaileypm",
+        twitter: "https://x.com/jordansb_",
+        email: "jordanbaileypmp@gmail.com",
     },
 };
