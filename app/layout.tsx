@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Russo_One } from "next/font/google";
 import "./globals.css";
 import HeroShell from "@/components/shell/HeroShell";
 
-const inter = Inter({ subsets: ["latin"] });
+const russoOne = Russo_One({
+    weight: "400",
+    subsets: ["latin"],
+    display: "swap",
+});
 
 export const metadata: Metadata = {
     title: "Jordan Bailey",
@@ -20,7 +24,7 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" className="dark">
-            <body className={`${inter.className} bg-black text-white antialiased selection:bg-white/30`}>
+            <body className={`${russoOne.className} bg-black text-white antialiased selection:bg-white/30`}>
                 <HeroShell>{children}</HeroShell>
             </body>
         </html>

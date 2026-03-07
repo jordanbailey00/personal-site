@@ -15,7 +15,7 @@ export default function Contact() {
             <h1 className="text-4xl font-light tracking-tight text-white/90 mb-2">Contact</h1>
 
             <p className="text-lg text-white/60 leading-relaxed mb-8">
-                I&apos;m always open to discussing new projects, creative ideas, or opportunities to be part of your visions.
+                Feel free to reach out anytime at any of the below links!
             </p>
 
             <ContentPanel className="w-full flex flex-col gap-4 p-8 items-center bg-white/[0.02]">
