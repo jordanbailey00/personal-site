@@ -10,6 +10,7 @@ export const aboutData = {
         { name: "TypeScript", type: "Language", color: "#3178C6", icon: "code-2" },
         { name: "Kotlin", type: "Language", color: "#7F52FF", icon: "code" },
         { name: "C++", type: "Language", color: "#00599C", icon: "cpu" },
+        { name: "C", type: "Language", color: "#A8B9CC", icon: "terminal" },
         { name: "PyTorch", type: "Framework", color: "#EE4C2C", icon: "brain-circuit" },
         { name: "TensorFlow", type: "Framework", color: "#FF6F00", icon: "activity" },
         { name: "Next.js", type: "Framework", color: "#FFFFFF", icon: "globe" },
