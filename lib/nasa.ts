@@ -1,20 +1,8 @@
 import { NASAMetadata, NASASearchResponse, NASAAssetResponse } from "@/types/nasa";
-import { searchFlickrImages } from "./flickr";
 
 const NASA_TOPICS = {
-    jwst: {
-        label: "James Webb Space Telescope",
-        source: "flickr",
-        queries: [
-            "NIRCam OR MIRI OR NIRSpec OR Webb",
-            "Webb Pillars of Creation",
-            "Webb Carina Nebula",
-            "Webb deep field",
-        ],
-    },
     "artemis-ii": {
         label: "Artemis II",
-        source: "nasa",
         queries: [
             "Artemis II",
             "Artemis II lunar flyby",
@@ -50,7 +38,6 @@ export async function searchNasaImages(query: string, limit: number = 20): Promi
             
             const description = (meta.description || "").toLowerCase();
             const title = (meta.title || "").toLowerCase();
-            const keywords = (meta.keywords || []).map(k => k.toLowerCase());
             
             const isPressRelease = 
                 title.includes("press") || 
@@ -111,13 +98,7 @@ export async function getTopicImages(topic: keyof typeof NASA_TOPICS, limitPerQu
     if (!config) return [];
 
     const allResults = await Promise.all(
-        config.queries.map(async (q) => {
-            if (config.source === "flickr") {
-                return await searchFlickrImages(q, limitPerQuery);
-            } else {
-                return await searchNasaImages(q, limitPerQuery);
-            }
-        })
+        config.queries.map(q => searchNasaImages(q, limitPerQuery))
     );
 
     // Flatten and deduplicate by nasaId
