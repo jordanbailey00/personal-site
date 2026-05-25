@@ -1,6 +1,19 @@
 import { NASAMetadata, NASASearchResponse, NASAAssetResponse } from "@/types/nasa";
 
 const NASA_TOPICS = {
+    jwst: {
+        label: "James Webb Space Telescope",
+        queries: [
+            "James Webb Space Telescope full-color image",
+            "Webb telescope colorful nebula",
+            "Webb telescope galaxy color composite",
+            "Webb telescope cosmic cliffs",
+            "Webb telescope deep field",
+            "Webb telescope star forming region",
+            "Webb telescope pillars of creation",
+            "Webb telescope cartwheel galaxy",
+        ],
+    },
     "artemis-ii": {
         label: "Artemis II",
         queries: [
@@ -93,7 +106,51 @@ export async function getBestNasaImageUrl(nasaId: string): Promise<string | null
     }
 }
 
-export async function getTopicImages(topic: keyof typeof NASA_TOPICS, limitPerQuery: number = 10): Promise<NASAMetadata[]> {
+type TopicImageOptions = {
+    hydrateAssets?: boolean;
+    maxResults?: number;
+};
+
+function isDisplaySpaceImage(item: NASAMetadata) {
+    const text = [item.title, item.description, item.keywords.join(" ")].join(" ").toLowerCase();
+    const blocked = ["artist", "illustration", "animation", "concept", "logo", "infographic", "diagram", "artist's"];
+    return !blocked.some((word) => text.includes(word));
+}
+
+function scoreSpaceImage(item: NASAMetadata) {
+    const text = [item.title, item.description, item.keywords.join(" ")].join(" ").toLowerCase();
+    const positive = [
+        "webb", "james webb", "full-color", "color", "composite", "nebula", "galaxy",
+        "deep field", "cosmic cliffs", "pillars of creation", "cartwheel", "tarantula",
+        "star-forming", "star forming", "near-infrared", "infrared",
+    ];
+    const negative = [
+        "engineer", "technician", "team", "mirror", "cleanroom", "test", "launch",
+        "instrument", "diagram", "artist", "illustration", "concept", "animation",
+    ];
+
+    return positive.reduce((score, word) => score + (text.includes(word) ? 2 : 0), 0)
+        - negative.reduce((score, word) => score + (text.includes(word) ? 3 : 0), 0);
+}
+
+async function hydrateFullImageUrls(items: NASAMetadata[]) {
+    return Promise.all(
+        items.map(async (item) => {
+            const fullImageUrl = await getBestNasaImageUrl(item.nasaId);
+            return {
+                ...item,
+                fullImageUrl: fullImageUrl ?? undefined,
+                preview: fullImageUrl ?? item.preview,
+            };
+        })
+    );
+}
+
+export async function getTopicImages(
+    topic: keyof typeof NASA_TOPICS,
+    limitPerQuery: number = 10,
+    options: TopicImageOptions = {}
+): Promise<NASAMetadata[]> {
     const config = NASA_TOPICS[topic];
     if (!config) return [];
 
@@ -110,8 +167,15 @@ export async function getTopicImages(topic: keyof typeof NASA_TOPICS, limitPerQu
         return true;
     });
 
-    // Sort by dateCreated descending
-    return deduplicated.sort((a, b) => 
-        new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
-    );
+    const maxResults = options.maxResults ?? deduplicated.length;
+    const ranked = deduplicated
+        .filter(isDisplaySpaceImage)
+        .sort((a, b) => {
+            const scoreDelta = scoreSpaceImage(b) - scoreSpaceImage(a);
+            if (scoreDelta !== 0) return scoreDelta;
+            return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
+        })
+        .slice(0, maxResults);
+
+    return options.hydrateAssets ? hydrateFullImageUrls(ranked) : ranked;
 }

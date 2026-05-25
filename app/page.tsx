@@ -1,14 +1,15 @@
 import ContentPanel from "@/components/panels/ContentPanel";
 import GitHubGraph from "@/components/github/GitHubGraph";
 import NASAGallery from "@/components/gallery/NASAGallery";
-import JwstGallery from "@/components/gallery/JwstGallery";
 import { profileData } from "@/content/profile";
 import { getTopicImages } from "@/lib/nasa";
-import { getJwstGalleryPhotos } from "@/lib/jwst";
 
 export default async function Home() {
-    // Fetch the latest displayable JWST images from the unfiltered JWST API feed
-    const jwstItems = await getJwstGalleryPhotos({ limit: 50 });
+    // Fetch color public-release Webb imagery from NASA Image and Video Library.
+    const jwstItems = await getTopicImages("jwst", 8, {
+        hydrateAssets: true,
+        maxResults: 12,
+    });
     
     // Fetch Artemis II images from NASA Image API
     const artemisItems = await getTopicImages("artemis-ii", 12);
@@ -37,8 +38,9 @@ export default async function Home() {
             </section>
 
             {/* JWST Gallery Section */}
-            <JwstGallery 
-                initialItems={jwstItems} 
+            <NASAGallery
+                title="James Webb Space Telescope"
+                items={jwstItems}
             />
 
             {/* Artemis II Gallery Section */}
