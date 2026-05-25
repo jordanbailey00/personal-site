@@ -1,14 +1,15 @@
 import ContentPanel from "@/components/panels/ContentPanel";
 import GitHubGraph from "@/components/github/GitHubGraph";
-import HubbleGallery from "@/components/gallery/HubbleGallery";
+import NASAGallery from "@/components/gallery/NASAGallery";
 import { profileData } from "@/content/profile";
-import { fetchNASAImages } from "@/lib/nasa";
+import { getTopicImages } from "@/lib/nasa";
 
 export default async function Home() {
-    const cosmicItems = await fetchNASAImages(25);
+    const jwstItems = await getTopicImages("jwst", 12);
+    const artemisItems = await getTopicImages("artemis-ii", 12);
 
     return (
-        <div className="flex flex-col gap-8 sm:gap-12 pb-20">
+        <div className="flex flex-col gap-12 sm:gap-16 pb-20">
 
             {/* Intro Section */}
             <section className="flex flex-col gap-4">
@@ -30,13 +31,17 @@ export default async function Home() {
                 </ContentPanel>
             </section>
 
-            {/* Hubble Gallery Section */}
-            <section>
-                <h2 className="mb-4 text-sm font-medium uppercase tracking-widest text-white/40">
-                    Cosmic Observations
-                </h2>
-                <HubbleGallery initialItems={cosmicItems} />
-            </section>
+            {/* JWST Gallery Section */}
+            <NASAGallery 
+                title="James Webb Space Telescope" 
+                items={jwstItems} 
+            />
+
+            {/* Artemis II Gallery Section */}
+            <NASAGallery 
+                title="Artemis II Mission" 
+                items={artemisItems} 
+            />
 
         </div>
     );

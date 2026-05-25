@@ -1,30 +1,39 @@
-export interface NASAImageItem {
-    id: string;
+export interface NASAMetadata {
+    nasaId: string;
     title: string;
     description: string;
-    image: string;
-    date: string;
+    dateCreated: string;
     center?: string;
-    keywords?: string[];
+    photographer?: string;
+    keywords: string[];
+    preview: string;
+    fullImageUrl?: string;
 }
 
-export interface NASAResponse {
+export interface NASAAssetResponse {
     collection: {
-        items: Array<{
-            data: Array<{
+        items: {
+            href: string;
+        }[];
+    };
+}
+
+export interface NASASearchResponse {
+    collection: {
+        items: {
+            data: {
                 nasa_id: string;
                 title: string;
-                description?: string;
+                description: string;
                 date_created: string;
                 center?: string;
+                photographer?: string;
                 keywords?: string[];
-            }>;
-            links?: Array<{
+            }[];
+            links?: {
                 href: string;
                 rel: string;
-                render?: string;
-            }>;
-            href: string; // Asset manifest link
-        }>;
+            }[];
+        }[];
     };
 }

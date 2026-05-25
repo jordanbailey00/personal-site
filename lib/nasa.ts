@@ -1,61 +1,116 @@
-import { NASAImageItem, NASAResponse } from "@/types/nasa";
+import { NASAMetadata, NASASearchResponse, NASAAssetResponse } from "@/types/nasa";
 
-export async function fetchNASAImages(limit: number = 25): Promise<NASAImageItem[]> {
+const NASA_TOPICS = {
+    jwst: {
+        label: "James Webb Space Telescope",
+        queries: [
+            "James Webb Space Telescope",
+            "JWST",
+            "Webb telescope",
+            "Webb Pillars of Creation",
+            "Webb Carina Nebula",
+            "Webb deep field",
+        ],
+    },
+    "artemis-ii": {
+        label: "Artemis II",
+        queries: [
+            "Artemis II",
+            "Artemis II lunar flyby",
+            "Artemis II Journey to the Moon",
+            "Artemis II Orion",
+            "art002",
+        ],
+    },
+};
+
+export async function searchNasaImages(query: string, limit: number = 20): Promise<NASAMetadata[]> {
+    const params = new URLSearchParams({
+        q: query,
+        media_type: "image",
+        page_size: String(limit),
+    });
+
     try {
-        const query = "James Webb Space Telescope";
-        const url = `https://images-api.nasa.gov/search?q=${query}&media_type=image`;
-
-        const response = await fetch(url, {
-            next: { revalidate: 86400 } // Cache for 24 hours
+        const res = await fetch(`https://images-api.nasa.gov/search?${params}`, {
+            next: { revalidate: 3600 } // Cache for 1 hour
         });
 
-        if (!response.ok) {
-            throw new Error(`NASA API returned status: ${response.status}`);
+        if (!res.ok) {
+            console.error(`NASA search failed for query "${query}": ${res.status}`);
+            return [];
         }
 
-        const data: NASAResponse = await response.json();
+        const data: NASASearchResponse = await res.json();
 
-        const items = data.collection.items
-            .filter(item => item.links && item.links.length > 0 && item.data && item.data.length > 0)
-            .map(item => {
-                const info = item.data[0];
-                const imageLink = item.links?.find(l => l.rel === "preview")?.href || item.links?.[0].href || "";
-                
-                // Heuristic to filter out press releases/people: look for "telescope", "nebula", "galaxy", "stars", "deep field"
-                const description = (info.description || "").toLowerCase();
-                const title = (info.title || "").toLowerCase();
-                const keywords = (info.keywords || []).map(k => k.toLowerCase());
-                
-                const isScientific = 
-                    title.includes("webb") || 
-                    title.includes("jwst") ||
-                    keywords.some(k => ["nebula", "galaxy", "star", "deep field", "infrared"].includes(k));
-                
-                const isPressRelease = 
-                    title.includes("press") || 
-                    title.includes("briefing") || 
-                    title.includes("conference") ||
-                    description.includes("standing in front of") ||
-                    description.includes("speaks to");
+        return data.collection.items.map((item) => {
+            const meta = item.data?.[0] ?? {};
+            const preview = item.links?.find(l => l.rel === "preview")?.href ?? item.links?.[0]?.href ?? "";
 
-                return {
-                    id: info.nasa_id,
-                    title: info.title || "JWST Observation",
-                    description: info.description || "Captured by the James Webb Space Telescope, providing a window into the deep reaches of our universe.",
-                    image: imageLink,
-                    date: info.date_created,
-                    center: info.center,
-                    keywords: info.keywords,
-                    isScientific,
-                    isPressRelease
-                };
-            })
-            .filter(item => item.image !== "" && item.isScientific && !item.isPressRelease)
-            .slice(0, limit);
-
-        return items;
+            return {
+                nasaId: meta.nasa_id,
+                title: meta.title || "NASA Observation",
+                description: meta.description || "",
+                dateCreated: meta.date_created,
+                center: meta.center,
+                photographer: meta.photographer,
+                keywords: meta.keywords ?? [],
+                preview,
+            };
+        }).filter(item => item.preview !== "");
     } catch (error) {
-        console.error("Error fetching Hubble images:", error);
+        console.error(`Error searching NASA images for "${query}":`, error);
         return [];
     }
+}
+
+export async function getBestNasaImageUrl(nasaId: string): Promise<string | null> {
+    try {
+        const res = await fetch(`https://images-api.nasa.gov/asset/${nasaId}`, {
+            next: { revalidate: 86400 } // Cache asset URLs for 24 hours
+        });
+
+        if (!res.ok) {
+            console.error(`NASA asset lookup failed for ${nasaId}: ${res.status}`);
+            return null;
+        }
+
+        const data: NASAAssetResponse = await res.json();
+        const urls = data.collection.items.map((item) => item.href);
+
+        return (
+            urls.find((url) => url.includes("~large.jpg")) ||
+            urls.find((url) => url.includes("~medium.jpg")) ||
+            urls.find((url) => url.endsWith(".jpg")) ||
+            urls.find((url) => url.endsWith(".png")) ||
+            urls[0] || 
+            null
+        );
+    } catch (error) {
+        console.error(`Error getting NASA asset URL for ${nasaId}:`, error);
+        return null;
+    }
+}
+
+export async function getTopicImages(topic: keyof typeof NASA_TOPICS, limitPerQuery: number = 10): Promise<NASAMetadata[]> {
+    const config = NASA_TOPICS[topic];
+    if (!config) return [];
+
+    const allResults = await Promise.all(
+        config.queries.map(q => searchNasaImages(q, limitPerQuery))
+    );
+
+    // Flatten and deduplicate by nasaId
+    const flattened = allResults.flat();
+    const seen = new Set<string>();
+    const deduplicated = flattened.filter(item => {
+        if (seen.has(item.nasaId)) return false;
+        seen.add(item.nasaId);
+        return true;
+    });
+
+    // Sort by dateCreated descending
+    return deduplicated.sort((a, b) => 
+        new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
+    );
 }
