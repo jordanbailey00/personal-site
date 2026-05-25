@@ -1,8 +1,8 @@
 import { NASAImageItem, NASAResponse } from "@/types/nasa";
 
-export async function fetchHubbleImages(limit: number = 25): Promise<NASAImageItem[]> {
+export async function fetchNASAImages(limit: number = 25): Promise<NASAImageItem[]> {
     try {
-        const query = "Hubble";
+        const query = "Artemis Moon";
         const url = `https://images-api.nasa.gov/search?q=${query}&media_type=image`;
 
         const response = await fetch(url, {
