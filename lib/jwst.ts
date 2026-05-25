@@ -40,6 +40,19 @@ async function jwstApiGet(path: string): Promise<JwstApiItem[]> {
     return data.body ?? [];
 }
 
+function isThumbnailJpg(item: JwstApiItem) {
+    return item.details?.suffix === "_thumb" || item.location?.toLowerCase().endsWith("_thumb.jpg") === true;
+}
+
+function isPreferredDisplayJpg(item: JwstApiItem) {
+    const location = item.location?.toLowerCase() ?? "";
+    return location.includes("long_cal") || location.endsWith("_i2d.jpg") || location.endsWith("_cal.jpg");
+}
+
+function takeRecentFirst<T>(items: T[], limit: number) {
+    return items.slice(-limit).reverse();
+}
+
 function normalizeJwstImage(item: JwstApiItem): JwstImage | null {
     if (!item || !item.id || !item.location) {
         return null;
@@ -61,24 +74,29 @@ function normalizeJwstImage(item: JwstApiItem): JwstImage | null {
         productDescription: item.details?.description ?? null,
         fileType: item.file_type,
         imageUrl: item.location,
-        thumbnailUrl: item.thumbnail || item.location,
+        thumbnailUrl: item.location,
         sourceUrl: item.location,
     };
 }
 
 export async function getJwstGalleryPhotos(options: { limit?: number } = {}): Promise<JwstImage[]> {
     const limit = options.limit ?? 50;
-    const perPage = Math.min(limit, 50);
 
-    const allItems = await jwstApiGet("/all?page=1&perPage=" + perPage);
+    // The Postman docs define /all/type/:type for file-type queries.
+    // Fetch all JPG records, then keep recent non-thumbnail display products.
+    const allJpgItems = await jwstApiGet("/all/type/jpg");
+    const displayJpgs = allJpgItems.filter((item) => item.location && !isThumbnailJpg(item));
+    const preferredJpgs = displayJpgs.filter(isPreferredDisplayJpg);
+    const fallbackJpgs = displayJpgs.filter((item) => !isPreferredDisplayJpg(item));
+    const recentItems = [
+        ...takeRecentFirst(preferredJpgs, limit),
+        ...takeRecentFirst(fallbackJpgs, limit),
+    ];
 
-    const jpgImages = allItems
-        .filter((item) => item.file_type === "jpg")
-        .filter((item) => item.location)
+    const jpgImages = recentItems
         .map(normalizeJwstImage)
         .filter((item): item is JwstImage => item !== null);
 
-    // Deduplicate by ID
     const deduped = Array.from(
         new Map(jpgImages.map((image) => [image.id, image])).values()
     );
