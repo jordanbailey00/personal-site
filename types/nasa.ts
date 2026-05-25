@@ -8,6 +8,7 @@ export interface NASAMetadata {
     keywords: string[];
     preview: string;
     fullImageUrl?: string;
+    source: "nasa" | "flickr";
 }
 
 export interface NASAAssetResponse {
@@ -36,4 +37,24 @@ export interface NASASearchResponse {
             }[];
         }[];
     };
+}
+
+export interface FlickrPhoto {
+    id: string;
+    title: string;
+    description: { _content: string };
+    datetaken: string;
+    dateupload: string;
+    tags: string;
+    url_m: string;
+    url_l?: string;
+    url_o?: string;
+    ownername: string;
+}
+
+export interface FlickrResponse {
+    photos: {
+        photo: FlickrPhoto[];
+    };
+    stat: string;
 }

@@ -18,6 +18,13 @@ export default function NASAGallery({ title, items }: NASAIGalleryProps) {
 
     const handleOpen = async (item: NASAMetadata) => {
         setSelectedItem(item);
+        
+        if (item.fullImageUrl) {
+            setHighResUrl(item.fullImageUrl);
+            setLoadingAsset(false);
+            return;
+        }
+
         setHighResUrl(null);
         setLoadingAsset(true);
         try {
@@ -157,7 +164,7 @@ export default function NASAGallery({ title, items }: NASAIGalleryProps) {
                                     <div className="pt-4 border-t border-white/5">
                                         <div className="text-[10px] text-white/20 uppercase tracking-widest mb-3">Image Credit</div>
                                         <div className="text-xs text-white/60 font-light">
-                                            NASA {selectedItem.center ? `/ ${selectedItem.center}` : ''} {selectedItem.photographer ? `/ ${selectedItem.photographer}` : ''}
+                                            {selectedItem.source === "flickr" ? "NASA / STScI / Flickr" : `NASA ${selectedItem.center ? `/ ${selectedItem.center}` : ""} ${selectedItem.photographer ? `/ ${selectedItem.photographer}` : ""}`}
                                         </div>
                                     </div>
 
