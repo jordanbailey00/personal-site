@@ -47,6 +47,17 @@ export async function searchNasaImages(query: string, limit: number = 20): Promi
         return data.collection.items.map((item) => {
             const meta = item.data?.[0] ?? {};
             const preview = item.links?.find(l => l.rel === "preview")?.href ?? item.links?.[0]?.href ?? "";
+            
+            const description = (meta.description || "").toLowerCase();
+            const title = (meta.title || "").toLowerCase();
+            const keywords = (meta.keywords || []).map(k => k.toLowerCase());
+            
+            const isPressRelease = 
+                title.includes("press") || 
+                title.includes("briefing") || 
+                title.includes("conference") ||
+                description.includes("standing in front of") ||
+                description.includes("speaks to");
 
             return {
                 nasaId: meta.nasa_id,
@@ -58,8 +69,9 @@ export async function searchNasaImages(query: string, limit: number = 20): Promi
                 keywords: meta.keywords ?? [],
                 preview,
                 source: "nasa",
+                isPressRelease
             };
-        }).filter(item => item.preview !== "");
+        }).filter(item => item.preview !== "" && !item.isPressRelease);
     } catch (error) {
         console.error(`Error searching NASA images for "${query}":`, error);
         return [];
