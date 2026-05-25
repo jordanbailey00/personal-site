@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { WritingPost } from "../../content/writing";
 import { motion } from "motion/react";
-import { Calendar, Tag, BookOpen, ArrowRight } from "lucide-react";
+import { Calendar, BookOpen, ArrowRight } from "lucide-react";
 import ContentPanel from "../panels/ContentPanel";
 import DetailModal from "../panels/DetailModal";
 

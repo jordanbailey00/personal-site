@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getJwstGalleryPhotos } from "@/lib/jwst";
 
-export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const limit = Number(searchParams.get("limit") ?? 48);
+export const dynamic = "force-static";
+export const revalidate = 86400;
 
-        const photos = await getJwstGalleryPhotos({ limit });
+export async function GET() {
+    try {
+        const photos = await getJwstGalleryPhotos({ limit: 48 });
 
         return NextResponse.json({
             source: "JWST API",

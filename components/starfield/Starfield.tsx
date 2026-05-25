@@ -1,43 +1,41 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+
+const PARTICLES_COUNT = 5000;
+
+function createStarPositions() {
+  const pos = new Float32Array(PARTICLES_COUNT * 3);
+  const innerRadius = 20;
+  const outerRadius = 80;
+
+  for (let i = 0; i < PARTICLES_COUNT; i++) {
+    const u = Math.random();
+    const v = Math.random();
+    const theta = u * 2.0 * Math.PI;
+    const phi = Math.acos(2.0 * v - 1.0);
+    const r = Math.cbrt(
+      Math.random() * (Math.pow(outerRadius, 3) - Math.pow(innerRadius, 3)) + Math.pow(innerRadius, 3)
+    );
+
+    pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    pos[i * 3 + 2] = r * Math.cos(phi);
+  }
+
+  return pos;
+}
+
+const STAR_POSITIONS = createStarPositions();
 
 function StarSphere() {
   const groupRef = useRef<THREE.Group>(null);
 
-  // Generate a thick volumetric shell of stars
-  const particlesCount = 5000;
+  const positions = STAR_POSITIONS;
 
-  const positions = useMemo(() => {
-    const pos = new Float32Array(particlesCount * 3);
-    const innerRadius = 20; // Empty space in the very center
-    const outerRadius = 80; // Outer edge of the star shell
-
-    for (let i = 0; i < particlesCount; i++) {
-      // Uniform distribution inside a spherical volume between inner and outer radius
-      const u = Math.random();
-      const v = Math.random();
-      const theta = u * 2.0 * Math.PI;
-      const phi = Math.acos(2.0 * v - 1.0);
-
-      const r = Math.cbrt(
-        Math.random() * (Math.pow(outerRadius, 3) - Math.pow(innerRadius, 3)) + Math.pow(innerRadius, 3)
-      );
-
-      const x = r * Math.sin(phi) * Math.cos(theta);
-      const y = r * Math.sin(phi) * Math.sin(theta);
-      const z = r * Math.cos(phi);
-
-      pos[i * 3] = x;
-      pos[i * 3 + 1] = y;
-      pos[i * 3 + 2] = z;
-    }
-    return pos;
-  }, []);
-
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (groupRef.current) {
       // Slowly rotate the entire volume around its persistent world axis (not the camera axis)
       groupRef.current.rotation.y += delta * 0.015;

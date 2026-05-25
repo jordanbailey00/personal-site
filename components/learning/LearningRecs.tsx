@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LearningSubject, Recommendation } from "@/content/learning";
 import { motion } from "motion/react";
 import { Book, Video, Box, ExternalLink, GraduationCap, ArrowRight } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import ContentPanel from "../panels/ContentPanel";
 import DetailModal from "../panels/DetailModal";
 import Image from "next/image";
@@ -12,78 +13,87 @@ interface LearningRecsProps {
     subjects: LearningSubject[];
 }
 
+type RecSectionProps = {
+    title: string;
+    icon: LucideIcon;
+    recs: Recommendation[];
+};
+
+function getImageUrl(rec: Recommendation): string | null {
+    if (rec.isbn) {
+        return "https://covers.openlibrary.org/b/isbn/" + rec.isbn + "-L.jpg";
+    }
+    if (rec.videoId) {
+        return "https://img.youtube.com/vi/" + rec.videoId + "/maxresdefault.jpg";
+    }
+    return null;
+}
+
+function RecSection({ title, icon: Icon, recs }: RecSectionProps) {
+    if (recs.length === 0) return null;
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center gap-2 text-white/40 uppercase tracking-widest text-[10px] font-bold border-b border-white/5 pb-2">
+                <Icon className="w-3.5 h-3.5" />
+                {title}
+            </div>
+            <div className="grid gap-6">
+                {recs.map((rec, i) => {
+                    const imageUrl = getImageUrl(rec);
+                    const isVideo = !!rec.videoId;
+
+                    return (
+                        <div key={i} className="flex flex-col sm:flex-row gap-6 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all group overflow-hidden">
+                            {imageUrl && (
+                                <div className={[
+                                    "relative shrink-0 overflow-hidden rounded-lg border border-white/10 shadow-lg bg-black/40",
+                                    isVideo ? "aspect-video w-full sm:w-48" : "aspect-[2/3] w-32 sm:w-28",
+                                ].join(" ")}>
+                                    <Image
+                                        src={imageUrl}
+                                        alt={rec.title}
+                                        fill
+                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                        sizes="(max-width: 640px) 100vw, 200px"
+                                    />
+                                    {isVideo && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors">
+                                            <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
+                                                <Video className="w-5 h-5 text-white/80" />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            <div className="flex-grow flex flex-col justify-center min-w-0">
+                                <div className="flex justify-between items-start gap-4 mb-2">
+                                    <h4 className="text-lg font-medium text-white/90 group-hover:text-white transition-colors truncate">{rec.title}</h4>
+                                    {rec.url && (
+                                        <a
+                                            href={rec.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="shrink-0 p-1.5 rounded-lg bg-white/5 text-white/20 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                        </a>
+                                    )}
+                                </div>
+                                <p className="text-sm text-white/50 leading-relaxed font-light italic border-l-2 border-white/10 pl-4 py-1">
+                                    &ldquo;{rec.review}&rdquo;
+                                </p>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 export default function LearningRecs({ subjects }: LearningRecsProps) {
     const [selectedSubject, setSelectedSubject] = useState<LearningSubject | null>(null);
-
-    const getImageUrl = (rec: Recommendation): string | null => {
-        if (rec.isbn) {
-            return `https://covers.openlibrary.org/b/isbn/${rec.isbn}-L.jpg`;
-        }
-        if (rec.videoId) {
-            return `https://img.youtube.com/vi/${rec.videoId}/maxresdefault.jpg`;
-        }
-        return null;
-    };
-
-    const RecSection = ({ title, icon: Icon, recs }: { title: string, icon: any, recs: Recommendation[] }) => {
-        if (recs.length === 0) return null;
-
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center gap-2 text-white/40 uppercase tracking-widest text-[10px] font-bold border-b border-white/5 pb-2">
-                    <Icon className="w-3.5 h-3.5" />
-                    {title}
-                </div>
-                <div className="grid gap-6">
-                    {recs.map((rec, i) => {
-                        const imageUrl = getImageUrl(rec);
-                        const isVideo = !!rec.videoId;
-
-                        return (
-                            <div key={i} className="flex flex-col sm:flex-row gap-6 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all group overflow-hidden">
-                                {imageUrl && (
-                                    <div className={`relative shrink-0 overflow-hidden rounded-lg border border-white/10 shadow-lg bg-black/40 ${isVideo ? 'aspect-video w-full sm:w-48' : 'aspect-[2/3] w-32 sm:w-28'}`}>
-                                        <Image
-                                            src={imageUrl}
-                                            alt={rec.title}
-                                            fill
-                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                            sizes="(max-width: 640px) 100vw, 200px"
-                                        />
-                                        {isVideo && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors">
-                                                <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
-                                                    <Video className="w-5 h-5 text-white/80" />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                <div className="flex-grow flex flex-col justify-center min-w-0">
-                                    <div className="flex justify-between items-start gap-4 mb-2">
-                                        <h4 className="text-lg font-medium text-white/90 group-hover:text-white transition-colors truncate">{rec.title}</h4>
-                                        {rec.url && (
-                                            <a
-                                                href={rec.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="shrink-0 p-1.5 rounded-lg bg-white/5 text-white/20 hover:text-white hover:bg-white/10 transition-all border border-white/5"
-                                            >
-                                                <ExternalLink className="w-4 h-4" />
-                                            </a>
-                                        )}
-                                    </div>
-                                    <p className="text-sm text-white/50 leading-relaxed font-light italic border-l-2 border-white/10 pl-4 py-1">
-                                        "{rec.review}"
-                                    </p>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        );
-    };
 
     return (
         <div className="relative">

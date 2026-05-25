@@ -55,7 +55,7 @@ export async function searchNasaImages(query: string, limit: number = 20): Promi
                 photographer: meta.photographer,
                 keywords: meta.keywords ?? [],
                 preview,
-                source: "nasa",
+                source: "nasa" as const,
                 isPressRelease
             };
         }).filter(item => item.preview !== "" && !item.isPressRelease);

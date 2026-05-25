@@ -1,3 +1,24 @@
+type GitHubContributionDay = {
+  contributionCount: number;
+  date: string;
+};
+
+type GitHubContributionWeek = {
+  contributionDays: GitHubContributionDay[];
+};
+
+type GitHubContributionsResponse = {
+  data?: {
+    user?: {
+      contributionsCollection?: {
+        contributionCalendar?: {
+          weeks?: GitHubContributionWeek[];
+        };
+      };
+    };
+  };
+};
+
 export async function getGitHubContributions() {
   const username = process.env.GITHUB_USERNAME;
   const token = process.env.GITHUB_TOKEN;
@@ -38,12 +59,12 @@ export async function getGitHubContributions() {
     });
 
     if (!res.ok) return null;
-    const json = await res.json();
+    const json: GitHubContributionsResponse = await res.json();
     const weeks = json.data?.user?.contributionsCollection?.contributionCalendar?.weeks;
     if (!weeks) return null;
 
-    return weeks.map((week: any) => {
-      return week.contributionDays.map((day: any) => {
+    return weeks.map((week) => {
+      return week.contributionDays.map((day) => {
         const count = day.contributionCount;
         if (count === 0) return 0;
         if (count <= 3) return 1;

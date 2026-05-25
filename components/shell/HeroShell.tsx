@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useContext, useRef } from "react";
+import { ReactNode, useContext, useState } from "react";
 import Starfield from "@/components/starfield/Starfield";
 import FloatingNav from "@/components/nav/FloatingNav";
 import { AnimatePresence, motion } from "motion/react";
@@ -9,7 +9,7 @@ import { LayoutRouterContext } from "next/dist/shared/lib/app-router-context.sha
 
 function FrozenRouter({ children }: { children: ReactNode }) {
     const context = useContext(LayoutRouterContext);
-    const frozen = useRef(context).current;
+    const [frozen] = useState(context);
 
     return (
         <LayoutRouterContext.Provider value={frozen}>

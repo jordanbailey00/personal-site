@@ -1,6 +1,8 @@
 import ContentPanel from "@/components/panels/ContentPanel";
 import { aboutData } from "@/content/about";
 import * as LucideIcons from "lucide-react";
+import type { CSSProperties } from "react";
+import type { LucideIcon } from "lucide-react";
 
 export default function About() {
     const groupedSkills = aboutData.skills.reduce((acc, skill) => {
@@ -44,13 +46,13 @@ export default function About() {
                                     // Map kebab-case or names to Lucide icon components
                                     // A very simple mapper or using icon name directly if it matches common lucide exports
                                     const iconName = skill.icon.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('') as keyof typeof LucideIcons;
-                                    const IconComponent = (LucideIcons[iconName] as any) || LucideIcons.HelpCircle;
+                                    const IconComponent = (LucideIcons[iconName] as LucideIcon | undefined) ?? LucideIcons.HelpCircle;
 
                                     return (
                                         <div
                                             key={skill.name}
                                             className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 bg-white/[0.03] transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]"
-                                            style={{ '--skill-color': skill.color } as any}
+                                            style={{ "--skill-color": skill.color } as CSSProperties & Record<"--skill-color", string>}
                                         >
                                             <IconComponent size={14} className="text-white/40 group-hover:text-[var(--skill-color)] transition-colors" />
                                             <span className="text-sm text-white/70 group-hover:text-white transition-colors">

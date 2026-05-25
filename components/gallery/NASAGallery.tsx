@@ -11,6 +11,31 @@ interface NASAIGalleryProps {
     items: NASAMetadata[];
 }
 
+type NASAAssetLookupResponse = {
+    collection?: {
+        items?: { href?: string }[];
+    };
+};
+
+async function getBestNasaImageUrl(nasaId: string): Promise<string | null> {
+    const res = await fetch("https://images-api.nasa.gov/asset/" + encodeURIComponent(nasaId));
+    if (!res.ok) return null;
+
+    const data: NASAAssetLookupResponse = await res.json();
+    const urls = data.collection?.items
+        ?.map((item) => item.href)
+        .filter((href): href is string => Boolean(href)) ?? [];
+
+    return (
+        urls.find((url) => url.includes("~large.jpg")) ||
+        urls.find((url) => url.includes("~medium.jpg")) ||
+        urls.find((url) => url.endsWith(".jpg")) ||
+        urls.find((url) => url.endsWith(".png")) ||
+        urls[0] ||
+        null
+    );
+}
+
 export default function NASAGallery({ title, items }: NASAIGalleryProps) {
     const [selectedItem, setSelectedItem] = useState<NASAMetadata | null>(null);
     const [highResUrl, setHighResUrl] = useState<string | null>(null);
@@ -28,11 +53,8 @@ export default function NASAGallery({ title, items }: NASAIGalleryProps) {
         setHighResUrl(null);
         setLoadingAsset(true);
         try {
-            const res = await fetch(`/api/nasa/asset?nasaId=${item.nasaId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setHighResUrl(data.url);
-            }
+            const url = await getBestNasaImageUrl(item.nasaId);
+            setHighResUrl(url ?? item.preview);
         } catch (error) {
             console.error("Failed to fetch high-res image:", error);
         } finally {
