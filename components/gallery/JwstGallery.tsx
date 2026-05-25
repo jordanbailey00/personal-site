@@ -20,7 +20,7 @@ export default function JwstGallery({ initialItems }: JwstGalleryProps) {
                     James Webb Space Telescope
                 </h2>
                 <p className="text-[10px] text-white/20 uppercase tracking-widest">
-                    Scientific Data Products (_i2d)
+                    Latest Uploaded Images
                 </p>
             </div>
             

@@ -7,8 +7,8 @@ import { getTopicImages } from "@/lib/nasa";
 import { getJwstGalleryPhotos } from "@/lib/jwst";
 
 export default async function Home() {
-    // Fetch scientific JWST images from specialized JWST API
-    const jwstItems = await getJwstGalleryPhotos({ limit: 12 });
+    // Fetch the latest displayable JWST images from the unfiltered JWST API feed
+    const jwstItems = await getJwstGalleryPhotos({ limit: 50 });
     
     // Fetch Artemis II images from NASA Image API
     const artemisItems = await getTopicImages("artemis-ii", 12);

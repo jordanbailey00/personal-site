@@ -6,7 +6,7 @@ export const revalidate = 86400;
 
 export async function GET() {
     try {
-        const photos = await getJwstGalleryPhotos({ limit: 48 });
+        const photos = await getJwstGalleryPhotos({ limit: 50 });
 
         return NextResponse.json({
             source: "JWST API",

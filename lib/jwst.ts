@@ -67,20 +67,10 @@ function normalizeJwstImage(item: JwstApiItem): JwstImage | null {
 }
 
 export async function getJwstGalleryPhotos(options: { limit?: number } = {}): Promise<JwstImage[]> {
-    const limit = options.limit ?? 48;
-    const perPage = 50;
-    const maxPages = 2; // Keep it reasonable for build times/initial load
+    const limit = options.limit ?? 50;
+    const perPage = Math.min(limit, 50);
 
-    const allItems: JwstApiItem[] = [];
-
-    for (let page = 1; page <= maxPages; page++) {
-        const items = await jwstApiGet(`/all/suffix/_i2d?page=${page}&perPage=${perPage}`);
-        allItems.push(...items);
-
-        if (!Array.isArray(items) || items.length < perPage) {
-            break;
-        }
-    }
+    const allItems = await jwstApiGet("/all?page=1&perPage=" + perPage);
 
     const jpgImages = allItems
         .filter((item) => item.file_type === "jpg")
