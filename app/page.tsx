@@ -2,18 +2,15 @@ import ContentPanel from "@/components/panels/ContentPanel";
 import GitHubGraph from "@/components/github/GitHubGraph";
 import NASAGallery from "@/components/gallery/NASAGallery";
 import { profileData } from "@/content/profile";
-import { getTopicImages } from "@/lib/nasa";
+import { getAstronomyImages } from "@/lib/nasa";
 
 export default async function Home() {
-    // Fetch color public-release Webb imagery from NASA Image and Video Library.
-    const jwstItems = await getTopicImages("jwst", 8, {
-        hydrateAssets: true,
-        maxResults: 12,
+    // Fetch image-only astronomy photos from NASA APOD.
+    const spaceItems = await getAstronomyImages({
+        daysBack: 180,
+        maxResults: 50,
     });
     
-    // Fetch Artemis II images from NASA Image API
-    const artemisItems = await getTopicImages("artemis-ii", 12);
-
     return (
         <div className="flex flex-col gap-12 sm:gap-16 pb-20">
 
@@ -37,16 +34,10 @@ export default async function Home() {
                 </ContentPanel>
             </section>
 
-            {/* JWST Gallery Section */}
+            {/* Space Gallery Section */}
             <NASAGallery
-                title="James Webb Space Telescope"
-                items={jwstItems}
-            />
-
-            {/* Artemis II Gallery Section */}
-            <NASAGallery 
-                title="Artemis II Mission" 
-                items={artemisItems} 
+                title="Space Images"
+                items={spaceItems}
             />
 
         </div>

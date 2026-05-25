@@ -9,33 +9,4 @@ export interface NASAMetadata {
     preview: string;
     fullImageUrl?: string;
     source: "nasa";
-    isPressRelease?: boolean;
-}
-
-export interface NASAAssetResponse {
-    collection: {
-        items: {
-            href: string;
-        }[];
-    };
-}
-
-export interface NASASearchResponse {
-    collection: {
-        items: {
-            data: {
-                nasa_id: string;
-                title: string;
-                description: string;
-                date_created: string;
-                center?: string;
-                photographer?: string;
-                keywords?: string[];
-            }[];
-            links?: {
-                href: string;
-                rel: string;
-            }[];
-        }[];
-    };
 }

@@ -61,7 +61,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           GITHUB_USERNAME: ${{ vars.GITHUB_USERNAME || 'jordanbailey00' }}
-          JWST_API_KEY: ${{ secrets.JWST_API_KEY }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

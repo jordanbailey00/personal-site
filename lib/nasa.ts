@@ -1,181 +1,102 @@
-import { NASAMetadata, NASASearchResponse, NASAAssetResponse } from "@/types/nasa";
+import { NASAMetadata } from "@/types/nasa";
 
-const NASA_TOPICS = {
-    jwst: {
-        label: "James Webb Space Telescope",
-        queries: [
-            "James Webb Space Telescope full-color image",
-            "Webb telescope colorful nebula",
-            "Webb telescope galaxy color composite",
-            "Webb telescope cosmic cliffs",
-            "Webb telescope deep field",
-            "Webb telescope star forming region",
-            "Webb telescope pillars of creation",
-            "Webb telescope cartwheel galaxy",
-        ],
-    },
-    "artemis-ii": {
-        label: "Artemis II",
-        queries: [
-            "Artemis II",
-            "Artemis II lunar flyby",
-            "Artemis II Journey to the Moon",
-            "Artemis II Orion",
-            "art002",
-        ],
-    },
-} as const;
+type ApodItem = {
+    copyright?: string;
+    date: string;
+    explanation: string;
+    hdurl?: string;
+    media_type: string;
+    title: string;
+    url: string;
+};
 
-export async function searchNasaImages(query: string, limit: number = 20): Promise<NASAMetadata[]> {
-    const params = new URLSearchParams({
-        q: query,
-        media_type: "image",
-        page_size: String(limit),
-    });
-
-    try {
-        const res = await fetch(`https://images-api.nasa.gov/search?${params}`, {
-            next: { revalidate: 3600 } // Cache for 1 hour
-        });
-
-        if (!res.ok) {
-            console.error(`NASA search failed for query "${query}": ${res.status}`);
-            return [];
-        }
-
-        const data: NASASearchResponse = await res.json();
-
-        return data.collection.items.map((item) => {
-            const meta = item.data?.[0] ?? {};
-            const preview = item.links?.find(l => l.rel === "preview")?.href ?? item.links?.[0]?.href ?? "";
-            
-            const description = (meta.description || "").toLowerCase();
-            const title = (meta.title || "").toLowerCase();
-            
-            const isPressRelease = 
-                title.includes("press") || 
-                title.includes("briefing") || 
-                title.includes("conference") ||
-                description.includes("standing in front of") ||
-                description.includes("speaks to");
-
-            return {
-                nasaId: meta.nasa_id,
-                title: meta.title || "NASA Observation",
-                description: meta.description || "",
-                dateCreated: meta.date_created,
-                center: meta.center,
-                photographer: meta.photographer,
-                keywords: meta.keywords ?? [],
-                preview,
-                source: "nasa" as const,
-                isPressRelease
-            };
-        }).filter(item => item.preview !== "" && !item.isPressRelease);
-    } catch (error) {
-        console.error(`Error searching NASA images for "${query}":`, error);
-        return [];
-    }
-}
-
-export async function getBestNasaImageUrl(nasaId: string): Promise<string | null> {
-    try {
-        const res = await fetch(`https://images-api.nasa.gov/asset/${nasaId}`, {
-            next: { revalidate: 86400 } // Cache asset URLs for 24 hours
-        });
-
-        if (!res.ok) {
-            console.error(`NASA asset lookup failed for ${nasaId}: ${res.status}`);
-            return null;
-        }
-
-        const data: NASAAssetResponse = await res.json();
-        const urls = data.collection.items.map((item) => item.href);
-
-        return (
-            urls.find((url) => url.includes("~large.jpg")) ||
-            urls.find((url) => url.includes("~medium.jpg")) ||
-            urls.find((url) => url.endsWith(".jpg")) ||
-            urls.find((url) => url.endsWith(".png")) ||
-            urls[0] || 
-            null
-        );
-    } catch (error) {
-        console.error(`Error getting NASA asset URL for ${nasaId}:`, error);
-        return null;
-    }
-}
-
-type TopicImageOptions = {
-    hydrateAssets?: boolean;
+type AstronomyImageOptions = {
+    daysBack?: number;
     maxResults?: number;
 };
 
-function isDisplaySpaceImage(item: NASAMetadata) {
-    const text = [item.title, item.description, item.keywords.join(" ")].join(" ").toLowerCase();
-    const blocked = ["artist", "illustration", "animation", "concept", "logo", "infographic", "diagram", "artist's"];
-    return !blocked.some((word) => text.includes(word));
+function formatDate(date: Date) {
+    return date.toISOString().slice(0, 10);
 }
 
-function scoreSpaceImage(item: NASAMetadata) {
-    const text = [item.title, item.description, item.keywords.join(" ")].join(" ").toLowerCase();
-    const positive = [
-        "webb", "james webb", "full-color", "color", "composite", "nebula", "galaxy",
-        "deep field", "cosmic cliffs", "pillars of creation", "cartwheel", "tarantula",
-        "star-forming", "star forming", "near-infrared", "infrared",
+function getDateDaysAgo(daysBack: number) {
+    const date = new Date();
+    date.setUTCDate(date.getUTCDate() - daysBack);
+    return formatDate(date);
+}
+
+function isLikelyAstronomyPhoto(item: ApodItem) {
+    if (item.media_type !== "image") return false;
+
+    if (!item.hdurl) return false;
+
+    const imageUrl = item.hdurl;
+    const normalizedUrl = imageUrl.split("?")[0].toLowerCase();
+    if (![".jpg", ".jpeg", ".png", ".webp"].some((extension) => normalizedUrl.endsWith(extension))) return false;
+    if (["300px", "thumb", "_sm", "-sm"].some((marker) => normalizedUrl.includes(marker))) return false;
+
+    const text = [item.title, item.explanation].join(" ").toLowerCase();
+    const blocked = [
+        "artist", "illustration", "drawing", "animation", "diagram", "map", "simulation", "chart", "poster", "catalog at uniform scale",
+        "people", "person", "portrait", "selfie", "crew", "astronaut", "launch", "rocket",
+        "conference", "telescope mirror", "black and white", "black-and-white", "monochrome", "grayscale", "grey-scale", "b&w",
     ];
-    const negative = [
-        "engineer", "technician", "team", "mirror", "cleanroom", "test", "launch",
-        "instrument", "diagram", "artist", "illustration", "concept", "animation",
+    const astronomyTerms = [
+        "galaxy", "nebula", "star", "cluster", "comet", "planet", "moon", "mars",
+        "jupiter", "saturn", "uranus", "neptune", "mercury", "venus", "sun", "solar",
+        "eclipse", "aurora", "meteor", "asteroid", "supernova", "milky way",
+        "constellation", "cosmic", "deep field", "space", "universe",
     ];
 
-    return positive.reduce((score, word) => score + (text.includes(word) ? 2 : 0), 0)
-        - negative.reduce((score, word) => score + (text.includes(word) ? 3 : 0), 0);
+    return !blocked.some((word) => text.includes(word))
+        && astronomyTerms.some((word) => text.includes(word));
 }
 
-async function hydrateFullImageUrls(items: NASAMetadata[]) {
-    return Promise.all(
-        items.map(async (item) => {
-            const fullImageUrl = await getBestNasaImageUrl(item.nasaId);
-            return {
-                ...item,
-                fullImageUrl: fullImageUrl ?? undefined,
-                preview: fullImageUrl ?? item.preview,
-            };
-        })
-    );
-}
-
-export async function getTopicImages(
-    topic: keyof typeof NASA_TOPICS,
-    limitPerQuery: number = 10,
-    options: TopicImageOptions = {}
-): Promise<NASAMetadata[]> {
-    const config = NASA_TOPICS[topic];
-    if (!config) return [];
-
-    const allResults = await Promise.all(
-        config.queries.map(q => searchNasaImages(q, limitPerQuery))
-    );
-
-    // Flatten and deduplicate by nasaId
-    const flattened = allResults.flat();
-    const seen = new Set<string>();
-    const deduplicated = flattened.filter(item => {
-        if (seen.has(item.nasaId)) return false;
-        seen.add(item.nasaId);
-        return true;
+export async function getAstronomyImages(options: AstronomyImageOptions = {}): Promise<NASAMetadata[]> {
+    const daysBack = options.daysBack ?? 500;
+    const maxResults = options.maxResults ?? 12;
+    const params = new URLSearchParams({
+        api_key: process.env.NASA_API_KEY ?? "DEMO_KEY",
+        start_date: getDateDaysAgo(daysBack),
+        end_date: formatDate(new Date()),
+        thumbs: "false",
     });
 
-    const maxResults = options.maxResults ?? deduplicated.length;
-    const ranked = deduplicated
-        .filter(isDisplaySpaceImage)
-        .sort((a, b) => {
-            const scoreDelta = scoreSpaceImage(b) - scoreSpaceImage(a);
-            if (scoreDelta !== 0) return scoreDelta;
-            return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
-        })
-        .slice(0, maxResults);
+    try {
+        const res = await fetch("https://api.nasa.gov/planetary/apod?" + params, {
+            next: { revalidate: 86400 }
+        });
 
-    return options.hydrateAssets ? hydrateFullImageUrls(ranked) : ranked;
+        if (!res.ok) {
+            console.error("NASA APOD lookup failed: " + res.status);
+            return [];
+        }
+
+        const data: ApodItem[] | ApodItem = await res.json();
+        const items = Array.isArray(data) ? data : [data];
+
+        return items
+            .filter(isLikelyAstronomyPhoto)
+            .reverse()
+            .slice(0, maxResults)
+            .map((item) => {
+                const imageUrl = item.hdurl ?? item.url;
+
+                return {
+                    nasaId: "apod-" + item.date,
+                    title: item.title,
+                    description: item.explanation,
+                    dateCreated: item.date,
+                    center: "NASA APOD",
+                    photographer: item.copyright,
+                    keywords: ["APOD", "Astronomy"],
+                    preview: imageUrl,
+                    fullImageUrl: imageUrl,
+                    source: "nasa" as const,
+                };
+            });
+    } catch (error) {
+        console.error("Error fetching NASA APOD images:", error);
+        return [];
+    }
 }

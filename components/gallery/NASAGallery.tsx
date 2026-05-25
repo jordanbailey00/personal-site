@@ -11,55 +11,12 @@ interface NASAIGalleryProps {
     items: NASAMetadata[];
 }
 
-type NASAAssetLookupResponse = {
-    collection?: {
-        items?: { href?: string }[];
-    };
-};
-
-async function getBestNasaImageUrl(nasaId: string): Promise<string | null> {
-    const res = await fetch("https://images-api.nasa.gov/asset/" + encodeURIComponent(nasaId));
-    if (!res.ok) return null;
-
-    const data: NASAAssetLookupResponse = await res.json();
-    const urls = data.collection?.items
-        ?.map((item) => item.href)
-        .filter((href): href is string => Boolean(href)) ?? [];
-
-    return (
-        urls.find((url) => url.includes("~large.jpg")) ||
-        urls.find((url) => url.includes("~medium.jpg")) ||
-        urls.find((url) => url.endsWith(".jpg")) ||
-        urls.find((url) => url.endsWith(".png")) ||
-        urls[0] ||
-        null
-    );
-}
-
 export default function NASAGallery({ title, items }: NASAIGalleryProps) {
     const [selectedItem, setSelectedItem] = useState<NASAMetadata | null>(null);
     const [highResUrl, setHighResUrl] = useState<string | null>(null);
-    const [loadingAsset, setLoadingAsset] = useState(false);
-
-    const handleOpen = async (item: NASAMetadata) => {
+    const handleOpen = (item: NASAMetadata) => {
         setSelectedItem(item);
-        
-        if (item.fullImageUrl) {
-            setHighResUrl(item.fullImageUrl);
-            setLoadingAsset(false);
-            return;
-        }
-
-        setHighResUrl(null);
-        setLoadingAsset(true);
-        try {
-            const url = await getBestNasaImageUrl(item.nasaId);
-            setHighResUrl(url ?? item.preview);
-        } catch (error) {
-            console.error("Failed to fetch high-res image:", error);
-        } finally {
-            setLoadingAsset(false);
-        }
+        setHighResUrl(item.fullImageUrl ?? item.preview);
     };
 
     return (
@@ -130,14 +87,9 @@ export default function NASAGallery({ title, items }: NASAIGalleryProps) {
                                     src={highResUrl || selectedItem.preview}
                                     alt={selectedItem.title}
                                     fill
-                                    className={`object-contain transition-opacity duration-500 ${loadingAsset ? 'opacity-50' : 'opacity-100'}`}
+                                    className="object-contain"
                                     priority
                                 />
-                                {loadingAsset && (
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-                                    </div>
-                                )}
                             </div>
 
                             <div className="w-full lg:w-[35%] p-6 sm:p-8 overflow-y-auto bg-neutral-900/50 border-t lg:border-t-0 lg:border-l border-white/5 custom-scrollbar">
