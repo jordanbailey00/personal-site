@@ -164,7 +164,7 @@ export default function NASAGallery({ title, items }: NASAIGalleryProps) {
                                     <div className="pt-4 border-t border-white/5">
                                         <div className="text-[10px] text-white/20 uppercase tracking-widest mb-3">Image Credit</div>
                                         <div className="text-xs text-white/60 font-light">
-                                            {selectedItem.source === "flickr" ? "NASA / STScI / Flickr" : `NASA ${selectedItem.center ? `/ ${selectedItem.center}` : ""} ${selectedItem.photographer ? `/ ${selectedItem.photographer}` : ""}`}
+                                            NASA {selectedItem.center ? `/ ${selectedItem.center}` : ""} {selectedItem.photographer ? `/ ${selectedItem.photographer}` : ""}
                                         </div>
                                     </div>
 
