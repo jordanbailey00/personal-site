@@ -1,22 +1,28 @@
-# Personal Site - Cinematic Floating Environment
+# personal-site
 
+A cinematic, immersive portfolio website designed to exist entirely within a persistent 3D hero environment.
 
-## Content Management / Customization
+## Architecture
 
-All the local content used to render the site is stored in the `/content` directory. The structure has been intentionally kept simple so you can easily replace the placeholder data with your own.
+The site is built with Next.js using the App Router. It employs a shared persistent layout (HeroShell) that contains the 3D canvas and navigation. This ensures that the WebGL environment remains active and uninterrupted during route transitions, creating a single-page experience across multiple sub-pages.
 
-- **`content/profile.ts`**: Update your name, high-level blurb, and social handles (used in the Home and Contact tabs).
-- **`content/about.ts`**: Contains the longer biography and skills list.
-- **`content/projects.ts`**: Array of project objects (title, description, thumbnail URLs, and links).
-- **`content/writing.ts`**: Your blog posts or external writing links.
+## Background Star Effect
 
-### Updating the Hubble/NASA Gallery Data
-The images rendered on the Home tab are currently mock objects pointing to high-quality space photography on Unsplash. 
-- You can refresh or update the data inside `content/hubble.ts` by pasting in a valid JSON structure or updating the array of objects (`title`, `description`, `image` URL).
-- If you switch this to a live NASA API fetch later, you can swap out `hubbleData` in `HubbleGallery.tsx` for a server-side fetch inside the Home page component.
+The immersive background is a fullscreen 3D starfield implemented with Three.js via React Three Fiber (R3F).
+- Stars are distributed as particles in 3D space.
+- A fixed-axis rotation is applied to the scene to provide a slow, ambient drift.
+- Motion is kept subtle to ensure content legibility while maintaining a sense of depth and scale.
 
-### Live GitHub Data Integration
-The `GitHubGraph.tsx` component automatically hooks into the GitHub GraphQL API to fetch user contribution metrics at build time. The real data is mapped to the internal `0-3` intensity scale to preserve the cinematic dark-mode look natively. Check the Environment Variables section for configuration options.
+## API Integrations
 
-## Deployment
-This project has `next.config.ts` prepared with `output: 'export'` and unoptimized images enabled, meaning it is ready for static deployment via **GitHub Pages** using GitHub Actions. Simply push to `main` and configure GitHub Actions to deploy Next.js static exports.
+The site dynamically aggregates content from two primary sources:
+- GitHub GraphQL API: Fetches real-time contribution data and repository metadata to build the activity graph and project showcase.
+- NASA Image and Video Library API: Curates a gallery of observations from the Hubble Space Telescope.
+
+## Technical Stack
+
+- Framework: Next.js (TypeScript)
+- Rendering: React Three Fiber / Three.js
+- Styling: Tailwind CSS
+- Animation: Motion (Framer Motion)
+- Icons: Lucide React
