@@ -26,7 +26,7 @@ export default function ProjectGallery({ projects }: ProjectGalleryProps) {
                             </p>
                             <div className="mt-4 flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-widest font-bold">
                                 <Info className="w-3 h-3" />
-                                View README & Details
+                                View Project
                             </div>
                         </div>
                     </div>
