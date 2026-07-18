@@ -1,12 +1,15 @@
 import Image from "next/image";
 import { Calendar, ExternalLink, Github, Tag } from "lucide-react";
 import { ProjectData } from "@/lib/github";
+import RuneCCaseStudy from "./RuneCCaseStudy";
 
 interface ProjectDetailProps {
     project: ProjectData;
 }
 
 export default function ProjectDetail({ project }: ProjectDetailProps) {
+    const isRuneC = project.repoFullName === "jordanbailey00/RuneC";
+
     return (
         <div className="space-y-12">
             <header className="flex flex-col gap-6 border-b border-white/5 pb-8">
@@ -61,11 +64,9 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
                 </div>
             )}
 
-            <div className="text-lg text-white/70 font-light leading-relaxed border-l-2 border-white/10 pl-6 italic">
-                {project.description}
-            </div>
-
-            {project.readmeHtml ? (
+            {isRuneC ? (
+                <RuneCCaseStudy />
+            ) : project.readmeHtml ? (
                 <div
                     className="prose prose-invert prose-base sm:prose-lg max-w-none
                     prose-headings:text-white prose-headings:font-light prose-headings:tracking-tight
