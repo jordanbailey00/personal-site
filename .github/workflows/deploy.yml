@@ -66,7 +66,7 @@ jobs:
         run: |
           test -n "$GITHUB_TOKEN"
           test -n "$NASA_API_KEY"
-          curl --fail --silent --show-error --get \
+          curl --fail --silent --show-error --retry 4 --retry-delay 2 --retry-all-errors --get \
             --data-urlencode "api_key=$NASA_API_KEY" \
             --data-urlencode "date=2024-01-01" \
             "https://api.nasa.gov/planetary/apod" > /dev/null
