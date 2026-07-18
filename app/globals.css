@@ -34,3 +34,71 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* One Dark-inspired syntax colors for statically highlighted project papers. */
+.hljs {
+  color: #abb2bf;
+  background: transparent;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #7f848e;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  color: #c678dd;
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: #98c379;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-symbol,
+.hljs-bullet {
+  color: #d19a66;
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_,
+.hljs-section,
+.hljs-type {
+  color: #61afef;
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attribute,
+.hljs-attr,
+.hljs-params,
+.hljs-deletion {
+  color: #e06c75;
+}
+
+.hljs-built_in,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: #56b6c2;
+}
+
+.hljs-meta,
+.hljs-doctag,
+.hljs-link {
+  color: #e5c07b;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}

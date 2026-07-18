@@ -12,7 +12,11 @@ type ProjectPageProps = {
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-    return projectRepos.map(({ owner, repo }) => ({ owner, repo }));
+    return [
+        ...projectRepos.map(({ owner, repo }) => ({ owner, repo })),
+        // Preserve the original mixed-case URL while cards use the canonical slug.
+        { owner: "jordanbailey00", repo: "FightCaves-RL" },
+    ];
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {

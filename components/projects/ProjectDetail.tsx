@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { Calendar, ExternalLink, Github, Tag } from "lucide-react";
 import { ProjectData } from "@/lib/github";
+import ByteWorldCaseStudy from "./ByteWorldCaseStudy";
+import FightCavesRLCaseStudy from "./FightCavesRLCaseStudy";
 import RuneCCaseStudy from "./RuneCCaseStudy";
 
 interface ProjectDetailProps {
@@ -8,7 +10,10 @@ interface ProjectDetailProps {
 }
 
 export default function ProjectDetail({ project }: ProjectDetailProps) {
-    const isRuneC = project.repoFullName === "jordanbailey00/RuneC";
+    const repoName = project.repoFullName.toLowerCase();
+    const isRuneC = repoName === "jordanbailey00/runec";
+    const isFightCaves = repoName === "jordanbailey00/fight-caves-rl" || repoName === "jordanbailey00/fightcaves-rl";
+    const isByteWorld = repoName === "jordanbailey00/byte_world_ai";
 
     return (
         <div className="space-y-12">
@@ -66,6 +71,10 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
 
             {isRuneC ? (
                 <RuneCCaseStudy />
+            ) : isFightCaves ? (
+                <FightCavesRLCaseStudy />
+            ) : isByteWorld ? (
+                <ByteWorldCaseStudy />
             ) : project.readmeHtml ? (
                 <div
                     className="prose prose-invert prose-base sm:prose-lg max-w-none

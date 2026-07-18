@@ -2,7 +2,7 @@ import { getRepoData, ProjectData } from "./github";
 
 export const projectRepos = [
     { owner: "jordanbailey00", repo: "RuneC" },
-    { owner: "jordanbailey00", repo: "FightCaves-RL" },
+    { owner: "jordanbailey00", repo: "fight-caves-rl" },
     { owner: "jordanbailey00", repo: "byte_world_ai" },
 ] as const;
 
