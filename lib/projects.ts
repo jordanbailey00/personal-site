@@ -1,12 +1,12 @@
 import { getRepoData, ProjectData } from "./github";
 
-export async function getProjects(): Promise<ProjectData[]> {
-    const projectRepos = [
-        { owner: "jordanbailey00", repo: "RuneC" },
-        { owner: "jordanbailey00", repo: "FightCaves-RL" },
-        { owner: "jordanbailey00", repo: "byte_world_ai" },
-    ];
+export const projectRepos = [
+    { owner: "jordanbailey00", repo: "RuneC" },
+    { owner: "jordanbailey00", repo: "FightCaves-RL" },
+    { owner: "jordanbailey00", repo: "byte_world_ai" },
+] as const;
 
+export async function getProjects(): Promise<ProjectData[]> {
     const projects = await Promise.all(
         projectRepos.map(async (repo) => {
             return await getRepoData(repo.owner, repo.repo);
