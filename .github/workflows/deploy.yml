@@ -80,6 +80,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_USERNAME: ${{ vars.GITHUB_USERNAME || 'jordanbailey00' }}
           NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
+      - name: Verify exported APOD gallery
+        run: |
+          test -s out/index.html
+          grep --quiet "apod-" out/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

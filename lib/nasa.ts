@@ -15,6 +15,57 @@ type AstronomyImageOptions = {
     maxResults?: number;
 };
 
+const APOD_ENDPOINT = "https://api.nasa.gov/planetary/apod";
+const APOD_RETRY_DELAYS_MS = [0, 2_000, 5_000, 10_000, 20_000] as const;
+
+function wait(milliseconds: number) {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function shouldRetry(status: number) {
+    return status === 429 || status >= 500;
+}
+
+async function fetchApod(params: URLSearchParams) {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < APOD_RETRY_DELAYS_MS.length; attempt++) {
+        const delay = APOD_RETRY_DELAYS_MS[attempt];
+        if (delay > 0) await wait(delay);
+
+        let response: Response;
+        try {
+            response = await fetch(APOD_ENDPOINT + "?" + params, {
+                headers: {
+                    Accept: "application/json",
+                    // A distinct header prevents one failed Next.js fetch-cache entry
+                    // from being reused for every retry in the same static build.
+                    "X-APOD-Attempt": String(attempt + 1),
+                },
+                next: { revalidate: 86400 },
+                signal: AbortSignal.timeout(45_000),
+            });
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+            console.warn(`NASA APOD request attempt ${attempt + 1} failed: ${lastError.message}`);
+
+            if (attempt === APOD_RETRY_DELAYS_MS.length - 1) throw lastError;
+            continue;
+        }
+
+        if (response.ok) return response;
+
+        lastError = new Error(`NASA APOD request returned HTTP ${response.status}`);
+        console.warn(`NASA APOD request attempt ${attempt + 1} failed: HTTP ${response.status}`);
+
+        if (!shouldRetry(response.status) || attempt === APOD_RETRY_DELAYS_MS.length - 1) {
+            throw lastError;
+        }
+    }
+
+    throw lastError ?? new Error("NASA APOD request failed without a response");
+}
+
 function formatDate(date: Date) {
     return date.toISOString().slice(0, 10);
 }
@@ -63,19 +114,12 @@ export async function getAstronomyImages(options: AstronomyImageOptions = {}): P
     });
 
     try {
-        const res = await fetch("https://api.nasa.gov/planetary/apod?" + params, {
-            next: { revalidate: 86400 }
-        });
-
-        if (!res.ok) {
-            console.error("NASA APOD lookup failed: " + res.status);
-            return [];
-        }
+        const res = await fetchApod(params);
 
         const data: ApodItem[] | ApodItem = await res.json();
         const items = Array.isArray(data) ? data : [data];
 
-        return items
+        const images = items
             .filter(isLikelyAstronomyPhoto)
             .reverse()
             .slice(0, maxResults)
@@ -95,8 +139,14 @@ export async function getAstronomyImages(options: AstronomyImageOptions = {}): P
                     source: "nasa" as const,
                 };
             });
+
+        if (images.length === 0) {
+            throw new Error("NASA APOD returned no eligible astronomy images");
+        }
+
+        return images;
     } catch (error) {
         console.error("Error fetching NASA APOD images:", error);
-        return [];
+        throw error;
     }
 }
