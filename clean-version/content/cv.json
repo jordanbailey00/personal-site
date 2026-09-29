@@ -1,0 +1,104 @@
+{
+  "name": "Jordan Bailey",
+  "subtitle": "MSCS student at Georgia Tech",
+  "intro": "My work brings together machine learning, platform engineering, and technical program management to build the systems and processes that take AI products from development to launch.",
+  "email": "JordanBaileyPMP@gmail.com",
+  "website": "https://www.jordanbailey.dev/",
+  "github": "https://github.com/jordanbailey00",
+  "linkedin": "https://www.linkedin.com/in/jordanbaileypm",
+  "sections": [
+    {
+      "id": "education",
+      "title": "Education",
+      "entries": [
+        { "date": "Aug. 2026 - Present", "primary": "M.S. in Computer Science", "secondary": "Georgia Institute of Technology", "description": ["Specialization in AI and ML systems"] },
+        { "date": "2015 - 2019", "primary": "B.A. in Computer Science and International Studies", "secondary": "College of Charleston", "description": [] }
+      ]
+    },
+    {
+      "id": "industry-research-experience",
+      "title": "Industry Research Experience",
+      "entries": [
+        {
+          "date": "2025 - Present",
+          "primary": "PayPal",
+          "position": "Senior Technical Program Manager, PayPal AI and PayPal World",
+          "description": [
+            "Led platform engineering and launch readiness for PayPal's first 0-to-1 cross-border digital wallet (PayPal World), coordinating across engineering, product, and operations to validate partner integrations and meet go-live requirements.",
+            "Drove the development of data ingestion and telemetry pipelines, experimentation services, MLOps infrastructure, and observability instrumentation supporting the AI/ML platform for a shopping personalization product.",
+            "Worked cross-functionally between product, engineering, marketing, and other PayPal departments to drive both development and integration of next-best-action (NBA) machine learning models into PayPal product offerings.",
+            "Managed the Friends & Family release of a new shopping personalization and recommendation product experience across 400 internal employees.",
+            "Optimized project and program management processes, documentation, reporting, and best practices for PayPal World, NBA model development, and Shopping Personalization projects."
+          ]
+        },
+        {
+          "date": "2024 - 2025",
+          "primary": "Railbookers",
+          "position": "Technical Program Manager, Data Infrastructure",
+          "description": [
+            "Owned the launch of an NLP-powered booking and SKU recommendation engine, driving $7M in new monthly revenue and 94,000 new customers across web and mobile.",
+            "Managed the end-to-end migration of dynamic pricing models to AWS SageMaker, enabling transaction volume scalability across all product bookings.",
+            "Streamlined program management best practices, processes, and tooling cross-functionally to 6 PMs and 30+ engineers, accelerating cross-team feature and product delivery efficiency."
+          ]
+        },
+        {
+          "date": "2024",
+          "primary": "Cultivate",
+          "position": "Technical Program Manager, Research & Development Engineering",
+          "description": [
+            "Led an optimization effort for model deployment and distributed ML training on biomarker data pipelines with embedded integration, increasing consistency across monitoring hardware and reducing misclassifications month over month.",
+            "Managed a research engineering team to build and continuously improve development infrastructure, tooling, CI/CD pipelines, and SDLC processes, enabling the creation of a greenfield 0-to-1 consumer AI CDSS prototype."
+          ]
+        },
+        {
+          "date": "2021 - 2024",
+          "primary": "Appspace",
+          "position": "Project Manager, Solution Engineering",
+          "description": [
+            "Oversaw a $25M enterprise software program, successfully delivering 75+ full lifecycle SaaS projects and aligning global implementation goals with the C-suite.",
+            "Built a decentralized Professional Services PMO supporting $90M in annual SaaS rollouts, reporting directly to VPs and optimizing delivery at scale."
+          ]
+        },
+        {
+          "date": "2019 - 2021",
+          "primary": "County of Santa Clara",
+          "position": "Project Manager, Infrastructure",
+          "description": [
+            "Spearheaded a 6-month AWS cloud migration for a hospital system serving 1.8M users, enabling scalable, low-latency services with Lambda and EKS.",
+            "Deployed a cloud-integrated CRM for index casing and contact tracing, supporting 150,000 frontline workers with rapid iteration and high-reliability data intake tooling."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "academic-research-experience",
+      "title": "Academic Research Experience",
+      "entries": [{ "date": "", "primary": "College of Charleston", "position": "Research for NASA Lab", "description": [] }]
+    },
+    {
+      "id": "honors-and-awards",
+      "title": "Honors and Awards",
+      "entries": [{ "date": "", "primary": "ICAT startup winner", "secondary": "College of Charleston", "description": [] }]
+    },
+    { "id": "grants-and-funding", "title": "Grants and Funding", "entries": [] },
+    { "id": "publications", "title": "Publications", "entries": [] },
+    { "id": "invited-talks", "title": "Invited Talks", "entries": [] },
+    {
+      "id": "teaching",
+      "title": "Teaching",
+      "entries": [{ "date": "", "primary": "Teaching Assistant", "secondary": "College of Charleston", "description": [] }]
+    },
+    { "id": "mentoring", "title": "Mentoring", "entries": [] },
+    {
+      "id": "technology-skills",
+      "title": "Technology Skills",
+      "entries": [],
+      "skills": [
+        { "category": "Technical Tools", "skills": "Jupyter Notebooks, Python, BigQuery, PyTorch, Weights & Biases (W&B), C, REST" },
+        { "category": "PM Tools", "skills": "Jira, Confluence, ClickUp, Salesforce, Asana, Figma, Miro, ServiceNow" },
+        { "category": "Analytics", "skills": "Tableau, Power BI, Looker, Google Analytics" }
+      ]
+    },
+    { "id": "references", "title": "References", "entries": [] }
+  ]
+}
