@@ -20,6 +20,7 @@ To restore the original website, restore the deployment workflow from the archiv
 
 ## Assets
 
+- Favicon: the original website's `public/favicon.png`, preserved unchanged at `/favicon.png` in both light and dark mode.
 - Design and heading fonts: the user's downloaded reference in `oracle/aereeeee.github.io/`.
 - Profile photo: Jordan's public GitHub avatar.
 - RuneC and Fight Caves screenshots: the respective public project READMEs.
