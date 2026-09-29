@@ -1,6 +1,6 @@
 # Jordan Bailey — clean version
 
-A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party scripts, API keys, or build dependencies are required.
+A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party scripts, API keys, or build dependencies are required. A small first-party script adds an accessible light/dark toggle to every page, follows the device theme initially, and remembers an explicit choice across pages and visits.
 
 ## Develop
 
