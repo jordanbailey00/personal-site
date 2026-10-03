@@ -1,0 +1,56 @@
+<!-- Copy this file to content/writing/<slug>.html and add a draft to posts.mjs.
+     The builder supplies the title, author, date, contents, and navigation.
+     Keep heading IDs unique. Relative assets belong in public/writing/<slug>/.
+     This specimen stays separate from published writing. -->
+<section aria-labelledby="opening">
+  <h2 id="opening">I. Opening</h2>
+  <p class="chapter-deck">Begin with a question worth spending time on.</p>
+  <div class="with-margin">
+    <div>
+      <p class="drop-cap">Every essay begins with a little room to think. This is a preview of the reading layout: a place for an opening question, a careful explanation, and the details that make an idea useful.<sup><a href="#note-1" id="note-ref-1" aria-label="Read note 1">1</a></sup></p>
+      <p>The main argument stays in a comfortable reading column. Supporting observations sit beside it, close to the passage they explain. On a smaller screen, those notes move into the flow of the page.</p>
+    </div>
+    <aside class="margin-note" id="note-1" aria-label="Note 1"><a href="#note-ref-1" aria-label="Back to note 1 reference">1</a> A margin note can hold a source, a qualification, or a useful detour without interrupting the thought.</aside>
+  </div>
+  <blockquote><p>A short quotation or guiding question can set the direction of a section.</p></blockquote>
+</section>
+<div class="book-ornament" aria-hidden="true">✧</div>
+<section aria-labelledby="ideas">
+  <h2 id="ideas">II. An idea, made precise</h2>
+  <p class="chapter-deck">Move from intuition to a definition.</p>
+  <p>Use a definition when a term needs a precise meaning. The muted color and small title bar keep it distinct from the surrounding prose.</p>
+  <div class="concept-box"><h3>Definition · A useful idea</h3><p>The definition goes here. Give the reader the minimum they need to follow the argument, then show what the definition lets them do.</p></div>
+  <h3 id="worked-example">A worked example</h3>
+  <p>A short example can follow a definition. Equations, lists, and tables use the same measure as the text, with room to scroll when a calculation needs more space.</p>
+  <div class="equation" role="math" aria-label="The sum of integers from one to n equals n times n plus one divided by two"><span>1 + 2 + ⋯ + <i>n</i> = <span class="fraction"><span><i>n</i>(<i>n</i> + 1)</span><span>2</span></span></span><span class="equation-number">(1)</span></div>
+  <div class="concept-box example-box"><h3>Example · From the general to the particular</h3><p>This space is for a concrete application, a small experiment, or a counterexample. It is sample layout text, ready to replace.</p></div>
+</section>
+<section aria-labelledby="code">
+  <h2 id="code">III. Code &amp; experiments</h2>
+  <p class="chapter-deck">Keep the experiment close to its explanation.</p>
+  <p>Code examples have a filename, a copy button, and a separate output area. Long lines scroll inside the example.</p>
+  <figure class="notebook">
+    <figcaption><span>example.py</span><button type="button" data-copy-code hidden>Copy code</button></figcaption>
+    <div class="notebook-input"><span class="cell-prompt" aria-hidden="true">In [1]:</span><pre><code><span class="token-comment"># A small example for the article template.</span>
+<span class="token-keyword">def</span> <span class="token-function">triangular</span>(n):
+    <span class="token-keyword">return</span> n * (n + 1) // 2
+
+print(triangular(10))</code></pre></div>
+    <div class="notebook-output"><span class="cell-prompt" aria-hidden="true">Out [1]:</span><pre><samp>55</samp></pre></div>
+  </figure>
+  <details class="reading-details"><summary>A little more detail</summary><p>Optional derivations, implementation notes, and longer explanations can live in an expandable section like this one.</p></details>
+</section>
+<section aria-labelledby="figures">
+  <h2 id="figures">IV. Figures &amp; results</h2>
+  <p class="chapter-deck">Let an illustration do some of the explaining.</p>
+  <figure class="article-figure">
+    <div class="figure-sample" role="img" aria-label="Example diagram: a question leads to an experiment, which leads to an observation"><span>Question</span><b aria-hidden="true">→</b><span>Experiment</span><b aria-hidden="true">→</b><span>Observation</span></div>
+    <figcaption><strong>Figure 1.</strong> An example of an in-column figure and its caption. Replace this with a diagram, photograph, plot, or interactive explanation.</figcaption>
+  </figure>
+  <div class="table-scroll"><table><caption>Table 1. Example table styling</caption><thead><tr><th scope="col">Element</th><th scope="col">Purpose</th><th scope="col">Placement</th></tr></thead><tbody><tr><th scope="row">Main text</th><td>The central argument</td><td>Reading column</td></tr><tr><th scope="row">Margin note</th><td>Sources and asides</td><td>Beside the passage</td></tr><tr><th scope="row">Figure</th><td>A visual explanation</td><td>In-column or wide</td></tr></tbody></table></div>
+</section>
+<section aria-labelledby="references">
+  <h2 id="references">V. Further reading</h2>
+  <p>Sources and related work will appear here at the end of each essay.</p>
+  <ol class="reference-list"><li>This reading design is inspired by Jeffrey Zhang’s <a href="https://sitp.ai/">Structure and Interpretation of Tensor Programs</a>.</li></ol>
+</section>

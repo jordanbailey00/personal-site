@@ -1,0 +1,14 @@
+New Computer Modern fonts by Antonis Tsolomitis.
+Upstream project: https://ctan.org/pkg/newcomputermodern
+
+These WOFF2 files were copied without modification from Jeffrey Zhang's
+Structure and Interpretation of Tensor Programs (SITP / asitpofborscht):
+https://github.com/4thd1m/asitpofborscht/tree/29c1c6341bbe0ef9f68285ca0e8d2b7c632f8fb4/sitp/src/fonts
+
+The reference's NewCM10-Regular and NewCM10-Italic browser conversions omit
+malformed upstream Phonetic Extension glyphs; see the reference's
+sitp/theme/fonts/fonts.css for the conversion notes and source provenance.
+
+Font license information and exceptions are reproduced in LICENSE.txt.
+The surrounding website code and text are independently authored.
+The book's typography, layout, and palette were used as design references.
