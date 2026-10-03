@@ -36,6 +36,8 @@ The reference person's biography, projects, and other personal content are not i
 
 ## Writing
 
+The first essay, `content/writing/reinforcement-learning-for-runescape.html`, uses the September 13–14 Fight Caves baseline and separately identifies the September 17 follow-up. Its original screenshots, vector figures, and public results extract live in `public/writing/reinforcement-learning-for-runescape/`. Two visible capture blocks specify the starting-loadout screenshot and baseline policy-replay sequence still to add. Keep archival images and measured results labeled when replacing them.
+
 `/writing/` is the empty essay index. `/writing/template/` is an explicitly labeled design preview, excluded from the sitemap and marked `noindex`. It is not counted as a published essay. The reading layout follows Jeffrey Zhang's [Structure and Interpretation of Tensor Programs](https://sitp.ai/): New Computer Modern type, small-cap headings, warm paper and dark sidebar, Ayu-like dark mode, a contents rail, margin notes, and notebook-style examples. The reference checkout is `/home/joe/projects/references/asitpofborscht` at commit `29c1c6341bbe0ef9f68285ca0e8d2b7c632f8fb4`.
 
 To add or migrate an essay:

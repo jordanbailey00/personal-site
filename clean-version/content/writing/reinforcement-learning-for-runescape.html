@@ -1,0 +1,257 @@
+<section aria-labelledby="why-a-cave">
+  <h2 id="why-a-cave">I. A question with 63 waves</h2>
+  <p class="chapter-deck">Can an agent learn an encounter without being handed the strategy?</p>
+  <div class="with-margin">
+    <div>
+      <p class="drop-cap">Fight Caves has a wonderfully compact job description: survive 63 waves of enemies, defeat TzTok-Jad, and earn a fire cape. The implementation details are less forgiving. You need to choose targets, manage resources, move around obstacles, and change protection prayers before an attack becomes a very expensive mistake.</p>
+      <p>I wanted to know whether an agent could learn those decisions through reinforcement learning. No demonstrations. No scripted sequence telling it where to stand or when to switch prayers. Give it a world, a way to act, and feedback. Then see what it discovers.<sup><a href="#scope-note" id="scope-ref" aria-label="Read the simulation scope note">1</a></sup></p>
+    </div>
+    <aside class="margin-note" id="scope-note" aria-label="Simulation scope"><a href="#scope-ref" aria-label="Back to the scope note reference">1</a> This project runs in my own simulator. It does not control the live RuneScape client. The policy receives structured game state, including precise attack timing, rather than screenshots.</aside>
+  </div>
+  <p>That question turned into three connected projects: a game engine fast enough to generate experience, a training system that could learn from it, and a viewer that let me inspect what either of them was doing. The viewer became especially useful when “learning to win” looked suspiciously like “learning to stand there.”</p>
+  <p>The September baseline I’ll use throughout this article completed <strong>9,570 of 10,800 full caves: 88.61%</strong>, with a Twisted bow and no food or Prayer potions. A later focused search reached <strong>93.40%</strong>. Those numbers are encouraging. The interesting part is what had to become correct before they meant anything.</p>
+  <figure class="article-figure wide-figure">
+    <a href="/writing/reinforcement-learning-for-runescape/viewer-cover.png" aria-label="Open the Fight Caves viewer screenshot at full size"><img src="/writing/reinforcement-learning-for-runescape/viewer-cover.png" width="1513" height="991" alt="The Fight Caves viewer showing the player facing Jad in a lava-lined arena, with the minimap and equipment panel visible." decoding="async" fetchpriority="high"></a>
+    <figcaption><strong>Figure 1.</strong> The playable Raylib viewer. This archival screenshot shows the environment; it is not a replay of the September baseline. Select any figure to open it at full size.</figcaption>
+  </figure>
+</section>
+<div class="book-ornament" aria-hidden="true">✧</div>
+<section aria-labelledby="build-the-world">
+  <h2 id="build-the-world">II. Build a world worth learning</h2>
+  <p class="chapter-deck">The simulator defines the problem the agent actually solves.</p>
+  <p>Fight Caves is a combat encounter in Old School RuneScape. Its waves introduce enemies separately, then combine them. Protection prayers defend against different attack styles, but consume a limited resource. Positioning changes which enemies can reach you, whether they have line of sight, and whether you can attack them.</p>
+  <p>The simulated arena is a 64 × 64 tile grid with 15 spawn rotations. Each game tick represents 0.6 seconds. Training advances those ticks as fast as the computer allows; it doesn’t wait for the clock on the wall.</p>
+  <div class="table-scroll"><table>
+    <caption>The main threats, in the order the encounter introduces them.</caption>
+    <thead><tr><th scope="col">First wave</th><th scope="col">Enemy</th><th scope="col">New problem</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><th scope="row">Tz-Kih</th><td>Melee pressure and Prayer drain.</td></tr>
+      <tr><td>3</td><th scope="row">Tz-Kek</th><td>A large enemy that splits into two smaller enemies.</td></tr>
+      <tr><td>7</td><th scope="row">Tok-Xil</th><td>Ranged attacks, with melee at close range.</td></tr>
+      <tr><td>15</td><th scope="row">Yt-MejKot</th><td>Healing that can undo damage already dealt.</td></tr>
+      <tr><td>31</td><th scope="row">Ket-Zek</th><td>Magic attacks, contact melee, and a large footprint.</td></tr>
+      <tr><td>63</td><th scope="row">TzTok-Jad</th><td>Protection timing, plus healers that restore his HP.</td></tr>
+    </tbody>
+  </table></div>
+  <p>The baseline starts with strong equipment: a Twisted bow, Dragon arrows, Masori armour, and 99 HP, Prayer, Defence, and Ranged. There are no sharks or Prayer-potion doses. Natural HP regeneration remains active. These conditions matter: better equipment shortens fights and changes how many mistakes the player can survive.</p>
+  <figure class="article-figure capture-placeholder">
+    <div><span class="capture-label">Screenshot to capture · Starting conditions</span><h3>The loadout before the first action</h3><p>Open the compatible September runtime at wave 1. Capture the equipment, starting stats, and inventory showing no food or Prayer potions. Use separate panel crops if the values are too small in a full-window image.</p></div>
+    <figcaption>Keep the loadout preset and checkpoint identity with the capture so the image matches the experiment.</figcaption>
+  </figure>
+  <h3 id="one-engine">One engine, several ways to use it</h3>
+  <p>The project began with a Kotlin/JVM prototype. I moved the simulation to C in March, then used offline cache-decoding tools to produce terrain, objects, collision maps, and visual assets. Raylib supplied the rendering layer.</p>
+  <p>The useful architectural decision was to keep gameplay in one place. Drawing a projectile and resolving its damage are different jobs. If the viewer and trainer implement combat independently, a convincing replay can hide a different training environment.</p>
+  <div class="table-scroll"><table>
+    <caption>The components and the responsibilities they keep.</caption>
+    <thead><tr><th scope="col">Component</th><th scope="col">Responsibility</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">C simulation</th><td>Own ticks, movement, collision, attacks, Prayer, healing, waves, observations, and reward events.</td></tr>
+      <tr><th scope="row">Training adapter</th><td>Expose observations, legal-action masks, actions, rewards, and episode statistics to PufferLib.</td></tr>
+      <tr><th scope="row">PufferLib learner</th><td>Collect parallel experience and update the recurrent policy with PPO.</td></tr>
+      <tr><th scope="row">Raylib viewer</th><td>Support manual play, checkpoint replay, and visual debugging through the same simulation.</td></tr>
+      <tr><th scope="row">Validation and run records</th><td>Check deterministic transitions and preserve the code, assets, configuration, and weights behind a result.</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="article-figure wide-figure">
+    <a href="/writing/reinforcement-learning-for-runescape/engine.svg" aria-label="Open the shared simulation architecture diagram"><img src="/writing/reinforcement-learning-for-runescape/engine.svg" width="864" height="547.2" loading="lazy" alt="Architecture diagram: the shared C simulation feeds the training interface, Raylib viewer, and deterministic replay and validation tools."></a>
+    <figcaption><strong>Figure 2.</strong> Training and inspection share the rules. The simulation can run thousands of caves without drawing thousands of windows.</figcaption>
+  </figure>
+  <p>Speed made iteration practical. Early C-only benchmarks at 64 environments improved from roughly 336,000 to 3.35 million environment steps per second. That is simulation throughput; policy inference and learning add their own costs.</p>
+  <p>Correctness needed a different set of tools. Seeded resets and action replay make failures repeatable. State hashes help detect divergence. Viewer overlays expose collision, line of sight, routes, footprints, and pending attacks. An agent willing to repeat a bad interaction millions of times is a remarkably persistent test case.</p>
+  <figure class="article-figure wide-figure">
+    <a href="/writing/reinforcement-learning-for-runescape/viewer-debug-los.png" aria-label="Open the line-of-sight debugging screenshot"><img src="/writing/reinforcement-learning-for-runescape/viewer-debug-los.png" width="1243" height="959" loading="lazy" alt="Archival Fight Caves debugging view with colored tile overlays, NPC footprints, and line-of-sight diagnostics."></a>
+    <figcaption><strong>Figure 3.</strong> An archival debugging view. The overlays help distinguish a policy mistake from a movement or combat rule that needs fixing.</figcaption>
+  </figure>
+</section>
+<section aria-labelledby="policy-interface">
+  <h2 id="policy-interface">III. Give the agent eyes and hands</h2>
+  <p class="chapter-deck">What the policy can observe and choose is part of the experiment.</p>
+  <p>A <strong>policy</strong> maps observations to action probabilities. This one starts with randomly initialized weights. It doesn’t know that a large red creature on wave 63 deserves special attention. It doesn’t see a large red creature at all.</p>
+  <h3 id="observations">A 320-number view of the cave</h3>
+  <p>Each decision receives 320 floating-point values. Structured observations let me study combat decisions without first solving image recognition or mouse control.</p>
+  <div class="table-scroll"><table>
+    <caption>The September policy input: 286 features plus 34 legality bits.</caption>
+    <thead><tr><th scope="col">Block</th><th scope="col">Values</th><th scope="col">Examples</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Player</th><td>23</td><td>HP, Prayer, position, attack timer, target, and run energy.</td></tr>
+      <tr><th scope="row">Nearby enemies</th><td>8 × 31</td><td>Type, HP, distance, line of sight, attack style, healing, and protection deadlines.</td></tr>
+      <tr><th scope="row">Wave and progress</th><td>15</td><td>Wave, rotation, remaining enemies, required work, and time without progress.</td></tr>
+      <tr><th scope="row">Legal actions</th><td>34</td><td>Which movement, target, and Prayer choices are available.</td></tr>
+    </tbody>
+  </table></div>
+  <p>The simulation can hold 16 enemies, but the policy sees the eight nearest. Slots are sorted by distance to each enemy’s footprint, then by spawn index. Empty slots contain zeros. A slot is a place in the current observation, not a permanent enemy identity, so the engine resolves target selections before movement can reorder the list.</p>
+  <p>Some features are more precise than human-facing cues. Pending-hit deadlines come directly from the engine. Nine aggregate incoming-hit channels are zeroed in this setup, while individual enemy timing remains available. The policy also does not receive the 20 raw reward-feature channels used for diagnostics. These are deliberate interface choices, not evidence that every retained feature is necessary.</p>
+  <h3 id="actions">Three decisions per tick</h3>
+  <p>The network has three action <strong>heads</strong>: separate outputs for movement, target selection, and Prayer. It samples one choice from each.</p>
+  <div class="table-scroll"><table>
+    <caption>Policy actions in the no-supply task.</caption>
+    <thead><tr><th scope="col">Head</th><th scope="col">Choices</th><th scope="col">Meaning</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Movement</th><td>17</td><td>Stay still, walk in eight directions, or run in eight directions.</td></tr>
+      <tr><th scope="row">Attack</th><td>9</td><td>Make no new selection, or select one of the eight observed enemies.</td></tr>
+      <tr><th scope="row">Prayer</th><td>8</td><td>Keep, switch off, select a protection, or flick one of three protections.</td></tr>
+    </tbody>
+  </table></div>
+  <p>An <strong>action mask</strong> removes illegal choices before sampling. Those same legality bits are included in the observation. Masks prevent forbidden moves; they don’t tell the policy which legal move is useful. Standing still is usually quite legal.</p>
+  <p>Targets persist, so “no new selection” can still lead to an attack. A shot that fires consumes that tick’s movement opportunity. Prayer flicking is an explicit action: the engine handles the off/on transition, and the policy chooses when to request it. Eating, drinking, gear switching, and spell selection are outside this policy’s action space.</p>
+  <h3 id="prayer-timing">A deadline before the damage</h3>
+  <p>Timing is where a seemingly small implementation choice changes the task. In the September simulation, a non-melee Jad attack launched at tick <var>T</var> locks its protection decision at the boundary <var>T</var> + 2, before that tick’s action. The action at <var>T</var> + 1 can still change the protection used for the hit. Impact occurs at <var>T</var> + 3 or later.</p>
+  <figure class="article-figure wide-figure">
+    <a href="/writing/reinforcement-learning-for-runescape/prayer-window.svg" aria-label="Open the Jad protection deadline diagram"><img src="/writing/reinforcement-learning-for-runescape/prayer-window.svg" width="1008" height="504" loading="lazy" alt="Jad timing: attack launches at T; the player can respond at T plus 1; protection locks before the T plus 2 action; damage lands at T plus 3 or later."></a>
+    <figcaption><strong>Figure 4.</strong> A schematic derived from the simulation rules, not a recorded policy response. Ordinary enemy attacks and immediate melee use different timing rules.</figcaption>
+  </figure>
+  <p>This is why a screenshot of the active prayer when damage appears can be misleading. The relevant decision may already be over. To debug a missed protection, inspect the launch, response opportunity, lock, and impact together.</p>
+</section>
+<section aria-labelledby="learning-loop">
+  <h2 id="learning-loop">IV. Turn experience into a policy</h2>
+  <p class="chapter-deck">Try an action, observe the consequence, update, repeat.</p>
+  <div class="concept-box"><h3>Reinforcement learning, in one loop</h3><p>The agent interacts with an environment and receives rewards. Training changes the policy to increase expected future reward. The environment supplies the feedback; it does not supply the correct action for each situation.</p></div>
+  <p>One way to write the objective is a discounted return:</p>
+  <div class="equation" role="math" aria-label="Return at time t equals the sum, from k equals zero to H minus one, of gamma to the k times the reward at time t plus k plus one."><math display="block"><mrow><msub><mi>G</mi><mi>t</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>H</mi><mo>−</mo><mn>1</mn></mrow></munderover><msup><mi>γ</mi><mi>k</mi></msup><msub><mi>r</mi><mrow><mi>t</mi><mo>+</mo><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></math><span class="equation-number">(1)</span></div>
+  <p>Here, <var>r</var> is reward, <var>H</var> is the number of remaining steps being considered, and <var>γ</var> discounts distant rewards. For the baseline, <var>γ</var> is about 0.999126. A reward 5,000 ticks away has a direct multiplier of about 0.0126. Finishing the cave is the goal, but a learner that almost never reaches the end needs useful feedback along the way.</p>
+  <p>The learner uses <a href="https://arxiv.org/abs/1707.06347">Proximal Policy Optimization (PPO)</a>. A critic estimates future reward; an advantage estimate measures how an outcome compares with that expectation. The policy update encourages actions with positive estimated advantages and discourages those with negative ones. PPO clips its probability-ratio objective to reduce the incentive for overly large changes in a single update.</p>
+  <p>The PufferLib setup also reuses experience through replay and applies V-trace corrections when the updated policy differs from the policy that collected it. An entropy term encourages action diversity. These tools help with learning; none substitutes for a sensible environment.</p>
+  <h3 id="memory-and-parallelism">Memory and parallel caves</h3>
+  <p>The policy has three MinGRU recurrent layers, each 512 units wide, with 2,541,056 parameters in total. Recurrence gives the network a state to carry between decisions. The actor produces action probabilities, the critic predicts value, and the Muon optimizer updates the parameters.</p>
+  <p>Training collects 256 steps from each of 4,096 agents per rollout: <strong>1,048,576 agent steps</strong>. Two buffers and 16 environment threads keep the pipeline supplied. A requested 500 million steps becomes 476 complete rollouts, or 499,122,176 steps.</p>
+  <figure class="notebook">
+    <figcaption><span>Learning loop · Python-style pseudocode</span><button type="button" data-copy-code hidden>Copy code</button></figcaption>
+    <div class="notebook-input"><span class="cell-prompt" aria-hidden="true">In [1]:</span><pre><code><span class="token-comment"># Conceptual flow, not the PufferLib API.</span>
+<span class="token-keyword">for</span> rollout <span class="token-keyword">in</span> training:
+    memory = zero_state(num_agents)
+    <span class="token-keyword">for</span> tick <span class="token-keyword">in</span> range(256):
+        obs, masks = caves.observe()
+        logits, value, memory = policy(obs, memory)
+        actions = sample_masked(logits, masks)
+        rewards, done = caves.step(actions)
+        rollout.store(obs, actions, rewards, done, value)
+        memory[done] = 0
+    learner.update(rollout)</code></pre></div>
+  </figure>
+  <p>The sketch shows the selected training behavior: recurrent state resets at each rollout horizon and at episode boundaries. Final evaluation carries state across horizons and resets it between episodes. That distinction belongs in the run record; silently changing it changes the experiment.</p>
+  <details class="reading-details"><summary>The baseline’s training settings</summary>
+    <p>These are selected settings from trial <code>0024</code>, seed 73. This excerpt is a reference, not a complete training configuration.</p>
+    <figure class="notebook"><figcaption><span>Selected configuration values</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>learning_rate = 0.00123960734
+momentum = 0.991584122
+ent_coef = 0.00026363763
+replay_ratio = 2.20972681
+clip_coef = 0.0250000004
+gamma = 0.9991261141073255
+gae_lambda = 0.9</code></pre></div></figure>
+    <p>Training was synchronous, with 32,768-step minibatches and recurrent-state resets each horizon. The <a href="https://github.com/jordanbailey00/PufferLib/blob/9ad3633d3563a8e467026160e90209146d2a733c/src/pufferl.cu">pinned native trainer</a> documents the implementation; the selected run’s settings supersede that commit’s original defaults.</p>
+  </details>
+</section>
+<section aria-labelledby="reward-design">
+  <h2 id="reward-design">V. Reward progress that stays made</h2>
+  <p class="chapter-deck">The agent optimizes the feedback it receives, including the parts I got wrong.</p>
+  <h3 id="survival-trap">Survival can be a dead end</h3>
+  <p>An early 500M-step run reached mean wave 27.6 and completed zero caves in 10,174 episodes. Later, I tried a 200,000-tick episode cap with a 2B-step budget. Mean episode length reached 199,939 ticks. Mean wave stayed near 30. There were still no completions.</p>
+  <p>I had made room for an exceptionally long unsuccessful cave. The cap and training budget both changed, so this isn’t a controlled estimate of the cap’s effect. It does establish that extra survival time was not becoming progress.</p>
+  <p>Rewarding protection introduced another problem. In one failed run, the correct-prayer component contributed 86.87 reward per episode, while progress contributed 2.92 before total-reward clipping. The policy spent about 83% of its time without a target. I was paying it well to defend a fight it wasn’t finishing.</p>
+  <p>A later matched 750M-step comparison removed the remaining correct-danger-prayer reward. Completion improved from <strong>88.02% to 92.74%</strong>. That does not prove that prayer shaping is always bad. It shows that this extra payment was not helping that setup.</p>
+  <h3 id="required-work">Count the work still required</h3>
+  <p>The reward design I kept gives dense feedback for reducing the work left in the cave. “Dense” means feedback arrives along the way, rather than only at the final kill.</p>
+  <p>Suppose the player deals 10 HP of damage and the enemy heals all 10 HP back. A reward based only on gross damage can treat the next hit as another accomplishment. Remaining-work accounting recognizes that the first accomplishment has been undone.</p>
+  <p>Let <var>W</var> be remaining work and <var>S</var> be work at the start of the wave, measured in the engine’s internal tenths of HP. Progress through the wave is <var>q</var>; overall cave progress is <var>C</var>:</p>
+  <div class="equation" role="math" aria-label="Wave progress q equals clamp of one minus W over S, between zero and one."><math display="block"><mrow><mi>q</mi><mo>=</mo><mi mathvariant="normal">clamp</mi><mo>(</mo><mn>1</mn><mo>−</mo><mfrac><mi>W</mi><mi>S</mi></mfrac><mo>,</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>)</mo></mrow></math><span class="equation-number">(2)</span></div>
+  <div class="equation" role="math" aria-label="Cave progress C equals the wave number minus one plus q, divided by 63."><math display="block"><mrow><mi>C</mi><mo>=</mo><mfrac><mrow><mi mathvariant="normal">wave</mi><mo>−</mo><mn>1</mn><mo>+</mo><mi>q</mi></mrow><mn>63</mn></mfrac></mrow></math><span class="equation-number">(3)</span></div>
+  <p>The progress component is <code>0.001 × ΔC × 63 × S</code>. Within a wave’s unclamped range, that reduces to 0.001 times the net work removed. Wave transitions reset the comparison baseline so a newly spawned wave is not charged as negative progress.</p>
+  <p>Required work includes the children a large Tz-Kek will spawn. Splitting therefore doesn’t create surprise work. On the final wave, it tracks Jad’s HP. Killing a healer is not required to finish the cave, but healing Jad increases the work remaining.</p>
+  <figure class="notebook">
+    <figcaption><span>reward_example.py · A within-wave illustration</span><button type="button" data-copy-code hidden>Copy code</button></figcaption>
+    <div class="notebook-input"><span class="cell-prompt" aria-hidden="true">In [2]:</span><pre><code><span class="token-keyword">def</span> <span class="token-function">progress_reward</span>(before_hp, after_hp):
+    <span class="token-comment"># Ten internal units equal one game HP.</span>
+    work_removed = (before_hp - after_hp) * 10
+    <span class="token-keyword">return</span> 0.001 * work_removed
+
+damage = progress_reward(100, 90)
+healing = progress_reward(90, 100) - 0.005
+print(f"{damage:+.3f}, {healing:+.3f}, {damage + healing:+.3f}")</code></pre></div>
+    <div class="notebook-output"><span class="cell-prompt" aria-hidden="true">Out [2]:</span><pre><samp>+0.100, -0.105, -0.005</samp></pre></div>
+  </figure>
+  <p>This example assumes one effective healing event and ignores other reward terms. Damage and restoration cancel in the progress component; the healing event adds its own small cost. It illustrates the accounting, not the complete engine implementation.</p>
+  <figure class="article-figure wide-figure">
+    <a href="/writing/reinforcement-learning-for-runescape/required-work.svg" aria-label="Open the required-work reward diagram"><img src="/writing/reinforcement-learning-for-runescape/required-work.svg" width="864" height="576" loading="lazy" alt="Reward accounting: removing 10 HP earns 0.1; restoring it reverses that progress and adds a 0.005 healing cost. Tz-Kek children count in advance, and Jad healers matter through restored Jad HP."></a>
+    <figcaption><strong>Figure 5.</strong> A worked example derived from the reward rules. Component values are shown before the trainer clips the combined reward.</figcaption>
+  </figure>
+  <p>Other terms penalize damage taken, Prayer spent, time, invalid actions, and sustained inactivity. Completion earns +1 and death earns −1. The trainer clips the combined reward to [−1, +1]. Gross damage, individual kills, wave clears, and correct prayers have zero direct reward weights in this baseline.</p>
+  <h3 id="debug-the-rules">Check the rules before tuning the penalty</h3>
+  <p>Some stalls were simulation problems. A movement correction addressed enemies that were nominally in attack range but lacked line of sight or valid melee contact, yet failed to keep chasing. With the reward and learner settings held fixed, mean wave increased from 40.82 to 49.17. Completion remained zero, but the interaction was less broken.</p>
+  <p>Accuracy corrections can lower the score, too. Adding a missing Magic attack bonus to Ket-Zek and Jad moved a matched result from 92.74% to 91.49%. I would rather measure the harder, more accurate task than preserve a nicer number by leaving a combat rule wrong.</p>
+  <p>The workflow became: find the suspicious metric, inspect the behavior, reproduce the interaction deterministically, and check the rule. Only then decide whether the reward or learner needs to change.</p>
+</section>
+<section aria-labelledby="results">
+  <h2 id="results">VI. What the agent learned</h2>
+  <p class="chapter-deck">A strong checkpoint and a dependable training recipe are different results.</p>
+  <p>The detailed baseline here is native PufferLib 5.0 trial <code>0024</code>, selected in September. It trained for 499,122,176 steps in <strong>434.08 seconds on an RTX 5070 Ti</strong>, excluding final evaluation. That is the cost of this run. It does not include building the simulator or searching for the recipe.</p>
+  <p>The retained log contains four training-bin averages and a separate final evaluation. Early bins show the agent progressing through ordinary waves. Around the third bin it begins reaching Jad, but almost never finishes. By the fourth, it reaches him in most episodes and completion has increased sharply.</p>
+  <figure class="article-figure wide-figure">
+    <a href="/writing/reinforcement-learning-for-runescape/current-learning.svg" aria-label="Open the baseline learning plots"><img src="/writing/reinforcement-learning-for-runescape/current-learning.svg" width="1008" height="571.2" loading="lazy" alt="Four training-bin averages: mean wave rises from 21.29 to 62.23, while cave completion rises from zero to 63.49 percent. The separate final evaluation completes 88.61 percent."></a>
+    <figcaption><strong>Figure 6.</strong> Dashed lines connect recorded bin averages; they do not reconstruct a dense learning curve. Diamonds mark the separate final evaluation.</figcaption>
+  </figure>
+  <h3 id="evaluate-the-checkpoint">Start at wave 1 and count outcomes</h3>
+  <p>Final evaluation reloads the checkpoint and samples actions from the masked policy. It starts full caves at wave 1, carries recurrent state across horizons, and resets it between episodes. The batched evaluation requested at least 10,000 episodes and finished with 10,800.</p>
+  <div class="table-scroll"><table>
+    <caption>Baseline evaluation. Failure counts are reconstructed by rounding the logged aggregate rates.</caption>
+    <thead><tr><th scope="col">Outcome</th><th scope="col">Episodes</th><th scope="col">Share</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Failed before Jad</th><td>≈1,161</td><td>10.75%</td></tr>
+      <tr><th scope="row">Reached Jad, then failed</th><td>≈69</td><td>0.64%</td></tr>
+      <tr><th scope="row">Completed the cave</th><td>9,570</td><td>88.61%</td></tr>
+    </tbody>
+  </table></div>
+  <p>The policy reached Jad in 89.25% of episodes. Conditional on reaching him, it finished about <strong>99.28%</strong> of the time. Most failures for these weights happened earlier. That directs the next investigation toward the preceding waves, rather than assuming the final boss is the main problem.</p>
+  <p>Mean episode length was 4,930.82 ticks: about 49.31 minutes of simulated game time, averaged over successes and failures. Accelerated simulation makes it possible to collect that experience without waiting 49 minutes per cave.</p>
+  <figure class="article-figure capture-placeholder">
+    <div><span class="capture-label">Screenshot sequence to capture · Policy replay</span><h3>Show the decision, not just the fire cape</h3><p>Replay the baseline <code>0024</code> checkpoint in its compatible runtime. Capture Jad’s attack tell, the last actionable protection tick, and the resulting hit. Keep HP, Prayer, target, and healer state visible. Add the episode seed, source ticks, and checkpoint ID.</p></div>
+    <figcaption>A short clip can replace this block. Inspect the replay before claiming the policy tags, kills, or outdamages healers; aggregate scores cannot establish that tactic.</figcaption>
+  </figure>
+  <h3 id="repeat-training">Train again with a different seed</h3>
+  <p>Evaluating one checkpoint across many caves tests those weights. Starting training again tests the recipe. Fresh seeds change initialization and the experience encountered during learning.</p>
+  <div class="table-scroll"><table>
+    <caption>Baseline recipe <code>0024</code> across four training seeds. Seed 73 was also used to select the recipe.</caption>
+    <thead><tr><th scope="col">Training seed</th><th scope="col">Evaluated caves</th><th scope="col">Completion</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">73 · selection seed</th><td>10,800</td><td>88.61%</td></tr>
+      <tr><th scope="row">101</th><td>10,165</td><td>38.51%</td></tr>
+      <tr><th scope="row">202</th><td>10,531</td><td>74.56%</td></tr>
+      <tr><th scope="row">303</th><td>10,840</td><td>81.07%</td></tr>
+    </tbody>
+  </table></div>
+  <p>The three fresh seeds average 64.72% completion when weighted equally. That spread matters more than another decimal place on the winning run. A checkpoint that wins repeatedly does not imply that every training run finds one.</p>
+  <p>Hyperparameter searches helped substantially, but the successful settings act together. Learning rate, entropy, clipping, replay, and advantage estimation all affect the updates. A sweep can identify a useful combination without proving which individual change caused the improvement.</p>
+  <div class="concept-box example-box"><h3>A later result · 93.40%</h3><p>A subsequent focused search produced trial <code>0073</code>, seed 303, with 93.4003% final completion at the same 499,122,176-step budget. Its September 17 retraining reproduced both the result and the saved checkpoint exactly. The ten selected retrains all matched their originals. This is evidence of same-seed reproducibility, not a new-seed reliability guarantee. <a href="https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/d544df7738a408a3">View the reproduced run.</a></p></div>
+  <p>The figures and seed table above continue to describe the earlier baseline. Keeping that boundary explicit avoids mixing a later headline score with a different run’s learning history.</p>
+</section>
+<section aria-labelledby="next-encounters">
+  <h2 id="next-encounters">VII. Beyond the Fight Caves</h2>
+  <p class="chapter-deck">Reuse the engineering; test whether the learning transfers.</p>
+  <p>I want to take this approach to more RuneScape encounters and content. Fight Caves is a useful starting point because it combines a long sequence of decisions with a clear terminal objective. Other encounters can test different kinds of planning, resource use, and coordination.</p>
+  <p>The next step within this environment is to understand the weak training seeds. I want to compare their resources on arrival, protection deadlines, target choices, and healer interactions. I also want to test how much the policy depends on exact timing features, recurrence, and fixed equipment.</p>
+  <div class="table-scroll"><table>
+    <caption>Possible next experiments. These extensions have not been demonstrated here.</caption>
+    <thead><tr><th scope="col">Direction</th><th scope="col">What carries over</th><th scope="col">New work</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Another wave encounter, such as the Inferno</th><td>Ticks, collision, line of sight, parallel simulation, and wave metrics.</td><td>Enemy mechanics, hazards, objectives, and sufficient observation capacity.</td></tr>
+      <tr><th scope="row">Bosses that require gear or combat-style changes</th><td>Combat state, viewer controls, and replay diagnostics.</td><td>Switching actions, inventory observations, and action costs or delays.</td></tr>
+      <tr><th scope="row">Longer or cooperative content</th><td>Deterministic simulation and the experiment pipeline.</td><td>Persistent resources, stage goals, other players’ state, and coordination.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Reusing a simulator framework saves engineering time. Reusing learned weights is a separate claim. A useful first transfer experiment would implement one bounded encounter, then compare training from scratch with a Fight Caves initialization under the same budget and across several seeds.</p>
+  <p>That is the curiosity I want to keep following: which decisions become reusable skills, and which depend on the particular world I built? For now, I can load a checkpoint, start at wave 1, and watch it finish the cave repeatedly. Getting there required learning how to ask the question as much as learning how to answer it.</p>
+</section>
+<section aria-labelledby="sources">
+  <h2 id="sources">VIII. Code and experiment notes</h2>
+  <p>This article follows the September 13–14 baseline and figure snapshot, with the September 17 retraining result called out separately. Earlier results retain their original conditions. The project’s mechanics and training integrations continue to evolve.</p>
+  <ol class="reference-list">
+    <li><a href="https://github.com/jordanbailey00/fight-caves-rl">Fight Caves RL</a>: the project, viewer, historical experiments, and implementation notes.</li>
+    <li>Pinned native PufferLib 5.0 sources: <a href="https://github.com/jordanbailey00/PufferLib/blob/9ad3633d3563a8e467026160e90209146d2a733c/ocean/fight_caves/simulation.h">simulation and policy interface</a>, <a href="https://github.com/jordanbailey00/PufferLib/blob/9ad3633d3563a8e467026160e90209146d2a733c/ocean/fight_caves/binding.c">training adapter</a>, and <a href="https://github.com/jordanbailey00/PufferLib/blob/9ad3633d3563a8e467026160e90209146d2a733c/src/algo.cu">network and optimizer</a>.</li>
+    <li><a href="https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/f146cdcf307ed881">Baseline trial 0024</a> and <a href="https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/d544df7738a408a3">later 93.40% reproduction</a>. Detailed dashboards may require access.</li>
+    <li><a href="https://arxiv.org/abs/1707.06347">Proximal Policy Optimization Algorithms</a>, Schulman et al. (2017), for the clipped policy objective.</li>
+    <li><a href="/writing/reinforcement-learning-for-runescape/results.json">Article results data</a>: the retained baseline metrics, seed confirmations, and later reproduction record used here.</li>
+  </ol>
+  <details class="reading-details"><summary>Reproduction and capture notes</summary>
+    <p>A result needs more than an INI file. Preserve the simulation source, executable, assets, loadout, training settings, seed, and checkpoint. The baseline checkpoint’s SHA-256 is <code class="hash-value">963d9949a3c1d954fb2c746860a226c0c34915f1f19b1b2f4ffb15e56a97d568</code>.</p>
+    <p>For replay captures, also record the episode seed or rotation, action-sampling mode, recurrent-state handling, source ticks, and playback speed. CPU and GPU sampling need not produce identical trajectories. The screenshots above are labeled archival; the two capture blocks specify images still to add.</p>
+  </details>
+</section>

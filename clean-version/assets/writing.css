@@ -95,6 +95,16 @@
 .margin-note{padding-top:3px;font-size:12.5px;line-height:1.5;color:var(--muted);scroll-margin-top:80px}
 .margin-note>a:first-child{font-size:11px;vertical-align:super;margin-right:5px}
 .reading-prose sup{font-size:11px;line-height:0;margin-left:2px}
+.reading-prose :not(pre)>code{font: .82em Writing Mono,monospace;background:var(--surface);padding:2px 4px;border-radius:2px;overflow-wrap:anywhere}
+.reading-prose .hash-value{word-break:break-all}
+.equation math{font-size:1.18em;margin-inline:auto;flex-shrink:0}
+.article-figure>a{display:block}
+.article-figure>a:focus-visible{outline:2px solid var(--book-link);outline-offset:5px}
+.capture-placeholder{border:1px dashed var(--muted);padding:23px 25px;background:var(--surface)}
+.capture-label{font:11px Writing Sans,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.capture-placeholder h3{font-size:21px;margin:12px 0}
+.capture-placeholder p{font-size:15px;margin-bottom:0}
+.capture-placeholder figcaption{border-top:1px solid var(--line);padding-top:12px}
 .reading-prose blockquote{margin:25px 0;padding:8px 0 8px 20px;border-left:2px solid var(--line);font-style:italic;color:var(--muted)}
 .reading-prose blockquote p{margin:0}
 .concept-box{margin:25px 0;background:var(--concept-bg);border-left:4px solid var(--concept-rule);border-radius:2px;overflow:hidden}

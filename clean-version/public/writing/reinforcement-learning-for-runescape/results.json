@@ -1,0 +1,226 @@
+{
+  "description": "Evidence used in Reinforcement Learning for Runescape. Rates are fractions unless the key says percent. Training entries are bin averages, not checkpoint evaluations.",
+  "baseline_snapshot": "2026-09-14",
+  "baseline_run": "sweep_1789246135940_0024",
+  "baseline_training_seed": 73,
+  "baseline_training_seconds_excluding_evaluation": 434.08,
+  "baseline_training": [
+    {
+      "agent_steps": 63438848.0,
+      "env/episode_length": 1214.4603773214048,
+      "env/jad_kill_rate": 0.0,
+      "env/n": 910.1610169491526,
+      "env/reached_wave_63": 0.0,
+      "env/wave_reached": 21.292407658140537
+    },
+    {
+      "agent_steps": 187695104.0,
+      "env/episode_length": 1985.5158547794117,
+      "env/jad_kill_rate": 0.0,
+      "env/n": 528.3781512605042,
+      "env/reached_wave_63": 0.0,
+      "env/wave_reached": 33.90422901185621
+    },
+    {
+      "agent_steps": 312475648.0,
+      "env/episode_length": 3761.3753467207193,
+      "env/jad_kill_rate": 0.0019098894529733337,
+      "env/n": 279.546218487395,
+      "env/reached_wave_63": 0.14640757014990605,
+      "env/wave_reached": 52.39511477045652
+    },
+    {
+      "agent_steps": 437256192.0,
+      "env/episode_length": 5014.181398535977,
+      "env/jad_kill_rate": 0.6348965813585815,
+      "env/n": 209.0672268907563,
+      "env/reached_wave_63": 0.8624405755716211,
+      "env/wave_reached": 62.22980835858513
+    }
+  ],
+  "baseline_evaluation": {
+    "agent_steps": 499122176.0,
+    "env/episode_length": 4930.81640625,
+    "env/jad_kill_rate": 0.8861111402511597,
+    "env/n": 10800.0,
+    "env/reached_wave_63": 0.8924999833106995,
+    "env/wave_reached": 62.315093994140625
+  },
+  "baseline_checkpoint_sha256": "963d9949a3c1d954fb2c746860a226c0c34915f1f19b1b2f4ffb15e56a97d568",
+  "baseline_seed_confirmations": [
+    {
+      "recipe": "0024",
+      "seed": 73,
+      "evaluated_episodes": 10800,
+      "completion_percent": 88.61111402511597,
+      "jad_reach_percent": 89.24999833106995
+    },
+    {
+      "recipe": "0024",
+      "seed": 101,
+      "evaluated_episodes": 10165,
+      "completion_percent": 38.51450979709625,
+      "jad_reach_percent": 72.47417569160461
+    },
+    {
+      "recipe": "0024",
+      "seed": 202,
+      "evaluated_episodes": 10531,
+      "completion_percent": 74.56082105636597,
+      "jad_reach_percent": 76.34602785110474
+    },
+    {
+      "recipe": "0024",
+      "seed": 303,
+      "evaluated_episodes": 10840,
+      "completion_percent": 81.07011318206787,
+      "jad_reach_percent": 84.40959453582764
+    }
+  ],
+  "september_17_same_seed_reproductions": [
+    {
+      "name": "top01_seed303_trial0073",
+      "wandb_id": "d544df7738a408a3",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/d544df7738a408a3",
+      "original_jad_kill_rate": 0.9340025782585144,
+      "final_jad_kill_rate": 0.9340025782585144,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "1e56ff00be95c40a0edcf287ca94c310373f215c67930f1933493bcdc985603e",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    },
+    {
+      "name": "top02_seed101_trial0062",
+      "wandb_id": "01954aaa67c4b033",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/01954aaa67c4b033",
+      "original_jad_kill_rate": 0.8938516974449158,
+      "final_jad_kill_rate": 0.8938516974449158,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "cc190727e7bc581aa794b10f81232874cbf6589d79c87a4aa7e65bd82803933d",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    },
+    {
+      "name": "top03_seed303_trial0056",
+      "wandb_id": "8ec185de5baee508",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/8ec185de5baee508",
+      "original_jad_kill_rate": 0.8886945247650146,
+      "final_jad_kill_rate": 0.8886945247650146,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "4aaeb54a53e4541cbe2219dafa464b54658d798fd68fe617a373a38bc630ade4",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    },
+    {
+      "name": "top04_seed101_trial0015",
+      "wandb_id": "b965c61351d491f4",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/b965c61351d491f4",
+      "original_jad_kill_rate": 0.8878815174102783,
+      "final_jad_kill_rate": 0.8878815174102783,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "0d42f7bb5faba0b2f7acb39518f0e5485699ea772274364d79c5a52dfcb68b04",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    },
+    {
+      "name": "top05_seed101_trial0032",
+      "wandb_id": "9d420b8636b87d42",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/9d420b8636b87d42",
+      "original_jad_kill_rate": 0.8690555691719055,
+      "final_jad_kill_rate": 0.8690555691719055,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "9f30f76493671c8e5c52010683a356318baf7aa172b105c8fcd71a2b66ce1547",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    },
+    {
+      "name": "top06_seed101_trial0067",
+      "wandb_id": "1034e9c38157bd6d",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/1034e9c38157bd6d",
+      "original_jad_kill_rate": 0.8629996180534363,
+      "final_jad_kill_rate": 0.8629996180534363,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "df955ed33cf07c8196606cc1b14cf95951d559ed21721df9c81004a04955caad",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    },
+    {
+      "name": "top07_seed101_trial0074",
+      "wandb_id": "a1c41c1477226dc7",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/a1c41c1477226dc7",
+      "original_jad_kill_rate": 0.8595452904701233,
+      "final_jad_kill_rate": 0.8595452904701233,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "6c6eb09af17085dae63a7994c8092522952eb2bc72c96142a2b627ecdecfb544",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    },
+    {
+      "name": "top08_seed303_trial0047",
+      "wandb_id": "e40b945b9afb4a58",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/e40b945b9afb4a58",
+      "original_jad_kill_rate": 0.856575608253479,
+      "final_jad_kill_rate": 0.856575608253479,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "f2075cf036d276307da113320a29d3fc2fb79646e5ecb4e473a53b64ff80767b",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    },
+    {
+      "name": "top09_seed202_trial0043",
+      "wandb_id": "fb9f188bf5c3fc0b",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/fb9f188bf5c3fc0b",
+      "original_jad_kill_rate": 0.8537523746490479,
+      "final_jad_kill_rate": 0.8537523746490479,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "3d4a879af944f604547f033d53f07ef6ad9da6d8c5fd57df9416f7e67b293859",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    },
+    {
+      "name": "top10_seed303_trial0038",
+      "wandb_id": "e0cdd17ad5972c05",
+      "url": "https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/e0cdd17ad5972c05",
+      "original_jad_kill_rate": 0.8504983186721802,
+      "final_jad_kill_rate": 0.8504983186721802,
+      "delta_percentage_points": 0.0,
+      "actual_steps": 499122176.0,
+      "configuration_verified": true,
+      "checkpoint_sha256": "60639115461c216c0fe635c91854ba74dc4b4d9748228d622549914a7cf69a25",
+      "matches_original_checkpoint": true,
+      "status": "complete"
+    }
+  ],
+  "figure_snapshot_sha256": "1fe43d4271f475160f0723c3ba4240fd0f79ddef8c586b36bfa3d9ff558ebc88",
+  "figure_files": {
+    "engine.svg": "d755d716adce1153eeef88900307fbbefe2bd265538a47b122028fafea1936fa",
+    "required-work.svg": "68d89aa01b7a91d04696a3838a19e12272091e7ad00d256df28fd2be9f9979bd",
+    "prayer-window.svg": "68e318f79a71b32cc0c397546e907ad429c2ccf5bd19ab9364931f13e2818eb8",
+    "current-learning.svg": "be3785a9d5bad6ae563e44ca7d289927615778c9f01e147fa9e903613f8ce62d"
+  },
+  "figure_source_sha256": {
+    "engine.svg": "581c0d10fef82aef86ca2d5aa2889e1d59c79a477abd61d40dca70af2384828c",
+    "required-work.svg": "0aefcd42238d3325f5d729ef930936612aa85840d7ef2fa0aac8f0ce2dccbc0f",
+    "prayer-window.svg": "788619b1e0afd9e7ecdb6b44e36ca588fbc15352fcb4f5813276302e96d2d1e0",
+    "current-learning.svg": "7f7cdb711da6e4af142aa291d89118d2eb4187e2013b3f0dbcd4406416988f17"
+  },
+  "figure_file_note": "Original figures with trailing whitespace removed; source and published checksums are both retained."
+}
