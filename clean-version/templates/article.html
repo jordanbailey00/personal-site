@@ -1,3 +1,17 @@
+<header class="article-opening">
+  <figure class="article-figure capture-placeholder">
+    <div><span class="capture-label">Opening image to add</span><h3>Introduce the world of the article</h3><p>Add a screenshot or supplied illustration that gives the reader a concrete setting. Describe what it shows and any limits on what it demonstrates.</p></div>
+    <figcaption>The image’s source, context, and caption go here.</figcaption>
+  </figure>
+  <blockquote class="learning-overview">
+    <p class="learning-label">Before we begin</p>
+    <p>Introduce the question the article will answer and why it is worth understanding.</p>
+    <p>By the end, the reader should be able to:</p>
+    <ul><li>Explain the central idea in their own words.</li><li>Apply it to the worked example.</li><li>Identify the limits of the result.</li></ul>
+    <p class="prerequisites"><strong>What you need:</strong> State the assumed background. Introduce any other terms as they appear.</p>
+  </blockquote>
+</header>
+
 <!-- Copy this file to content/writing/<slug>.html and add a draft to posts.mjs.
      The builder supplies the title, author, date, contents, and navigation.
      Keep heading IDs unique. Relative assets belong in public/writing/<slug>/.
@@ -12,7 +26,7 @@
     </div>
     <aside class="margin-note" id="note-1" aria-label="Note 1"><a href="#note-ref-1" aria-label="Back to note 1 reference">1</a> A margin note can hold a source, a qualification, or a useful detour without interrupting the thought.</aside>
   </div>
-  <blockquote><p>A short quotation or guiding question can set the direction of a section.</p></blockquote>
+  <aside class="callout" data-callout="note"><p>Use a Note for supporting context that a reader can set aside without losing the main argument. Keep essential explanations in the surrounding prose.</p></aside>
 </section>
 <div class="book-ornament" aria-hidden="true">✧</div>
 <section aria-labelledby="ideas">
@@ -23,7 +37,7 @@
   <h3 id="worked-example">A worked example</h3>
   <p>A short example can follow a definition. Equations, lists, and tables use the same measure as the text, with room to scroll when a calculation needs more space.</p>
   <div class="equation" role="math" aria-label="The sum of integers from one to n equals n times n plus one divided by two"><span>1 + 2 + ⋯ + <i>n</i> = <span class="fraction"><span><i>n</i>(<i>n</i> + 1)</span><span>2</span></span></span><span class="equation-number">(1)</span></div>
-  <div class="concept-box example-box"><h3>Example · From the general to the particular</h3><p>This space is for a concrete application, a small experiment, or a counterexample. It is sample layout text, ready to replace.</p></div>
+  <aside class="callout" data-callout="important"><p>Use Important for a condition or distinction the reader needs to interpret the example correctly. State it directly; the label supplies the emphasis.</p></aside>
 </section>
 <section aria-labelledby="code">
   <h2 id="code">III. Code &amp; experiments</h2>

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { posts } from '../content/writing/posts.mjs';
+import { renderCallouts } from './callouts.mjs';
 
 const stripTags = value => value.replace(/<[^>]*>/g, '');
 const formatDate = value => new Intl.DateTimeFormat('en', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`));
@@ -47,6 +48,9 @@ export async function writingPages({ root, escape, appearanceControls }) {
   const template = { slug: 'template', title: 'A place for the next idea', subtitle: 'An article template for the things still to be written.', preview: true, html: await readFile(path.join(root, 'templates/article.html'), 'utf8') };
   for (const post of [...published, template]) {
     let html = post.html || await readFile(path.join(root, 'content/writing', post.file), 'utf8');
+    html = renderCallouts(html);
+    const opening = html.match(/^\s*(<header class="article-opening">[\s\S]*?<\/header>)/)?.[1] || '';
+    if (opening) html = html.replace(opening, '');
     const headings = [];
     const headingIds = new Set();
     html = html.replace(/<h([23]) id="([a-z0-9-]+)">([\s\S]*?)<\/h\1>/g, (_, level, id, title) => {
@@ -56,8 +60,8 @@ export async function writingPages({ root, escape, appearanceControls }) {
       return `<h${level} id="${id}"><a class="heading-link" href="#${id}">${title}</a></h${level}>`;
     });
     const position = published.indexOf(post);
-    const minutes = Math.max(1, Math.ceil(stripTags(html).split(/\s+/).length / 220));
-    const body = `${post.preview ? '<div class="template-notice"><strong>Template preview</strong><span>Sample layout only · No essay published</span></div>' : ''}<header class="essay-header"><p class="book-kicker">${post.preview ? 'An unwritten chapter' : `Essay ${String(position + 1).padStart(2, '0')}`}</p><h1 class="page-title">${escape(post.title)}</h1><p class="page-subtitle">${escape(post.subtitle)}</p><p class="essay-meta">Jordan Bailey <span aria-hidden="true">·</span> ${post.preview ? 'Undated draft' : `<time datetime="${post.date}">${formatDate(post.date)}</time> <span aria-hidden="true">·</span> ${minutes} min read`}</p></header><nav class="inline-contents" aria-label="On this page"><details open><summary>In this article</summary><ol>${contents(headings.filter(heading => heading.level === '2'))}</ol></details></nav><article class="prose reading-prose">${html}</article>`;
+    const minutes = Math.max(1, Math.ceil(stripTags(opening + html).split(/\s+/).length / 220));
+    const body = `${post.preview ? '<div class="template-notice"><strong>Template preview</strong><span>Sample layout only · No essay published</span></div>' : ''}<header class="essay-header"><p class="book-kicker">${post.preview ? 'An unwritten chapter' : `Essay ${String(position + 1).padStart(2, '0')}`}</p><h1 class="page-title">${escape(post.title)}</h1><p class="page-subtitle">${escape(post.subtitle)}</p><p class="essay-meta">Jordan Bailey <span aria-hidden="true">·</span> ${post.preview ? 'Undated draft' : `<time datetime="${post.date}">${formatDate(post.date)}</time> <span aria-hidden="true">·</span> ${minutes} min read`}</p></header>${opening ? `<div class="prose reading-prose opening-prose">${opening}</div>` : ''}<nav class="inline-contents" aria-label="On this page"><details open><summary>In this article</summary><ol>${contents(headings.filter(heading => heading.level === '2'))}</ol></details></nav><article class="prose reading-prose">${html}</article>`;
     pages.push({ pathname: linkTo(post), title: `${post.title} | Jordan Bailey`, description: post.subtitle, noindex: !!post.preview, article: !post.preview, body: shell({ title: post.preview ? 'Article template' : post.title, body, current: post.slug, headings, preview: post.preview, previous: published[position - 1], next: post.preview ? null : published[position + 1] }) });
   }
   return pages;

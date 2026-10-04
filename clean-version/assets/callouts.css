@@ -1,0 +1,14 @@
+/* mdBook/SITP callout palettes, matched to sitp.ai/css/variables-8adf115d.css.
+   Question is the reference's additional burnt-orange teaching prompt. */
+:root{--callout-note:#0969da;--callout-tip:#008000;--callout-important:#8250df;--callout-warning:#9a6700;--callout-caution:#b52731;--callout-question:#c9791f}
+:root[data-theme="rust"]{--callout-note:#023b95;--callout-tip:#007700;--callout-important:#8250df;--callout-warning:#603700;--callout-caution:#aa1721}
+:root[data-theme="coal"]{--callout-note:#4493f8;--callout-tip:#08ae08;--callout-important:#ab7df8;--callout-warning:#d29922;--callout-caution:#d91b29;--callout-question:#e0a458}
+:root[data-theme="navy"]{--callout-note:#4493f8;--callout-tip:#09ca09;--callout-important:#ab7df8;--callout-warning:#d29922;--callout-caution:#f21424;--callout-question:#e0a458}
+:root[data-theme="ayu"]{--callout-note:#74b9ff;--callout-tip:#09ca09;--callout-important:#d3abff;--callout-warning:#f0b72f;--callout-caution:#f21424;--callout-question:#e0a458}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){--callout-note:#4493f8;--callout-tip:#08ae08;--callout-important:#ab7df8;--callout-warning:#d29922;--callout-caution:#d91b29;--callout-question:#e0a458}}
+.callout-note{--callout-accent:var(--callout-note)}.callout-tip{--callout-accent:var(--callout-tip)}.callout-important{--callout-accent:var(--callout-important)}.callout-warning{--callout-accent:var(--callout-warning)}.callout-caution{--callout-accent:var(--callout-caution)}.callout-question{--callout-accent:var(--callout-question)}
+.prose .callout{margin:24px 0;padding:2px 0 2px 20px;border:0;border-inline-start:4px solid var(--callout-accent);background:none;color:var(--ink);break-inside:avoid}
+.prose .callout .callout-title{display:flex;align-items:center;margin:2px 0 8px;font-weight:600;color:var(--callout-accent);line-height:1.45}
+.callout-title svg{width:18px;height:18px;fill:currentColor;flex-shrink:0;margin-right:8px}
+.prose .callout>:last-child{margin-bottom:2px}
+@media print{:root[data-theme],:root:not([data-theme]){--callout-note:#0969da;--callout-tip:#008000;--callout-important:#8250df;--callout-warning:#9a6700;--callout-caution:#b52731;--callout-question:#c9791f}.callout{print-color-adjust:exact;-webkit-print-color-adjust:exact}}

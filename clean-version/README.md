@@ -61,3 +61,12 @@ The **Aa** control selects Classic or Fantasy independently of the paintbrush th
 `data-style` scopes the Fantasy overrides. The package consumes the shared palette variables instead of assigning a theme, so either style works with all six theme choices. `jordan-bailey-style` and `jordan-bailey-theme` are separate local storage preferences, applied before CSS loads and synchronized across tabs. Storage failures still permit selections for the current page.
 
 To add a footnote, use the `.with-margin` wrapper from `templates/article.html`, containing a text `<div>` and an `<aside class="margin-note">`. Put it around the paragraph that contains the reference, give each reference/note pair unique IDs and reciprocal links, and keep notes concise. The shared grid reserves enough vertical space for long notes to avoid collisions. No scripting or duplicate mobile note content is required.
+
+
+## Article openings and callouts
+
+An optional `<header class="article-opening">` at the start of an essay supplies its opening image and learning overview. The writing builder places it after the title and before the contents. See `templates/article.html` for a figure, a short motivating question, learning objectives, and prerequisites. Use an existing screenshot or supplied artwork; do not generate diagrams.
+
+Use `<aside class="callout" data-callout="note"><p>Supporting context.</p></aside>` for a callout. `scripts/callouts.mjs` supplies its accessible label and icon at build time. Supported types are `note`, `important`, `warning`, `tip`, `caution`, and `question`. The text stays readable without JavaScript. Use Note for context, Important for an essential condition, Warning for an easy-to-make mistake, Tip for a useful practice, Caution for a consequential risk, and Question for a short reasoning exercise. Do not add one merely to vary the page's appearance.
+
+`assets/callouts.css` matches SITP's exact per-theme blue, purple, amber, green, and red accents, plus its burnt-orange Question accent. Both Classic and Fantasy share its icon/label/4px-rule treatment and retain their own typography. Octicons are included under their MIT license in `assets/icons/OCTICONS-LICENSE.txt`. The Fight Caves article uses seven callouts and five side footnotes; the existing capture and diagram briefs are preserved.

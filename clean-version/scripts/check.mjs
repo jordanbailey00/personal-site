@@ -16,6 +16,12 @@ for (const file of files.filter(file => file.endsWith('.html'))) {
     }
   }
   if (!html.includes('href="/assets/fantasy.css"')) errors.push(`${file}: missing Fantasy style package`);
+  if (!html.includes('href="/assets/callouts.css"')) errors.push(`${file}: missing callout styles`);
+  const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
+  if (new Set(ids).size !== ids.length) errors.push(`${file}: duplicate IDs`);
+  for (const [, fragment] of html.matchAll(/href="#([^"]+)"/g)) {
+    if (!ids.includes(decodeURIComponent(fragment))) errors.push(`${file}: missing fragment #${fragment}`);
+  }
   if (/Insert screenshot|href="#"|Aeree Cho<\/h1>/.test(html)) errors.push(`${file}: unfinished content`);
   for (const image of html.matchAll(/<img\b[^>]*>/g)) if (!/alt="[^"]+"/.test(image[0])) errors.push(`${file}: image without alt text`);
   for (const match of html.matchAll(/(?:href|src)="(\/[^"#?]*)(?:[?#][^"]*)?"/g)) {

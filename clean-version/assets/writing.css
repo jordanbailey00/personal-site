@@ -97,3 +97,13 @@
 /* Reserve equal gutters on both sides; notes never push the article left. */
 @media screen and (min-width:1200px){.book-main{width:min(802px,calc(var(--reader-space) - 368px))}}
 @media print{.book-sidebar,.reader-toolbar,.sidebar-shade,.reading-progress,.chapter-navigation,.book-footer,.notebook button{display:none!important}.book-page{margin:0}.book-main{padding:0;max-width:none}.notebook pre,.notebook pre code{white-space:pre-wrap}.concept-box,.article-figure,.notebook{break-inside:avoid}.reading-prose h2,.reading-prose h3{break-after:avoid}}
+
+/* Chapter frontispiece and learning overview, before the contents and argument. */
+.article-opening{margin:0 0 40px}
+.article-opening .article-figure{margin:0 0 24px}
+.reading-prose .learning-overview{margin:24px 0 0;padding:16px 20px;border-left:0;border-block:1px solid var(--note-border);background:var(--note-bg);color:var(--ink)}
+.reading-prose .learning-overview p{margin-bottom:16px}
+.reading-prose .learning-overview .learning-label{font-size:.85rem;font-weight:600;margin-bottom:12px}
+.learning-overview ul{margin:12px 0 18px}
+.reading-prose .learning-overview .prerequisites{font-size:.85rem;color:var(--muted);margin-bottom:0}
+@media print{.article-opening .article-figure{break-inside:avoid}.learning-overview{break-inside:avoid}}
