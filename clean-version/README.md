@@ -8,7 +8,7 @@ A small, static portfolio based on the supplied Aeree Cho website oracle. It fol
 npm run dev
 ```
 
-Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, and multi-article listing behavior.
+Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, style/theme independence, keyboard menu dismissal, and multi-article listing behavior.
 
 Profile and project metadata live in `content/site.mjs`. The three project articles in `content/*.html` were imported from the original site with `scripts/import-case-studies.cjs`; their prose and code examples are preserved, with empty screenshot placeholders omitted. Layout and page generation live in `scripts/build.mjs`; styling lives in `assets/style.css`.
 
@@ -40,7 +40,7 @@ The first essay, `content/writing/reinforcement-learning-for-runescape.html`, us
 
 `/writing/` is the writing hub, listing every published entry from `content/writing/posts.mjs`. The homepage uses the same listing renderer for its three most recent entries: the Writing heading and All writing link open the hub, while article titles open their individual pages. `/writing/template/` remains a labeled authoring preview, excluded from the sitemap and marked `noindex`.
 
-The reading layout retains the contents sidebar, section navigation, and code examples inspired by [Structure and Interpretation of Tensor Programs](https://sitp.ai/). Its text column is centered in the space beside the sidebar, with equal left/right padding. Font families, body and heading sizes, colors, and themes come from the main site stylesheet. Supporting notes stay in the reading column rather than reserving an asymmetric right gutter.
+The reading layout retains the contents sidebar, section navigation, and code examples inspired by [Structure and Interpretation of Tensor Programs](https://sitp.ai/). Its text column is centered in the space beside the sidebar, with equal left/right padding. Font families, body and heading sizes, colors, and themes come from the main site stylesheet. Both styles put supporting footnotes in the right margin on screens at least 1200px wide. Equal gutters keep the main text centered; notes return to document flow on smaller screens and in print.
 
 To add or migrate an essay:
 
@@ -49,6 +49,15 @@ To add or migrate an essay:
 3. Use `<h2 id="section-name">…</h2>` and `<h3 id="subsection-name">…</h3>` for automatic section navigation. IDs must be unique, lowercase, and hyphenated. Put images in `public/writing/<slug>/` and refer to them with absolute `/writing/<slug>/…` URLs.
 4. Change the status to `published` when the essay is ready, then build and check. The homepage, hub, chapter links, reading time, and sitemap update automatically.
 
-The template demonstrates `.with-margin` + `.margin-note` (inline supporting notes), `.concept-box`, `.example-box`, `.notebook` with copyable code and static output, `.reading-details`, `.article-figure`, `.wide-figure`, `.table-scroll`, and `.reference-list`. Code/output is presentational; it does not execute readers' code. Figures use the reading column’s width and may contain supplied images, video, or accessible iframe embeds. Equations can use semantic MathML or authored HTML; no remote rendering service is required. All writing content remains readable without JavaScript; navigation controls, reading progress, print, and copying progressively enhance it.
+The template demonstrates `.with-margin` + `.margin-note` (responsive side footnotes with reference and return links), `.concept-box`, `.example-box`, `.notebook` with copyable code and static output, `.reading-details`, `.article-figure`, `.wide-figure`, `.table-scroll`, and `.reference-list`. Code/output is presentational; it does not execute readers' code. Figures use the reading column’s width and may contain supplied images, video, or accessible iframe embeds. Equations can use semantic MathML or authored HTML; no remote rendering service is required. All writing content remains readable without JavaScript; navigation controls, reading progress, print, and copying progressively enhance it.
 
-The reading implementation is in `scripts/writing.mjs`, `assets/writing.css`, and `assets/writing.js`. The shared picker is in `scripts/appearance.mjs` and `assets/theme.js`; all palettes and typography live in `assets/style.css`. The original site and favicon are preserved. Legacy reference font files and notices remain in `assets/fonts/writing/`, but no page loads them.
+The reading implementation is in `scripts/writing.mjs`, `assets/writing.css`, and `assets/writing.js`. The shared appearance controls are in `scripts/appearance.mjs` and `assets/theme.js`. All palettes and Classic typography live in `assets/style.css`; `assets/fantasy.css` is the separate Fantasy style package. The original site and favicon are preserved.
+
+
+## Style packages
+
+The **Aa** control selects Classic or Fantasy independently of the paintbrush theme control. Classic is the default and retains the original design. Fantasy follows [the supplied asitpofborscht fork](https://github.com/jordanbailey00/asitpofborscht) at commit `29c1c6341bbe0ef9f68285ca0e8d2b7c632f8fb4`: New Computer Modern serif text, its 16/24/32px type scale, real small-cap headings, Goudy Initialen drop caps, Vectorian dividers, compact tables, and notebook cells with hanging prompts. The page structure and navigation are shared. The font and decoration notices and licenses are included with the assets.
+
+`data-style` scopes the Fantasy overrides. The package consumes the shared palette variables instead of assigning a theme, so either style works with all six theme choices. `jordan-bailey-style` and `jordan-bailey-theme` are separate local storage preferences, applied before CSS loads and synchronized across tabs. Storage failures still permit selections for the current page.
+
+To add a footnote, use the `.with-margin` wrapper from `templates/article.html`, containing a text `<div>` and an `<aside class="margin-note">`. Put it around the paragraph that contains the reference, give each reference/note pair unique IDs and reciprocal links, and keep notes concise. The shared grid reserves enough vertical space for long notes to avoid collisions. No scripting or duplicate mobile note content is required.

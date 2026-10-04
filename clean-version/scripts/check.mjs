@@ -9,6 +9,13 @@ for (const file of files.filter(file => file.endsWith('.html'))) {
   const html = await readFile(path.join(root, file), 'utf8');
   if ((html.match(/<h1\b/g) || []).length !== 1) errors.push(`${file}: needs exactly one h1`);
   if (!html.includes('name="description"')) errors.push(`${file}: missing description`);
+  for (const [kind, count] of [['style', 2], ['theme', 6]]) {
+    if ((html.match(new RegExp(`data-${kind}-picker`, 'g')) || []).length !== 1 ||
+        (html.match(new RegExp(`name="site-${kind}"`, 'g')) || []).length !== count) {
+      errors.push(`${file}: missing or duplicate ${kind} choices`);
+    }
+  }
+  if (!html.includes('href="/assets/fantasy.css"')) errors.push(`${file}: missing Fantasy style package`);
   if (/Insert screenshot|href="#"|Aeree Cho<\/h1>/.test(html)) errors.push(`${file}: unfinished content`);
   for (const image of html.matchAll(/<img\b[^>]*>/g)) if (!/alt="[^"]+"/.test(image[0])) errors.push(`${file}: image without alt text`);
   for (const match of html.matchAll(/(?:href|src)="(\/[^"#?]*)(?:[?#][^"]*)?"/g)) {

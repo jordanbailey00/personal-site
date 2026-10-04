@@ -1,9 +1,9 @@
 <section aria-labelledby="why-a-cave">
   <h2 id="why-a-cave">I. A question with 63 waves</h2>
   <p class="chapter-deck">Can an agent learn an encounter without being handed the strategy?</p>
+  <p class="drop-cap">Fight Caves has a wonderfully compact job description: survive 63 waves of enemies, defeat TzTok-Jad, and earn a fire cape. The implementation details are less forgiving. You need to choose targets, manage resources, move around obstacles, and change protection prayers before an attack becomes a very expensive mistake.</p>
   <div class="with-margin">
     <div>
-      <p class="drop-cap">Fight Caves has a wonderfully compact job description: survive 63 waves of enemies, defeat TzTok-Jad, and earn a fire cape. The implementation details are less forgiving. You need to choose targets, manage resources, move around obstacles, and change protection prayers before an attack becomes a very expensive mistake.</p>
       <p>I wanted to know whether an agent could learn those decisions through reinforcement learning. No demonstrations. No scripted sequence telling it where to stand or when to switch prayers. Give it a world, a way to act, and feedback. Then see what it discovers.<sup><a href="#scope-note" id="scope-ref" aria-label="Read the simulation scope note">1</a></sup></p>
     </div>
     <aside class="margin-note" id="scope-note" aria-label="Simulation scope"><a href="#scope-ref" aria-label="Back to the scope note reference">1</a> This project runs in my own simulator. It does not control the live RuneScape client. The policy receives structured game state, including precise attack timing, rather than screenshots.</aside>

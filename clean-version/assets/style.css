@@ -29,6 +29,12 @@ svg{width:1em;height:1em;vertical-align:-.1em}
 .social a:hover,.theme-picker summary:hover{background:var(--hover);color:var(--ink)}
 .social svg{width:17px;height:17px}
 .social .cv-icon{font-size:.75rem;font-weight:700;letter-spacing:-.02em}
+.appearance-controls{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.appearance-controls:has(.theme-picker[hidden]):not(:has(.theme-picker:not([hidden]))){display:none}
+.style-picker summary{font-family:Georgia,serif;font-size:17px;padding:4px}
+.style-menu{width:174px}
+.sample-classic{font-family:system-ui,sans-serif}
+.sample-fantasy{font-family:"New Computer Modern",Georgia,serif;font-variant-caps:small-caps;font-size:1rem}
 .theme-picker{position:relative;flex-shrink:0;z-index:70}
 .theme-picker[hidden]{display:none}
 .theme-picker summary{list-style:none;cursor:pointer;width:32px;height:32px;padding:7px;background:var(--surface);border-radius:50%;color:var(--muted)}
@@ -118,3 +124,13 @@ svg{width:1em;height:1em;vertical-align:-.1em}
 @media(max-width:500px){.social{margin-left:0;width:100%;justify-content:flex-end}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
 @media print{:root[data-theme],:root:not([data-theme]){color-scheme:light;--ink:#262626;--muted:#737373;--line:#e5e5e5;--paper:#fff;--surface:#fafafa;--underline:#aaa;--note-bg:#f7f7f5;--note-border:#c9c9c1;--code-bg:#f5f5f5;--tag-border:#cecece;--tag-ink:#646464;--badge-bg:#fff7de;--badge-ink:#856315;--icon:#888}.social,.footer,.back-link,.skip-link,.theme-picker,.page-tools{display:none}.page,.contents{padding:0;max-width:none}body{font-size:11pt}.prose pre{white-space:pre-wrap}.project,.prose section{break-inside:avoid}}
+
+/* Shared side-footnote apparatus. A symmetric gutter keeps the text centered. */
+.with-margin{display:flow-root}
+.margin-note{border-left:1px solid var(--note-border);padding:4px 0 4px 16px;margin:0 0 20px;font-size:.8rem;line-height:1.4;color:var(--muted);overflow-wrap:anywhere;scroll-margin-top:82px}
+.margin-note>a:first-child{vertical-align:super;margin-right:5px;color:var(--focus)}
+.margin-note p:last-child{margin-bottom:0}
+.prose sup a[id]{scroll-margin-top:82px}
+.margin-note:target{outline:1px solid var(--focus);outline-offset:6px}
+@media screen and (min-width:1200px){.with-margin{display:grid;grid-template-columns:minmax(0,1fr) 160px;gap:24px;margin-right:-184px;align-items:start}.with-margin>.margin-note{grid-column:2;grid-row:1;border:0;padding:3px 0;margin:0 0 20px}}
+@media print{.with-margin{display:block;margin-right:0}.margin-note{border-left:1px solid var(--note-border);padding-left:12px}.appearance-controls{display:none}}

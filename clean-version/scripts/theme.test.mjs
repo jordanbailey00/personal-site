@@ -6,24 +6,31 @@ import { posts } from '../content/writing/posts.mjs';
 import { writingList } from './writing.mjs';
 
 const script = await readFile(new URL('../assets/theme.js', import.meta.url), 'utf8');
-function page({ saved = null, dark = false, blocked = false } = {}) {
+function page({ saved = null, savedStyle = null, dark = false, blocked = false } = {}) {
   const handlers = {}, device = {}, pickerEvents = {};
   const root = { dataset: {} }, meta = {};
-  const inputs = ['auto', 'light', 'rust', 'coal', 'navy', 'ayu'].map(value => ({ value, checked: false }));
-  const summary = { focus() {} };
-  const picker = { hidden: true, querySelectorAll: () => inputs, querySelector: () => summary, addEventListener: (name, fn) => { pickerEvents[name] = fn; }, contains: () => false };
+  const stored = { 'jordan-bailey-theme': saved, 'jordan-bailey-style': savedStyle };
+  const pickers = {};
+  for (const [kind, values] of Object.entries({ theme: ['auto', 'light', 'rust', 'coal', 'navy', 'ayu'], style: ['classic', 'fantasy'] })) {
+    const inputs = values.map(value => ({ value, checked: false }));
+    const summary = { focus() { summary.focused = true; } };
+    pickerEvents[kind] = {};
+    pickers[kind] = { hidden: true, inputs, summary, querySelectorAll: () => inputs, querySelector: () => summary, addEventListener: (name, fn) => { pickerEvents[kind][name] = fn; }, contains: () => false };
+  }
   const system = { matches: dark, addEventListener: (name, fn) => { device[name] = fn; } };
-  const document = { documentElement: root, querySelector: () => ({ setAttribute: (name, value) => { meta[name] = value; } }), querySelectorAll: () => [picker], addEventListener: (name, fn) => { handlers[name] = fn; } };
-  const window = { matchMedia: () => system, addEventListener: (name, fn) => { handlers[name] = fn; } };
-  const localStorage = { getItem() { if (blocked) throw Error('Storage unavailable'); return saved; }, setItem(key, value) { if (blocked) throw Error('Storage unavailable'); saved = value; } };
+  const document = { documentElement: root, querySelector: () => ({ setAttribute: (name, value) => { meta[name] = value; } }), querySelectorAll: selector => [pickers[selector === '[data-theme-picker]' ? 'theme' : 'style']], addEventListener: (name, fn) => { (handlers[name] ??= []).push(fn); } };
+  const window = { matchMedia: () => system, addEventListener: (name, fn) => { (handlers[name] ??= []).push(fn); } };
+  const localStorage = { getItem(key) { if (blocked) throw Error('Storage unavailable'); return stored[key]; }, setItem(key, value) { if (blocked) throw Error('Storage unavailable'); stored[key] = value; } };
   vm.runInNewContext(script, { document, window, localStorage });
-  const initial = root.dataset.theme;
-  handlers.DOMContentLoaded();
+  const initial = root.dataset.theme, initialStyle = root.dataset.style;
+  handlers.DOMContentLoaded.forEach(fn => fn());
   return {
-    initial, root, picker, inputs, meta, saved: () => saved,
-    choose(value) { pickerEvents.change({ target: { value, matches: () => true } }); },
+    initial, initialStyle, root, pickers, picker: pickers.theme, inputs: pickers.theme.inputs, meta, saved: () => stored['jordan-bailey-theme'], savedStyle: () => stored['jordan-bailey-style'],
+    choose(value, kind = 'theme') { pickerEvents[kind].change({ target: { value, matches: selector => selector === `input[name="site-${kind}"]` } }); },
+    escape(kind) { pickerEvents[kind].keydown({ key: 'Escape' }); },
+    outsideClick() { handlers.click.forEach(fn => fn({ target: {} })); },
     device(dark) { system.matches = dark; device.change(); },
-    storage(value, key = 'jordan-bailey-theme') { handlers.storage({ key, newValue: value }); },
+    storage(value, key = 'jordan-bailey-theme') { handlers.storage.forEach(fn => fn({ key, newValue: value })); },
   };
 }
 
@@ -78,4 +85,49 @@ test('Hub supports multiple essays while homepage limits entries and excludes dr
     assert.ok(!hub.includes('fixture-4/'));
     assert.ok(hub.includes('A &lt; B'));
   } finally { posts.splice(0, posts.length, ...original); }
+});
+
+
+test('Both styles persist independently for every theme, including Auto', () => {
+  for (const theme of ['auto', 'light', 'rust', 'coal', 'navy', 'ayu']) {
+    const p = page(); p.choose(theme);
+    const resolved = p.root.dataset.theme, color = p.meta.content;
+    for (const style of ['fantasy', 'classic']) {
+      p.choose(style, 'style');
+      assert.equal(p.root.dataset.theme, resolved);
+      assert.equal(p.meta.content, color);
+      const next = page({ saved: p.saved(), savedStyle: p.savedStyle() });
+      assert.equal(next.initialStyle, style);
+      assert.equal(next.initial, resolved);
+      assert.equal(next.pickers.style.inputs.find(input => input.checked).value, style);
+      next.choose('navy'); assert.equal(next.root.dataset.style, style);
+    }
+  }
+});
+
+test('Style defaults safely, handles unavailable storage, and syncs without changing theme', () => {
+  assert.equal(page().initialStyle, 'classic');
+  assert.equal(page({ savedStyle: 'unknown' }).initialStyle, 'classic');
+  const p = page({ saved: 'rust', savedStyle: 'fantasy' });
+  p.storage('classic', 'jordan-bailey-style');
+  assert.equal(p.root.dataset.style, 'classic');
+  assert.equal(p.root.dataset.theme, 'rust');
+  p.choose('fantasy', 'style'); p.storage('ayu');
+  assert.equal(p.root.dataset.style, 'fantasy');
+  p.storage(null, null);
+  assert.deepEqual({ ...p.root.dataset }, { theme: 'light', style: 'classic' });
+  const blocked = page({ blocked: true }); blocked.choose('fantasy', 'style'); blocked.choose('coal');
+  assert.equal(blocked.root.dataset.style, 'fantasy');
+  assert.equal(blocked.root.dataset.theme, 'coal');
+});
+
+test('Both menus close on Escape with focus returned, and on outside clicks', () => {
+  const p = page();
+  for (const kind of ['theme', 'style']) {
+    p.pickers[kind].open = true; p.escape(kind);
+    assert.equal(p.pickers[kind].open, false);
+    assert.equal(p.pickers[kind].summary.focused, true);
+    p.pickers[kind].open = true; p.outsideClick();
+    assert.equal(p.pickers[kind].open, false);
+  }
 });

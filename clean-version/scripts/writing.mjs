@@ -12,7 +12,7 @@ export function writingList({ escape, limit = Infinity }) {
   return published.length ? `<ol class="writing-list">${published.map(post => `<li><h3><a href="/writing/${post.slug}/">${escape(post.title)}</a></h3><p>${escape(post.subtitle)}</p><time datetime="${post.date}">${formatDate(post.date)}</time></li>`).join('')}</ol>` : '<p>No essays published yet.</p>';
 }
 
-export async function writingPages({ root, escape, themePicker }) {
+export async function writingPages({ root, escape, appearanceControls }) {
   const published = posts.filter(post => post.status === 'published');
   const slugs = new Set(['template']);
   for (const post of published) {
@@ -34,7 +34,7 @@ export async function writingPages({ root, escape, themePicker }) {
 </aside>
 <button class="sidebar-shade" type="button" aria-label="Close contents" tabindex="-1" hidden></button>
 <div class="book-page">
-  <header class="reader-toolbar"><div class="reader-actions"><button class="reader-button" type="button" data-contents-toggle aria-label="Toggle contents" aria-expanded="true" aria-controls="writing-sidebar" hidden>${menuIcon}</button>${themePicker()}</div><a class="toolbar-title" href="/writing/">${escape(title)}</a><button class="reader-button print-button" type="button" data-print aria-label="Print this page" title="Print this page" hidden>${printIcon}</button></header>
+  <header class="reader-toolbar"><div class="reader-actions"><button class="reader-button" type="button" data-contents-toggle aria-label="Toggle contents" aria-expanded="true" aria-controls="writing-sidebar" hidden>${menuIcon}</button>${appearanceControls()}</div><a class="toolbar-title" href="/writing/">${escape(title)}</a><button class="reader-button print-button" type="button" data-print aria-label="Print this page" title="Print this page" hidden>${printIcon}</button></header>
   <main class="book-main ${current ? 'book-article' : 'book-index'}" id="main" tabindex="-1">${body}
   ${current ? `<nav class="chapter-navigation" aria-label="Essay navigation">${previous ? `<a href="${linkTo(previous)}"><small>Previous essay</small>← ${escape(previous.title)}</a>` : '<a href="/writing/"><small>Contents</small>← All writing</a>'}${next ? `<a href="${linkTo(next)}"><small>Next essay</small>${escape(next.title)} →</a>` : '<a href="#main"><small>Return</small>Back to top ↑</a>'}</nav>` : ''}
   <footer class="book-footer"><span>Jordan Bailey</span><span>Reading design inspired by <a href="https://sitp.ai/">SITP</a></span></footer></main>

@@ -1,42 +1,57 @@
 (() => {
-  const key = 'jordan-bailey-theme';
   const system = window.matchMedia('(prefers-color-scheme: dark)');
   const colors = { light: '#ffffff', rust: '#e1e1db', coal: '#18191b', navy: '#161923', ayu: '#0f1419' };
-  const normalize = value => value === 'dark' ? 'coal' : value === 'auto' || Object.hasOwn(colors, value) ? value : 'auto';
-  let preference = 'auto';
-  try { preference = normalize(localStorage.getItem(key)); } catch { /* Follow the device when storage is unavailable. */ }
+  const settings = {
+    theme: { key: 'jordan-bailey-theme', normalize: value => value === 'dark' ? 'coal' : value === 'auto' || Object.hasOwn(colors, value) ? value : 'auto' },
+    style: { key: 'jordan-bailey-style', normalize: value => value === 'fantasy' ? 'fantasy' : 'classic' },
+  };
+  const capitalize = value => value[0].toUpperCase() + value.slice(1);
 
-  function applyTheme() {
-    const theme = preference === 'auto' ? (system.matches ? 'coal' : 'light') : preference;
-    document.documentElement.dataset.theme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', colors[theme]);
-    document.querySelectorAll('[data-theme-picker]').forEach(picker => {
+  function apply(kind) {
+    const { value } = settings[kind];
+    const resolved = kind === 'theme' && value === 'auto' ? (system.matches ? 'coal' : 'light') : value;
+    document.documentElement.dataset[kind] = resolved;
+    if (kind === 'theme') document.querySelector('meta[name="theme-color"]')?.setAttribute('content', colors[resolved]);
+    document.querySelectorAll(`[data-${kind}-picker]`).forEach(picker => {
       picker.hidden = false;
-      picker.querySelectorAll('input').forEach(input => { input.checked = input.value === preference; });
-      picker.querySelector('summary').title = `Theme: ${preference[0].toUpperCase()}${preference.slice(1)}`;
+      picker.querySelectorAll('input').forEach(input => { input.checked = input.value === value; });
+      picker.querySelector('summary').title = `${capitalize(kind)}: ${capitalize(value)}`;
     });
   }
 
-  // Resolve the shared preference before styles load to avoid a theme flash.
-  applyTheme();
+  // Both preferences resolve before CSS loads, independently and without a flash.
+  for (const [kind, setting] of Object.entries(settings)) {
+    let saved;
+    try { saved = localStorage.getItem(setting.key); } catch { /* Defaults work without storage. */ }
+    setting.value = setting.normalize(saved);
+    apply(kind);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    applyTheme();
-    document.querySelectorAll('[data-theme-picker]').forEach(picker => {
-      picker.addEventListener('change', event => {
-        if (!event.target.matches('input[name="site-theme"]')) return;
-        preference = normalize(event.target.value);
-        try { localStorage.setItem(key, preference); } catch { /* Selection still works for this page. */ }
-        applyTheme();
+    for (const [kind, setting] of Object.entries(settings)) {
+      apply(kind);
+      document.querySelectorAll(`[data-${kind}-picker]`).forEach(picker => {
+        picker.addEventListener('change', event => {
+          if (!event.target.matches(`input[name="site-${kind}"]`)) return;
+          setting.value = setting.normalize(event.target.value);
+          try { localStorage.setItem(setting.key, setting.value); } catch { /* Selection still works for this page. */ }
+          apply(kind);
+        });
+        picker.addEventListener('keydown', event => {
+          if (event.key === 'Escape') { picker.open = false; picker.querySelector('summary').focus(); }
+        });
+        document.addEventListener('click', event => { if (!picker.contains(event.target)) picker.open = false; });
       });
-      picker.addEventListener('keydown', event => {
-        if (event.key === 'Escape') { picker.open = false; picker.querySelector('summary').focus(); }
-      });
-      document.addEventListener('click', event => { if (!picker.contains(event.target)) picker.open = false; });
-    });
+    }
   }, { once: true });
 
-  system.addEventListener('change', () => { if (preference === 'auto') applyTheme(); });
+  system.addEventListener('change', () => { if (settings.theme.value === 'auto') apply('theme'); });
   window.addEventListener('storage', event => {
-    if (event.key === key || event.key === null) { preference = normalize(event.newValue); applyTheme(); }
+    for (const [kind, setting] of Object.entries(settings)) {
+      if (event.key === setting.key || event.key === null) {
+        setting.value = setting.normalize(event.newValue);
+        apply(kind);
+      }
+    }
   });
 })();

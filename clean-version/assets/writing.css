@@ -18,7 +18,7 @@
 .section-links .subsection-link{padding-left:10px;color:var(--muted);font-size:.75rem}
 .sidebar-bottom{margin-top:auto;padding-top:40px;display:flex;gap:20px;color:var(--muted);font-size:.75rem;align-items:center}
 .sidebar-bottom [data-reading-label]{margin-left:auto;font-variant-numeric:tabular-nums}
-.book-page{margin-left:var(--sidebar-width);min-height:100vh}
+.book-page{--reader-space:calc(100vw - var(--sidebar-width));margin-left:var(--sidebar-width);min-height:100vh}
 .reader-toolbar{height:58px;display:flex;align-items:center;gap:20px;padding:0 24px;position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line);z-index:50}
 .reader-actions{display:flex;gap:8px;align-items:center}
 .reader-actions .theme-menu{left:0;right:auto}
@@ -41,8 +41,6 @@
 .reading-prose .heading-link{text-decoration:none;color:var(--ink)}
 .reading-prose .heading-link:hover{color:var(--focus)}
 .chapter-deck{color:var(--muted)}
-.margin-note{border-left:2px solid var(--note-border);background:var(--note-bg);padding:12px 16px;margin:0 0 20px;font-size:.85rem;color:var(--muted)}
-.margin-note>a:first-child{vertical-align:super;margin-right:5px}
 .reading-prose sup{font-size:.7rem;line-height:0;margin-left:2px}
 .reading-prose .hash-value{word-break:break-all}
 .book-ornament{border-top:1px solid var(--line);margin:40px auto;width:100%;height:0;overflow:hidden;color:transparent}
@@ -90,10 +88,12 @@
 .reading-progress span{display:block;height:100%;background:var(--focus);width:0}
 .reader-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .sidebar-shade{display:none}
-.contents-hidden .book-sidebar{display:none}.contents-hidden .book-page{margin-left:0}.contents-hidden .reading-progress{left:0}
+.contents-hidden .book-sidebar{display:none}.contents-hidden .book-page{--reader-space:calc(100vw - var(--sidebar-width));margin-left:0}.contents-hidden .reading-progress{left:0}
 .template-notice{display:flex;flex-wrap:wrap;gap:6px 16px;padding:12px 0;border-block:1px solid var(--line);margin-bottom:32px;font-size:.8rem;color:var(--muted)}
 .writing-hub header{margin-bottom:40px}
 .writing-hub .writing-heading>span{color:var(--muted);font-size:.8rem}
-@media(max-width:800px){.book-sidebar{display:none;width:min(300px,82vw);box-shadow:8px 0 25px #0002}.book-page{margin-left:0}.reading-progress{left:0}.contents-open .book-sidebar{display:flex;z-index:70}.contents-open .sidebar-shade{display:block;position:fixed;inset:0;background:#0007;border:0;z-index:60;width:100%;height:100%;cursor:pointer}.book-main{padding:24px 20px}.reader-toolbar{padding-inline:16px;gap:12px}.no-writing-js .book-sidebar{display:flex;position:static;width:auto;padding:20px;box-shadow:none}.no-writing-js .book-sidebar nav,.no-writing-js .sidebar-bottom{display:none}.no-writing-js .book-name{margin:0}}
+@media(max-width:800px){.book-sidebar{display:none;width:min(300px,82vw);box-shadow:8px 0 25px #0002}.book-page{--reader-space:calc(100vw - var(--sidebar-width));margin-left:0}.reading-progress{left:0}.contents-open .book-sidebar{display:flex;z-index:70}.contents-open .sidebar-shade{display:block;position:fixed;inset:0;background:#0007;border:0;z-index:60;width:100%;height:100%;cursor:pointer}.book-main{padding:24px 20px}.reader-toolbar{padding-inline:16px;gap:12px}.no-writing-js .book-sidebar{display:flex;position:static;width:auto;padding:20px;box-shadow:none}.no-writing-js .book-sidebar nav,.no-writing-js .sidebar-bottom{display:none}.no-writing-js .book-name{margin:0}}
 @media(max-width:500px){.inline-contents ol{grid-template-columns:1fr}.book-footer{flex-direction:column;gap:8px}.print-button{margin-left:0}.toolbar-title{font-size:.8rem}.reader-toolbar{gap:10px}.capture-placeholder{padding:18px}.notebook figcaption{gap:10px}}
+/* Reserve equal gutters on both sides; notes never push the article left. */
+@media screen and (min-width:1200px){.book-main{width:min(802px,calc(var(--reader-space) - 368px))}}
 @media print{.book-sidebar,.reader-toolbar,.sidebar-shade,.reading-progress,.chapter-navigation,.book-footer,.notebook button{display:none!important}.book-page{margin:0}.book-main{padding:0;max-width:none}.notebook pre,.notebook pre code{white-space:pre-wrap}.concept-box,.article-figure,.notebook{break-inside:avoid}.reading-prose h2,.reading-prose h3{break-after:avoid}}

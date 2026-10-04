@@ -12,3 +12,13 @@ sitp/theme/fonts/fonts.css for the conversion notes and source provenance.
 Font license information and exceptions are reproduced in LICENSE.txt.
 The surrounding website code and text are independently authored.
 The book's typography, layout, and palette were used as design references.
+
+Goudy Initialen: original design by Frederic W. Goudy, digitized by Dieter
+Steffmann, distributed on CTAN (https://ctan.org/pkg/initials) under LPPL.
+The single-character WOFF2 conversions are copied without modification from
+the same asitpofborscht commit listed above. The reference documents their
+conversion in sitp/theme/fonts/fonts.css. License: https://www.latex-project.org/lppl/
+
+The decorative rule in assets/decorations/ornament.svg is also copied from
+that reference. Its embedded notice records the Vectorian/pgfornament
+provenance and LPPL 1.3c-or-later license.
