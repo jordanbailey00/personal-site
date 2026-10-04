@@ -11,7 +11,7 @@ function page({ saved = null, savedStyle = null, dark = false, blocked = false }
   const root = { dataset: {} }, meta = {};
   const stored = { 'jordan-bailey-theme': saved, 'jordan-bailey-style': savedStyle };
   const pickers = {};
-  for (const [kind, values] of Object.entries({ theme: ['auto', 'light', 'rust', 'coal', 'navy', 'ayu'], style: ['classic', 'fantasy'] })) {
+  for (const [kind, values] of Object.entries({ theme: ['auto', 'light', 'rust', 'coal', 'navy', 'ayu', 'supernova'], style: ['classic', 'fantasy'] })) {
     const inputs = values.map(value => ({ value, checked: false }));
     const summary = { focus() { summary.focused = true; } };
     pickerEvents[kind] = {};
@@ -45,7 +45,7 @@ test('Auto follows live device changes; explicit themes override the device', ()
 });
 
 test('Every explicit selection persists when another page loads', () => {
-  for (const theme of ['light', 'rust', 'coal', 'navy', 'ayu']) {
+  for (const theme of ['light', 'rust', 'coal', 'navy', 'ayu', 'supernova']) {
     const first = page(); first.choose(theme);
     const next = page({ saved: first.saved(), dark: true });
     assert.equal(next.initial, theme);
@@ -89,7 +89,7 @@ test('Hub supports multiple essays while homepage limits entries and excludes dr
 
 
 test('Both styles persist independently for every theme, including Auto', () => {
-  for (const theme of ['auto', 'light', 'rust', 'coal', 'navy', 'ayu']) {
+  for (const theme of ['auto', 'light', 'rust', 'coal', 'navy', 'ayu', 'supernova']) {
     const p = page(); p.choose(theme);
     const resolved = p.root.dataset.theme, color = p.meta.content;
     for (const style of ['fantasy', 'classic']) {

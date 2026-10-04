@@ -1,6 +1,6 @@
 (() => {
   const system = window.matchMedia('(prefers-color-scheme: dark)');
-  const colors = { light: '#ffffff', rust: '#e1e1db', coal: '#18191b', navy: '#161923', ayu: '#0f1419' };
+  const colors = { light: '#ffffff', rust: '#e1e1db', coal: '#18191b', navy: '#161923', ayu: '#0f1419', supernova: '#000000' };
   const settings = {
     theme: { key: 'jordan-bailey-theme', normalize: value => value === 'dark' ? 'coal' : value === 'auto' || Object.hasOwn(colors, value) ? value : 'auto' },
     style: { key: 'jordan-bailey-style', normalize: value => value === 'fantasy' ? 'fantasy' : 'classic' },

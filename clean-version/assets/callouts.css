@@ -2,7 +2,7 @@
    Question is the reference's additional burnt-orange teaching prompt. */
 :root{--callout-note:#0969da;--callout-tip:#008000;--callout-important:#8250df;--callout-warning:#9a6700;--callout-caution:#b52731;--callout-question:#c9791f}
 :root[data-theme="rust"]{--callout-note:#023b95;--callout-tip:#007700;--callout-important:#8250df;--callout-warning:#603700;--callout-caution:#aa1721}
-:root[data-theme="coal"]{--callout-note:#4493f8;--callout-tip:#08ae08;--callout-important:#ab7df8;--callout-warning:#d29922;--callout-caution:#d91b29;--callout-question:#e0a458}
+:root[data-theme="coal"],:root[data-theme="supernova"]{--callout-note:#4493f8;--callout-tip:#08ae08;--callout-important:#ab7df8;--callout-warning:#d29922;--callout-caution:#d91b29;--callout-question:#e0a458}
 :root[data-theme="navy"]{--callout-note:#4493f8;--callout-tip:#09ca09;--callout-important:#ab7df8;--callout-warning:#d29922;--callout-caution:#f21424;--callout-question:#e0a458}
 :root[data-theme="ayu"]{--callout-note:#74b9ff;--callout-tip:#09ca09;--callout-important:#d3abff;--callout-warning:#f0b72f;--callout-caution:#f21424;--callout-question:#e0a458}
 @media(prefers-color-scheme:dark){:root:not([data-theme]){--callout-note:#4493f8;--callout-tip:#08ae08;--callout-important:#ab7df8;--callout-warning:#d29922;--callout-caution:#d91b29;--callout-question:#e0a458}}

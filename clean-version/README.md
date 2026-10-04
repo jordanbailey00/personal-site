@@ -1,6 +1,6 @@
 # Jordan Bailey — clean version
 
-A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party scripts, API keys, or build dependencies are required. A shared theme picker offers Auto, Light, Rust, Coal, Navy, and Ayu on every page. Auto follows the device appearance; an explicit selection persists across pages, tabs, and visits. Old dark-mode preferences map to Coal.
+A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party services, API keys, or build dependencies are required. A shared theme picker offers Auto, Light, Rust, Coal, Navy, Ayu, and Supernova on every page. Auto follows the device appearance; an explicit selection persists across pages, tabs, and visits. Old dark-mode preferences map to Coal.
 
 ## Develop
 
@@ -8,7 +8,7 @@ A small, static portfolio based on the supplied Aeree Cho website oracle. It fol
 npm run dev
 ```
 
-Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, style/theme independence, keyboard menu dismissal, and multi-article listing behavior.
+Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, style/theme independence, keyboard menu dismissal, multi-article listing behavior, and the Supernova animation lifecycle.
 
 Profile and project metadata live in `content/site.mjs`. The three project articles in `content/*.html` were imported from the original site with `scripts/import-case-studies.cjs`; their prose and code examples are preserved, with empty screenshot placeholders omitted. Layout and page generation live in `scripts/build.mjs`; styling lives in `assets/style.css`.
 
@@ -58,7 +58,7 @@ The reading implementation is in `scripts/writing.mjs`, `assets/writing.css`, an
 
 The **Aa** control selects Classic or Fantasy independently of the paintbrush theme control. Classic is the default and retains the original design. Fantasy follows [the supplied asitpofborscht fork](https://github.com/jordanbailey00/asitpofborscht) at commit `29c1c6341bbe0ef9f68285ca0e8d2b7c632f8fb4`: New Computer Modern serif text, its 16/24/32px type scale, real small-cap headings, Goudy Initialen drop caps, Vectorian dividers, compact tables, and notebook cells with hanging prompts. The page structure and navigation are shared. The font and decoration notices and licenses are included with the assets.
 
-`data-style` scopes the Fantasy overrides. The package consumes the shared palette variables instead of assigning a theme, so either style works with all six theme choices. `jordan-bailey-style` and `jordan-bailey-theme` are separate local storage preferences, applied before CSS loads and synchronized across tabs. Storage failures still permit selections for the current page.
+`data-style` scopes the Fantasy overrides. The package consumes the shared palette variables instead of assigning a theme, so either style works with all seven theme choices. `jordan-bailey-style` and `jordan-bailey-theme` are separate local storage preferences, applied before CSS loads and synchronized across tabs. Storage failures still permit selections for the current page.
 
 To add a footnote, use the `.with-margin` wrapper from `templates/article.html`, containing a text `<div>` and an `<aside class="margin-note">`. Put it around the paragraph that contains the reference, give each reference/note pair unique IDs and reciprocal links, and keep notes concise. The shared grid reserves enough vertical space for long notes to avoid collisions. No scripting or duplicate mobile note content is required.
 
@@ -70,3 +70,10 @@ An optional `<header class="article-opening">` at the start of an essay supplies
 Use `<aside class="callout" data-callout="note"><p>Supporting context.</p></aside>` for a callout. `scripts/callouts.mjs` supplies its accessible label and icon at build time. Supported types are `note`, `important`, `warning`, `tip`, `caution`, and `question`. The text stays readable without JavaScript. Use Note for context, Important for an essential condition, Warning for an easy-to-make mistake, Tip for a useful practice, Caution for a consequential risk, and Question for a short reasoning exercise. Do not add one merely to vary the page's appearance.
 
 `assets/callouts.css` matches SITP's exact per-theme blue, purple, amber, green, and red accents, plus its burnt-orange Question accent. Both Classic and Fantasy share its icon/label/4px-rule treatment and retain their own typography. Octicons are included under their MIT license in `assets/icons/OCTICONS-LICENSE.txt`. The Fight Caves article uses seven callouts and five side footnotes; the existing capture and diagram briefs are preserved.
+
+
+## Supernova
+
+Supernova brings back the original star field from `space-version/components/starfield/Starfield.tsx`, with its 5,000 white circular particles in a spherical shell (radii 20–80), camera at z=5 and 60° field of view, volume offset z=−60, fog at 25–120, 0.15 point size, 0.7 opacity, and rotation rates x=0.005, y=0.015, z=0.002 radians/second. The shared theme picker selects it on every page, independently of Classic/Fantasy. Layout, typography, and the favicon remain unchanged.
+
+`assets/supernova.js` loads `assets/starfield.js` only when Supernova is visible and selected. The renderer uses the same Three.js 0.183.2 build already installed for the retired site, vendored locally in `assets/vendor/three/` with its MIT license. Other themes never download the 3D renderer. The effect pauses in hidden tabs, disposes its graphics resources when deselected, and shows a still star field for reduced-motion preferences. WebGL or loading failures leave the readable black theme intact. Printing hides the canvas and uses the existing light print palette.

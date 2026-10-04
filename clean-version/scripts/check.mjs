@@ -9,7 +9,7 @@ for (const file of files.filter(file => file.endsWith('.html'))) {
   const html = await readFile(path.join(root, file), 'utf8');
   if ((html.match(/<h1\b/g) || []).length !== 1) errors.push(`${file}: needs exactly one h1`);
   if (!html.includes('name="description"')) errors.push(`${file}: missing description`);
-  for (const [kind, count] of [['style', 2], ['theme', 6]]) {
+  for (const [kind, count] of [['style', 2], ['theme', 7]]) {
     if ((html.match(new RegExp(`data-${kind}-picker`, 'g')) || []).length !== 1 ||
         (html.match(new RegExp(`name="site-${kind}"`, 'g')) || []).length !== count) {
       errors.push(`${file}: missing or duplicate ${kind} choices`);
@@ -17,6 +17,7 @@ for (const file of files.filter(file => file.endsWith('.html'))) {
   }
   if (!html.includes('href="/assets/fantasy.css"')) errors.push(`${file}: missing Fantasy style package`);
   if (!html.includes('href="/assets/callouts.css"')) errors.push(`${file}: missing callout styles`);
+  if (!html.includes('src="/assets/supernova.js"')) errors.push(`${file}: missing Supernova background support`);
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
   if (new Set(ids).size !== ids.length) errors.push(`${file}: duplicate IDs`);
   for (const [, fragment] of html.matchAll(/href="#([^"]+)"/g)) {
