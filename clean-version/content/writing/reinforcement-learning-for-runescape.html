@@ -12,7 +12,7 @@
   <p>The September baseline I’ll use throughout this article completed <strong>9,570 of 10,800 full caves: 88.61%</strong>, with a Twisted bow and no food or Prayer potions. A later focused search reached <strong>93.40%</strong>. Those numbers are encouraging. The interesting part is what had to become correct before they meant anything.</p>
   <figure class="article-figure wide-figure">
     <a href="/writing/reinforcement-learning-for-runescape/viewer-cover.png" aria-label="Open the Fight Caves viewer screenshot at full size"><img src="/writing/reinforcement-learning-for-runescape/viewer-cover.png" width="1513" height="991" alt="The Fight Caves viewer showing the player facing Jad in a lava-lined arena, with the minimap and equipment panel visible." decoding="async" fetchpriority="high"></a>
-    <figcaption><strong>Figure 1.</strong> The playable Raylib viewer. This archival screenshot shows the environment; it is not a replay of the September baseline. Select any figure to open it at full size.</figcaption>
+    <figcaption><strong>Figure 1.</strong> The playable Raylib viewer. This archival screenshot shows the environment; it is not a replay of the September baseline. Select a screenshot to open it at full size.</figcaption>
   </figure>
 </section>
 <div class="book-ornament" aria-hidden="true">✧</div>
@@ -52,9 +52,9 @@
       <tr><th scope="row">Validation and run records</th><td>Check deterministic transitions and preserve the code, assets, configuration, and weights behind a result.</td></tr>
     </tbody>
   </table></div>
-  <figure class="article-figure wide-figure">
-    <a href="/writing/reinforcement-learning-for-runescape/engine.svg" aria-label="Open the shared simulation architecture diagram"><img src="/writing/reinforcement-learning-for-runescape/engine.svg" width="864" height="547.2" loading="lazy" alt="Architecture diagram: the shared C simulation feeds the training interface, Raylib viewer, and deterministic replay and validation tools."></a>
-    <figcaption><strong>Figure 2.</strong> Training and inspection share the rules. The simulation can run thousands of caves without drawing thousands of windows.</figcaption>
+  <figure class="article-figure capture-placeholder">
+    <div><span class="capture-label">Diagram to add · Architecture</span><h3>One simulation, two ways to use it</h3><p>Draw the C simulation as the shared source of game state. Show observations and legal-action masks flowing to the recurrent policy, and movement, target, and Prayer actions returning to the simulation. Add rewards and experience flowing to PPO, with updated weights returning to the policy. Place the Raylib viewer and deterministic replay/tests beside the core, both using its state and rules.</p></div>
+    <figcaption><strong>Figure 2.</strong> Label the training loop separately from rendering and inspection. The viewer must not appear to be a second simulator.</figcaption>
   </figure>
   <p>Speed made iteration practical. Early C-only benchmarks at 64 environments improved from roughly 336,000 to 3.35 million environment steps per second. That is simulation throughput; policy inference and learning add their own costs.</p>
   <p>Correctness needed a different set of tools. Seeded resets and action replay make failures repeatable. State hashes help detect divergence. Viewer overlays expose collision, line of sight, routes, footprints, and pending attacks. An agent willing to repeat a bad interaction millions of times is a remarkably persistent test case.</p>
@@ -96,9 +96,9 @@
   <p>Targets persist, so “no new selection” can still lead to an attack. A shot that fires consumes that tick’s movement opportunity. Prayer flicking is an explicit action: the engine handles the off/on transition, and the policy chooses when to request it. Eating, drinking, gear switching, and spell selection are outside this policy’s action space.</p>
   <h3 id="prayer-timing">A deadline before the damage</h3>
   <p>Timing is where a seemingly small implementation choice changes the task. In the September simulation, a non-melee Jad attack launched at tick <var>T</var> locks its protection decision at the boundary <var>T</var> + 2, before that tick’s action. The action at <var>T</var> + 1 can still change the protection used for the hit. Impact occurs at <var>T</var> + 3 or later.</p>
-  <figure class="article-figure wide-figure">
-    <a href="/writing/reinforcement-learning-for-runescape/prayer-window.svg" aria-label="Open the Jad protection deadline diagram"><img src="/writing/reinforcement-learning-for-runescape/prayer-window.svg" width="1008" height="504" loading="lazy" alt="Jad timing: attack launches at T; the player can respond at T plus 1; protection locks before the T plus 2 action; damage lands at T plus 3 or later."></a>
-    <figcaption><strong>Figure 4.</strong> A schematic derived from the simulation rules, not a recorded policy response. Ordinary enemy attacks and immediate melee use different timing rules.</figcaption>
+  <figure class="article-figure capture-placeholder">
+    <div><span class="capture-label">Diagram to add · Attack timing</span><h3>Jad’s protection deadline</h3><p>Draw a four-stage timeline: attack launch and tell at T; the last response opportunity at T + 1; protection locked before the action at T + 2; impact at T + 3 or later. Mark the actionable window and show that extra projectile travel time does not extend it.</p></div>
+    <figcaption><strong>Figure 4.</strong> This should illustrate the September simulation’s non-melee Jad timing, not a measured policy response. Ordinary enemy attacks and immediate melee follow different rules.</figcaption>
   </figure>
   <p>This is why a screenshot of the active prayer when damage appears can be misleading. The relevant decision may already be over. To debug a missed protection, inspect the launch, response opportunity, lock, and impact together.</p>
 </section>
@@ -170,9 +170,9 @@ print(f"{damage:+.3f}, {healing:+.3f}, {damage + healing:+.3f}")</code></pre></d
     <div class="notebook-output"><span class="cell-prompt" aria-hidden="true">Out [2]:</span><pre><samp>+0.100, -0.105, -0.005</samp></pre></div>
   </figure>
   <p>This example assumes one effective healing event and ignores other reward terms. Damage and restoration cancel in the progress component; the healing event adds its own small cost. It illustrates the accounting, not the complete engine implementation.</p>
-  <figure class="article-figure wide-figure">
-    <a href="/writing/reinforcement-learning-for-runescape/required-work.svg" aria-label="Open the required-work reward diagram"><img src="/writing/reinforcement-learning-for-runescape/required-work.svg" width="864" height="576" loading="lazy" alt="Reward accounting: removing 10 HP earns 0.1; restoring it reverses that progress and adds a 0.005 healing cost. Tz-Kek children count in advance, and Jad healers matter through restored Jad HP."></a>
-    <figcaption><strong>Figure 5.</strong> A worked example derived from the reward rules. Component values are shown before the trainer clips the combined reward.</figcaption>
+  <figure class="article-figure capture-placeholder">
+    <div><span class="capture-label">Diagram to add · Reward accounting</span><h3>Damage, healing, and work remaining</h3><p>Show an enemy going from 100 HP to 90 HP and back to 100 HP. Annotate the damage with +0.100 progress reward and the healing with −0.100 progress reward plus a −0.005 healing-event cost, for a net −0.005. Add small explanatory panels for Tz-Kek children being counted in advance and Jad healers contributing through restored Jad HP.</p></div>
+    <figcaption><strong>Figure 5.</strong> Use component rewards before clipping. Keep the worked example distinct from recorded training data.</figcaption>
   </figure>
   <p>Other terms penalize damage taken, Prayer spent, time, invalid actions, and sustained inactivity. Completion earns +1 and death earns −1. The trainer clips the combined reward to [−1, +1]. Gross damage, individual kills, wave clears, and correct prayers have zero direct reward weights in this baseline.</p>
   <h3 id="debug-the-rules">Check the rules before tuning the penalty</h3>
@@ -185,9 +185,9 @@ print(f"{damage:+.3f}, {healing:+.3f}, {damage + healing:+.3f}")</code></pre></d
   <p class="chapter-deck">A strong checkpoint and a dependable training recipe are different results.</p>
   <p>The detailed baseline here is native PufferLib 5.0 trial <code>0024</code>, selected in September. It trained for 499,122,176 steps in <strong>434.08 seconds on an RTX 5070 Ti</strong>, excluding final evaluation. That is the cost of this run. It does not include building the simulator or searching for the recipe.</p>
   <p>The retained log contains four training-bin averages and a separate final evaluation. Early bins show the agent progressing through ordinary waves. Around the third bin it begins reaching Jad, but almost never finishes. By the fourth, it reaches him in most episodes and completion has increased sharply.</p>
-  <figure class="article-figure wide-figure">
-    <a href="/writing/reinforcement-learning-for-runescape/current-learning.svg" aria-label="Open the baseline learning plots"><img src="/writing/reinforcement-learning-for-runescape/current-learning.svg" width="1008" height="571.2" loading="lazy" alt="Four training-bin averages: mean wave rises from 21.29 to 62.23, while cave completion rises from zero to 63.49 percent. The separate final evaluation completes 88.61 percent."></a>
-    <figcaption><strong>Figure 6.</strong> Dashed lines connect recorded bin averages; they do not reconstruct a dense learning curve. Diamonds mark the separate final evaluation.</figcaption>
+  <figure class="article-figure capture-placeholder">
+    <div><span class="capture-label">Visualization to add · Training results</span><h3>Learning to reach Jad, then finish</h3><p>Create three aligned plots against agent steps: mean wave reached, mean episode length in ticks, and the rates of reaching Jad and completing the cave. Use the four baseline training-bin averages in the linked results data. Show the final evaluation at 499.12M steps with a separate marker: 89.25% reached Jad and 88.61% completed.</p></div>
+    <figcaption><strong>Figure 6.</strong> The recorded points are bin averages, not independent checkpoint evaluations. Any connecting lines should only guide the eye; do not imply a dense learning curve.</figcaption>
   </figure>
   <h3 id="evaluate-the-checkpoint">Start at wave 1 and count outcomes</h3>
   <p>Final evaluation reloads the checkpoint and samples actions from the masked policy. It starts full caves at wave 1, carries recurrent state across horizons, and resets it between episodes. The batched evaluation requested at least 10,000 episodes and finished with 10,800.</p>
@@ -221,7 +221,7 @@ print(f"{damage:+.3f}, {healing:+.3f}, {damage + healing:+.3f}")</code></pre></d
   <p>The three fresh seeds average 64.72% completion when weighted equally. That spread matters more than another decimal place on the winning run. A checkpoint that wins repeatedly does not imply that every training run finds one.</p>
   <p>Hyperparameter searches helped substantially, but the successful settings act together. Learning rate, entropy, clipping, replay, and advantage estimation all affect the updates. A sweep can identify a useful combination without proving which individual change caused the improvement.</p>
   <div class="concept-box example-box"><h3>A later result · 93.40%</h3><p>A subsequent focused search produced trial <code>0073</code>, seed 303, with 93.4003% final completion at the same 499,122,176-step budget. Its September 17 retraining reproduced both the result and the saved checkpoint exactly. The ten selected retrains all matched their originals. This is evidence of same-seed reproducibility, not a new-seed reliability guarantee. <a href="https://wandb.ai/jbailey8531-oakton-college/fight%20caves%20rl/runs/d544df7738a408a3">View the reproduced run.</a></p></div>
-  <p>The figures and seed table above continue to describe the earlier baseline. Keeping that boundary explicit avoids mixing a later headline score with a different run’s learning history.</p>
+  <p>The visualization brief and seed table above continue to describe the earlier baseline. Keeping that boundary explicit avoids mixing a later headline score with a different run’s learning history.</p>
 </section>
 <section aria-labelledby="next-encounters">
   <h2 id="next-encounters">VII. Beyond the Fight Caves</h2>
@@ -242,7 +242,7 @@ print(f"{damage:+.3f}, {healing:+.3f}, {damage + healing:+.3f}")</code></pre></d
 </section>
 <section aria-labelledby="sources">
   <h2 id="sources">VIII. Code and experiment notes</h2>
-  <p>This article follows the September 13–14 baseline and figure snapshot, with the September 17 retraining result called out separately. Earlier results retain their original conditions. The project’s mechanics and training integrations continue to evolve.</p>
+  <p>This article follows the September 13–14 baseline and experiment snapshot, with the September 17 retraining result called out separately. Earlier results retain their original conditions. The project’s mechanics and training integrations continue to evolve.</p>
   <ol class="reference-list">
     <li><a href="https://github.com/jordanbailey00/fight-caves-rl">Fight Caves RL</a>: the project, viewer, historical experiments, and implementation notes.</li>
     <li>Pinned native PufferLib 5.0 sources: <a href="https://github.com/jordanbailey00/PufferLib/blob/9ad3633d3563a8e467026160e90209146d2a733c/ocean/fight_caves/simulation.h">simulation and policy interface</a>, <a href="https://github.com/jordanbailey00/PufferLib/blob/9ad3633d3563a8e467026160e90209146d2a733c/ocean/fight_caves/binding.c">training adapter</a>, and <a href="https://github.com/jordanbailey00/PufferLib/blob/9ad3633d3563a8e467026160e90209146d2a733c/src/algo.cu">network and optimizer</a>.</li>
@@ -252,6 +252,6 @@ print(f"{damage:+.3f}, {healing:+.3f}, {damage + healing:+.3f}")</code></pre></d
   </ol>
   <details class="reading-details"><summary>Reproduction and capture notes</summary>
     <p>A result needs more than an INI file. Preserve the simulation source, executable, assets, loadout, training settings, seed, and checkpoint. The baseline checkpoint’s SHA-256 is <code class="hash-value">963d9949a3c1d954fb2c746860a226c0c34915f1f19b1b2f4ffb15e56a97d568</code>.</p>
-    <p>For replay captures, also record the episode seed or rotation, action-sampling mode, recurrent-state handling, source ticks, and playback speed. CPU and GPU sampling need not produce identical trajectories. The screenshots above are labeled archival; the two capture blocks specify images still to add.</p>
+    <p>For replay captures, also record the episode seed or rotation, action-sampling mode, recurrent-state handling, source ticks, and playback speed. CPU and GPU sampling need not produce identical trajectories. The screenshots above are labeled archival; the capture and visualization blocks describe the images and diagrams still to add.</p>
   </details>
 </section>

@@ -1,40 +1,42 @@
 (() => {
   const key = 'jordan-bailey-theme';
   const system = window.matchMedia('(prefers-color-scheme: dark)');
-  let preference = null;
-
-  const validTheme = value => value === 'light' || value === 'dark' ? value : null;
-  try { preference = validTheme(localStorage.getItem(key)); } catch { /* Storage may be disabled. */ }
+  const colors = { light: '#ffffff', rust: '#e1e1db', coal: '#18191b', navy: '#161923', ayu: '#0f1419' };
+  const normalize = value => value === 'dark' ? 'coal' : value === 'auto' || Object.hasOwn(colors, value) ? value : 'auto';
+  let preference = 'auto';
+  try { preference = normalize(localStorage.getItem(key)); } catch { /* Follow the device when storage is unavailable. */ }
 
   function applyTheme() {
-    const theme = preference || (system.matches ? 'dark' : 'light');
+    const theme = preference === 'auto' ? (system.matches ? 'coal' : 'light') : preference;
     document.documentElement.dataset.theme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.page === 'writing' ? (theme === 'dark' ? '#0f1419' : '#e1e1db') : (theme === 'dark' ? '#18191b' : '#ffffff'));
-    document.querySelectorAll('[data-theme-toggle]').forEach(button => {
-      button.setAttribute('aria-pressed', String(theme === 'dark'));
-      button.title = `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`;
-      button.hidden = false;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', colors[theme]);
+    document.querySelectorAll('[data-theme-picker]').forEach(picker => {
+      picker.hidden = false;
+      picker.querySelectorAll('input').forEach(input => { input.checked = input.value === preference; });
+      picker.querySelector('summary').title = `Theme: ${preference[0].toUpperCase()}${preference.slice(1)}`;
     });
   }
 
-  // Run before the stylesheet loads to avoid flashing the wrong theme.
+  // Resolve the shared preference before styles load to avoid a theme flash.
   applyTheme();
   document.addEventListener('DOMContentLoaded', () => {
     applyTheme();
-    document.querySelectorAll('[data-theme-toggle]').forEach(button => {
-      button.addEventListener('click', () => {
-        preference = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-        try { localStorage.setItem(key, preference); } catch { /* The toggle still works without storage. */ }
+    document.querySelectorAll('[data-theme-picker]').forEach(picker => {
+      picker.addEventListener('change', event => {
+        if (!event.target.matches('input[name="site-theme"]')) return;
+        preference = normalize(event.target.value);
+        try { localStorage.setItem(key, preference); } catch { /* Selection still works for this page. */ }
         applyTheme();
       });
+      picker.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { picker.open = false; picker.querySelector('summary').focus(); }
+      });
+      document.addEventListener('click', event => { if (!picker.contains(event.target)) picker.open = false; });
     });
   }, { once: true });
 
-  system.addEventListener('change', () => { if (!preference) applyTheme(); });
+  system.addEventListener('change', () => { if (preference === 'auto') applyTheme(); });
   window.addEventListener('storage', event => {
-    if (event.key === key || event.key === null) {
-      preference = validTheme(event.newValue);
-      applyTheme();
-    }
+    if (event.key === key || event.key === null) { preference = normalize(event.newValue); applyTheme(); }
   });
 })();

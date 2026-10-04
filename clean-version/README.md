@@ -1,6 +1,6 @@
 # Jordan Bailey — clean version
 
-A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party scripts, API keys, or build dependencies are required. A small first-party script adds an accessible light/dark toggle to every page, follows the device theme initially, and remembers an explicit choice across pages and visits.
+A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party scripts, API keys, or build dependencies are required. A shared theme picker offers Auto, Light, Rust, Coal, Navy, and Ayu on every page. Auto follows the device appearance; an explicit selection persists across pages, tabs, and visits. Old dark-mode preferences map to Coal.
 
 ## Develop
 
@@ -8,7 +8,7 @@ A small, static portfolio based on the supplied Aeree Cho website oracle. It fol
 npm run dev
 ```
 
-Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages and internal links.
+Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, and multi-article listing behavior.
 
 Profile and project metadata live in `content/site.mjs`. The three project articles in `content/*.html` were imported from the original site with `scripts/import-case-studies.cjs`; their prose and code examples are preserved, with empty screenshot placeholders omitted. Layout and page generation live in `scripts/build.mjs`; styling lives in `assets/style.css`.
 
@@ -36,17 +36,19 @@ The reference person's biography, projects, and other personal content are not i
 
 ## Writing
 
-The first essay, `content/writing/reinforcement-learning-for-runescape.html`, uses the September 13–14 Fight Caves baseline and separately identifies the September 17 follow-up. Its original screenshots, vector figures, and public results extract live in `public/writing/reinforcement-learning-for-runescape/`. Two visible capture blocks specify the starting-loadout screenshot and baseline policy-replay sequence still to add. Keep archival images and measured results labeled when replacing them.
+The first essay, `content/writing/reinforcement-learning-for-runescape.html`, uses the September 13–14 Fight Caves baseline and separately identifies the September 17 follow-up. Its original screenshots and public results extract live in `public/writing/reinforcement-learning-for-runescape/`. Four visualization briefs and two screenshot capture requests describe the artwork Jordan will supply. Do not generate replacement diagrams; retain these descriptions until supplied artwork is ready.
 
-`/writing/` is the empty essay index. `/writing/template/` is an explicitly labeled design preview, excluded from the sitemap and marked `noindex`. It is not counted as a published essay. The reading layout follows Jeffrey Zhang's [Structure and Interpretation of Tensor Programs](https://sitp.ai/): New Computer Modern type, small-cap headings, warm paper and dark sidebar, Ayu-like dark mode, a contents rail, margin notes, and notebook-style examples. The reference checkout is `/home/joe/projects/references/asitpofborscht` at commit `29c1c6341bbe0ef9f68285ca0e8d2b7c632f8fb4`.
+`/writing/` is the writing hub, listing every published entry from `content/writing/posts.mjs`. The homepage uses the same listing renderer for its three most recent entries: the Writing heading and All writing link open the hub, while article titles open their individual pages. `/writing/template/` remains a labeled authoring preview, excluded from the sitemap and marked `noindex`.
+
+The reading layout retains the contents sidebar, section navigation, and code examples inspired by [Structure and Interpretation of Tensor Programs](https://sitp.ai/). Its text column is centered in the space beside the sidebar, with equal left/right padding. Font families, body and heading sizes, colors, and themes come from the main site stylesheet. Supporting notes stay in the reading column rather than reserving an asymmetric right gutter.
 
 To add or migrate an essay:
 
 1. Copy `templates/article.html` to `content/writing/<slug>.html`. Replace the sample content with the essay body; the layout supplies its title, author, date, and navigation.
 2. Add an entry to `content/writing/posts.mjs` with `slug`, `title`, `subtitle`, an ISO `date`, `file`, and `status: 'draft'`. Drafts are omitted from the output entirely. Manifest order is the index and previous/next order.
 3. Use `<h2 id="section-name">…</h2>` and `<h3 id="subsection-name">…</h3>` for automatic section navigation. IDs must be unique, lowercase, and hyphenated. Put images in `public/writing/<slug>/` and refer to them with absolute `/writing/<slug>/…` URLs.
-4. Change the status to `published` when the essay is ready, then build and check. The index, chapter links, reading time, and sitemap update automatically.
+4. Change the status to `published` when the essay is ready, then build and check. The homepage, hub, chapter links, reading time, and sitemap update automatically.
 
-The template demonstrates `.with-margin` + `.margin-note` (inline below 1100px), `.concept-box`, `.example-box`, `.notebook` with copyable code and static output, `.reading-details`, `.article-figure`, `.wide-figure`, `.table-scroll`, and `.reference-list`. Code/output is presentational; it does not execute readers' code. Wide figures may use images, video, or accessible iframe embeds. Equations can use semantic MathML or authored HTML; no remote rendering service is required. All writing content remains readable without JavaScript; navigation controls, reading progress, print, and copying progressively enhance it.
+The template demonstrates `.with-margin` + `.margin-note` (inline supporting notes), `.concept-box`, `.example-box`, `.notebook` with copyable code and static output, `.reading-details`, `.article-figure`, `.wide-figure`, `.table-scroll`, and `.reference-list`. Code/output is presentational; it does not execute readers' code. Figures use the reading column’s width and may contain supplied images, video, or accessible iframe embeds. Equations can use semantic MathML or authored HTML; no remote rendering service is required. All writing content remains readable without JavaScript; navigation controls, reading progress, print, and copying progressively enhance it.
 
-The implementation is in `scripts/writing.mjs`, `assets/writing.css`, and `assets/writing.js`. These styles are loaded only for writing routes. Existing homepage, CV, project pages, the original site, and the favicon remain separate. The fonts are self-hosted, copied unchanged from the reference; their upstream license is retained in `assets/fonts/writing/LICENSE.txt`, with attribution in `assets/fonts/writing/NOTICE.txt`.
+The reading implementation is in `scripts/writing.mjs`, `assets/writing.css`, and `assets/writing.js`. The shared picker is in `scripts/appearance.mjs` and `assets/theme.js`; all palettes and typography live in `assets/style.css`. The original site and favicon are preserved. Legacy reference font files and notices remain in `assets/fonts/writing/`, but no page loads them.
