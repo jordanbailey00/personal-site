@@ -6,6 +6,9 @@
 @font-face{font-family:'New Computer Modern';src:url('/assets/fonts/writing/NewCM10-Italic.woff2') format('woff2');font-weight:400;font-style:italic;font-display:swap}
 @font-face{font-family:'New Computer Modern';src:url('/assets/fonts/writing/NewCM10-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
 @font-face{font-family:'New Computer Modern';src:url('/assets/fonts/writing/NewCM10-BoldItalic.woff2') format('woff2');font-weight:700;font-style:italic;font-display:swap}
+/* The homepage uses the regular outlines for both text and synthesized bold.
+   This keeps emphasis from switching to NewCM's wider, differently shaped bold cut. */
+@font-face{font-family:'New Computer Modern Text';src:url('/assets/fonts/writing/NewCM10-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'New Computer Modern Mono';src:url('/assets/fonts/writing/NewCMMono10-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'New Computer Modern Sans';src:url('/assets/fonts/writing/NewCMSans10-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
 
@@ -24,6 +27,8 @@
 [data-style="fantasy"] :is(.project-title,.writing-list h3,.notes h3){font-size:1.17rem;font-weight:700;line-height:1.4}
 [data-style="fantasy"] :is(.prose p,.prose ul,.prose ol,.info p,.now-row,.project-description,.writing-list p){line-height:1.45}
 /* Give the homepage's introductory serif copy a little more reading room. */
+[data-style="fantasy"] .contents .info{font-family:'New Computer Modern Text','Times New Roman',serif;font-synthesis:weight}
+[data-style="fantasy"] .contents .info strong{font-family:inherit;font-size:inherit;font-style:inherit}
 [data-style="fantasy"] .contents :is(.info p,.now-row p){font-size:1.125rem;line-height:1.55}
 [data-style="fantasy"] .contents .now-label{font-size:.875rem}
 [data-style="fantasy"] :is(.article-lead,.project-description,.writing-list p,.contact-copy){font-size:1rem}

@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, cp, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { profile, projects } from '../content/site.mjs';
 import { renderCV } from './cv.mjs';
 import { writingPages, writingList } from './writing.mjs';
@@ -10,6 +11,15 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const out = path.join(root, 'dist');
 const domain = 'https://www.jordanbailey.dev';
 const year = new Date().getUTCFullYear();
+// A changed stylesheet gets a new URL, so deployments do not reuse old CSS
+// from the browser's ten-minute GitHub Pages cache.
+const stylesheetVersions = Object.fromEntries(await Promise.all(
+  ['style.css', 'cv.css', 'writing.css', 'fantasy.css', 'callouts.css'].map(async name => [
+    name, createHash('sha256').update(await readFile(path.join(root, 'assets', name))).digest('hex').slice(0, 12),
+  ]),
+));
+const versionStylesheets = html => html.replace(/href="\/assets\/([\w-]+\.css)"/g,
+  (_, name) => `href="/assets/${name}?v=${stylesheetVersions[name]}"`);
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const icons = {
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>',
@@ -37,8 +47,8 @@ function document(title, description, pathname, body, options = {}) {
   if (pathname !== '/' || title.startsWith('Page not found')) {
     body = body.replace(/<a class="back-link"[^>]*>.*?<\/a>/, link => `<div class="page-tools">${link}${appearanceControls()}</div>`);
   }
-  return `<!doctype html>
-<html lang="en"${reader ? ' data-page="writing" class="no-writing-js"' : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff"><title>${escape(title)}</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${domain}${pathname}">${options.noindex ? '<meta name="robots" content="noindex,follow">' : ''}<meta property="og:type" content="${options.article ? 'article' : 'website'}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${domain}${pathname}"><meta property="og:image" content="${domain}/assets/jordan.jpg"><meta name="twitter:card" content="summary"><link rel="icon" href="/favicon.png" type="image/png"><script src="/assets/theme.js"></script><script type="module" src="/assets/supernova.js"></script><link rel="stylesheet" href="/assets/style.css">${pathname === "/cv/" ? '<link rel="stylesheet" href="/assets/cv.css">' : ""}${writing ? '<link rel="stylesheet" href="/assets/writing.css">' : ''}<link rel="stylesheet" href="/assets/fantasy.css"><link rel="stylesheet" href="/assets/callouts.css"><link rel="preload" href="/assets/fonts/akzidenz-bold.otf" as="font" type="font/otf" crossorigin>${reader ? '<script src="/assets/writing.js" defer></script>' : ''}</head><body${reader ? ' class="writing-site"' : ''}><a class="skip-link" href="#main">Skip to content</a>${body}${pathname === "/cv/" || reader ? "" : footer()}</body></html>\n`;
+  return versionStylesheets(`<!doctype html>
+<html lang="en"${reader ? ' data-page="writing" class="no-writing-js"' : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff"><title>${escape(title)}</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${domain}${pathname}">${options.noindex ? '<meta name="robots" content="noindex,follow">' : ''}<meta property="og:type" content="${options.article ? 'article' : 'website'}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${domain}${pathname}"><meta property="og:image" content="${domain}/assets/jordan.jpg"><meta name="twitter:card" content="summary"><link rel="icon" href="/favicon.png" type="image/png"><script src="/assets/theme.js"></script><script type="module" src="/assets/supernova.js"></script><link rel="stylesheet" href="/assets/style.css">${pathname === "/cv/" ? '<link rel="stylesheet" href="/assets/cv.css">' : ""}${writing ? '<link rel="stylesheet" href="/assets/writing.css">' : ''}<link rel="stylesheet" href="/assets/fantasy.css"><link rel="stylesheet" href="/assets/callouts.css"><link rel="preload" href="/assets/fonts/akzidenz-bold.otf" as="font" type="font/otf" crossorigin>${reader ? '<script src="/assets/writing.js" defer></script>' : ''}</head><body${reader ? ' class="writing-site"' : ''}><a class="skip-link" href="#main">Skip to content</a>${body}${pathname === "/cv/" || reader ? "" : footer()}</body></html>\n`);
 }
 const pages = new Map();
 const noindexPages = new Set();

@@ -60,6 +60,8 @@ The **Aa** control selects Classic or Fantasy independently of the paintbrush th
 
 `data-style` scopes the Fantasy overrides. The package consumes the shared palette variables instead of assigning a theme, so either style works with all seven theme choices. `jordan-bailey-style` and `jordan-bailey-theme` are separate local storage preferences, applied before CSS loads and synchronized across tabs. Storage failures still permit selections for the current page.
 
+The homepage About Me and Now paragraphs use 18px Fantasy text. Introductory emphasis uses the same regular New Computer Modern outlines with synthesized bold, so highlighted words retain the surrounding text's letterforms; headings keep the original bold cut. Dark CV themes pair muted green, blue, and rose backgrounds with light accent text. Generated stylesheet URLs include content hashes to prevent stale CSS after deployments.
+
 To add a footnote, use the `.with-margin` wrapper from `templates/article.html`, containing a text `<div>` and an `<aside class="margin-note">`. Put it around the paragraph that contains the reference, give each reference/note pair unique IDs and reciprocal links, and keep notes concise. The shared grid reserves enough vertical space for long notes to avoid collisions. No scripting or duplicate mobile note content is required.
 
 

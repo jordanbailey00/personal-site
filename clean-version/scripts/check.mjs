@@ -15,8 +15,8 @@ for (const file of files.filter(file => file.endsWith('.html'))) {
       errors.push(`${file}: missing or duplicate ${kind} choices`);
     }
   }
-  if (!html.includes('href="/assets/fantasy.css"')) errors.push(`${file}: missing Fantasy style package`);
-  if (!html.includes('href="/assets/callouts.css"')) errors.push(`${file}: missing callout styles`);
+  if (!html.includes('href="/assets/fantasy.css?v=')) errors.push(`${file}: missing versioned Fantasy style package`);
+  if (!html.includes('href="/assets/callouts.css?v=')) errors.push(`${file}: missing versioned callout styles`);
   if (!html.includes('src="/assets/supernova.js"')) errors.push(`${file}: missing Supernova background support`);
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
   if (new Set(ids).size !== ids.length) errors.push(`${file}: duplicate IDs`);
