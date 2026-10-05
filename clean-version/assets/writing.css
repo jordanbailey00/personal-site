@@ -38,6 +38,9 @@
 .inline-contents a:hover{text-decoration:underline;text-underline-offset:3px}
 .reading-prose h2,.reading-prose h3,.margin-note{scroll-margin-top:82px}
 .reading-prose section:first-child{margin-top:0}
+/* Both styles honor authored drop caps; Fantasy supplies its ornate letterform. */
+.reading-prose .drop-cap{display:flow-root}
+.reading-prose .drop-cap::first-letter{font-family:var(--font-heading);font-weight:600;font-style:normal;float:left;font-size:4.6em;line-height:.85;margin:.06em .12em 0 0;color:var(--ink)}
 .reading-prose .heading-link{text-decoration:none;color:var(--ink)}
 .reading-prose .heading-link:hover{color:var(--focus)}
 .chapter-deck{color:var(--muted)}
