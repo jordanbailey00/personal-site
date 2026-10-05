@@ -23,6 +23,9 @@
 [data-style="fantasy"] .prose h3{font-size:1.17rem;font-weight:700;line-height:1.4;margin-top:2.5em}
 [data-style="fantasy"] :is(.project-title,.writing-list h3,.notes h3){font-size:1.17rem;font-weight:700;line-height:1.4}
 [data-style="fantasy"] :is(.prose p,.prose ul,.prose ol,.info p,.now-row,.project-description,.writing-list p){line-height:1.45}
+/* Give the homepage's introductory serif copy a little more reading room. */
+[data-style="fantasy"] .contents :is(.info p,.now-row p){font-size:1.125rem;line-height:1.55}
+[data-style="fantasy"] .contents .now-label{font-size:.875rem}
 [data-style="fantasy"] :is(.article-lead,.project-description,.writing-list p,.contact-copy){font-size:1rem}
 [data-style="fantasy"] .prose p{margin-bottom:1em}
 [data-style="fantasy"] :is(.page-subtitle,.chapter-deck){font-style:italic}
