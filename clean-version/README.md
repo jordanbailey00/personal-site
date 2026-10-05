@@ -51,7 +51,7 @@ To add or migrate an essay:
 
 The template demonstrates `.with-margin` + `.margin-note` (responsive side footnotes with reference and return links), `.concept-box`, `.example-box`, `.notebook` with copyable code and static output, `.reading-details`, `.article-figure`, `.wide-figure`, `.table-scroll`, and `.reference-list`. Code/output is presentational; it does not execute readers' code. Figures use the reading column’s width and may contain supplied images, video, or accessible iframe embeds. Equations can use semantic MathML or authored HTML; no remote rendering service is required. All writing content remains readable without JavaScript; navigation controls, reading progress, print, and copying progressively enhance it.
 
-Use `<p class="drop-cap">…</p>` for a section's opening paragraph. Both styles render its initial as a drop cap: Classic uses its heading typeface, while Fantasy uses its decorative Goudy initial. The text remains one paragraph for selection and screen readers.
+Use `<p class="drop-cap">…</p>` for a section's opening paragraph. Both styles share Fantasy's decorative Goudy initial, with the same size, weight, and spacing. Its rule and font import live in `assets/writing.css` so switching styles does not replace the drop cap. The text remains one paragraph for selection and screen readers.
 
 The reading implementation is in `scripts/writing.mjs`, `assets/writing.css`, and `assets/writing.js`. The shared appearance controls are in `scripts/appearance.mjs` and `assets/theme.js`. All palettes and Classic typography live in `assets/style.css`; `assets/fantasy.css` is the separate Fantasy style package. The original site and favicon are preserved.
 

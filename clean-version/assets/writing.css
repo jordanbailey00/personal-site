@@ -1,4 +1,5 @@
 /* Reading layout; typography and all theme colors come from style.css. */
+@import url('/assets/fonts/writing/initials.css');
 :root[data-page="writing"]{--sidebar-width:248px;scroll-padding-top:0}
 .writing-site .skip-link{z-index:90}
 .book-sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar-width);padding:30px 24px 22px;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;z-index:40;font-size:.85rem;scrollbar-width:thin}
@@ -38,9 +39,10 @@
 .inline-contents a:hover{text-decoration:underline;text-underline-offset:3px}
 .reading-prose h2,.reading-prose h3,.margin-note{scroll-margin-top:82px}
 .reading-prose section:first-child{margin-top:0}
-/* Both styles honor authored drop caps; Fantasy supplies its ornate letterform. */
+/* Keep Fantasy's decorative initial identical across both style packages.
+   100.64px preserves its original 6.29 × 16px size regardless of body type. */
 .reading-prose .drop-cap{display:flow-root}
-.reading-prose .drop-cap::first-letter{font-family:var(--font-heading);font-weight:600;font-style:normal;float:left;font-size:4.6em;line-height:.85;margin:.06em .12em 0 0;color:var(--ink)}
+.reading-prose .drop-cap::first-letter{font-family:'Goudy Initialen','New Computer Modern',serif;font-weight:400;font-style:normal;float:left;font-size:100.64px;line-height:.8;letter-spacing:.32px;margin:.0547em .04em 0 0;color:var(--ink)}
 .reading-prose .heading-link{text-decoration:none;color:var(--ink)}
 .reading-prose .heading-link:hover{color:var(--focus)}
 .chapter-deck{color:var(--muted)}

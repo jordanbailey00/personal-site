@@ -1,7 +1,6 @@
 /* Fantasy is a typography and decoration package, independent of color themes.
    Reference: jordanbailey00/asitpofborscht @ 29c1c634. The reference uses a
    10px rem; sizes below preserve its rendered 16/24/32px type scale. */
-@import url('/assets/fonts/writing/initials.css');
 @font-face{font-family:'New Computer Modern';src:url('/assets/fonts/writing/NewCM10-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'New Computer Modern';src:url('/assets/fonts/writing/NewCM10-Italic.woff2') format('woff2');font-weight:400;font-style:italic;font-display:swap}
 @font-face{font-family:'New Computer Modern';src:url('/assets/fonts/writing/NewCM10-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
@@ -44,8 +43,6 @@
 [data-style="fantasy"] .book-name{font-size:1.5rem;font-weight:700}
 [data-style="fantasy"] .book-sidebar{font-size:.875rem;line-height:1.5}
 [data-style="fantasy"] .book-ornament,[data-style="fantasy"] main hr{width:30%;min-width:120px;height:auto;aspect-ratio:454/24;margin:2em auto;border:0;font-size:0;background:var(--ink);mask:url('/assets/decorations/ornament.svg') center/contain no-repeat;-webkit-mask:url('/assets/decorations/ornament.svg') center/contain no-repeat;print-color-adjust:exact;-webkit-print-color-adjust:exact}
-[data-style="fantasy"] .drop-cap{display:flow-root}
-[data-style="fantasy"] .drop-cap::first-letter{font-family:'Goudy Initialen','New Computer Modern',serif;font-weight:400;font-style:normal;float:left;font-size:6.29em;line-height:.8;margin:.0547em .04em 0 0;color:var(--ink)}
 [data-style="fantasy"] .drop-cap::first-line{font-variant-caps:small-caps;letter-spacing:.02em}
 [data-style="fantasy"] .margin-note{font-size:.75rem;line-height:1.3}
 [data-style="fantasy"] .reading-prose blockquote{padding:12px 20px;border-left:0;border-block:1px solid var(--note-border);background:var(--note-bg);color:var(--ink)}
