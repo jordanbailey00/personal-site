@@ -10,7 +10,11 @@ const printIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 export function writingList({ escape, limit = Infinity }) {
   const published = posts.filter(post => post.status === 'published').slice(0, limit);
-  return published.length ? `<ol class="writing-list">${published.map(post => `<li><h3><a href="/writing/${post.slug}/">${escape(post.title)}</a></h3><p>${escape(post.subtitle)}</p><time datetime="${post.date}">${formatDate(post.date)}</time></li>`).join('')}</ol>` : '<p>No essays published yet.</p>';
+  return published.length ? `<ol class="writing-list">${published.map(post => {
+    const thumbnail = post.thumbnail;
+    const image = thumbnail ? `<img class="writing-thumbnail" src="${escape(thumbnail.src)}" alt="${escape(thumbnail.alt)}" width="${thumbnail.width}" height="${thumbnail.height}" loading="lazy" decoding="async">` : '';
+    return `<li><a class="writing-entry${thumbnail ? ' has-thumbnail' : ''}" href="/writing/${post.slug}/" aria-labelledby="writing-title-${post.slug}">${image}<div class="writing-summary"><h3 id="writing-title-${post.slug}">${escape(post.title)}</h3><p>${escape(post.subtitle)}</p><time datetime="${post.date}">${formatDate(post.date)}</time></div></a></li>`;
+  }).join('')}</ol>` : '<p>No essays published yet.</p>';
 }
 
 export async function writingPages({ root, escape, appearanceControls }) {
@@ -21,6 +25,7 @@ export async function writingPages({ root, escape, appearanceControls }) {
     slugs.add(post.slug);
     if (!post.title || !post.subtitle || !/^\d{4}-\d{2}-\d{2}$/.test(post.date) || Number.isNaN(Date.parse(`${post.date}T12:00:00Z`))) throw new Error(`Incomplete writing metadata: ${post.slug}`);
     if (!/^[a-z0-9-]+\.html$/.test(post.file)) throw new Error(`Invalid article filename: ${post.file}`);
+    if (post.thumbnail && (!post.thumbnail.src?.startsWith('/writing/') || !post.thumbnail.alt?.trim() || !Number.isInteger(post.thumbnail.width) || post.thumbnail.width <= 0 || !Number.isInteger(post.thumbnail.height) || post.thumbnail.height <= 0)) throw new Error(`Incomplete writing thumbnail: ${post.slug}`);
   }
   const linkTo = post => `/writing/${post.slug}/`;
   const contents = headings => headings.map(heading => `<li class="${heading.level === '3' ? 'subsection-link' : ''}"><a href="#${escape(heading.id)}" data-section-link>${heading.title}</a></li>`).join('');
