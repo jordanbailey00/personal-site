@@ -10,7 +10,7 @@ npm run dev
 
 Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, style/theme independence, keyboard menu dismissal, multi-article listing behavior, and the Supernova animation lifecycle.
 
-Profile and project metadata live in `content/site.mjs`. The three project articles in `content/*.html` were imported from the original site with `scripts/import-case-studies.cjs`; their prose and code examples are preserved, with empty screenshot placeholders omitted. Layout and page generation live in `scripts/build.mjs`; styling lives in `assets/style.css`.
+Profile and project metadata live in `content/site.mjs`. The three project summaries in `content/*.html` give a short, plain-language introduction and a few outcomes. Keep these around 100 words, with occasional light humor; long explanations belong in Writing, and implementation details belong on GitHub. The original long case studies remain in the retired site and Git history. `scripts/import-case-studies.cjs` is a legacy importer and would overwrite the concise summaries. Layout and page generation live in `scripts/build.mjs`; styling lives in `assets/style.css`.
 
 ## CV
 

@@ -22,7 +22,7 @@ export const projects = [
     category: 'Game engines', badge: '',
     image: 'runec.png', alt: 'Varrock rendered in the RuneC desktop game viewer',
     description: 'An Old School RuneScape-style world implemented in C. A modular, deterministic simulation powers both a playable Raylib client and fast headless environments.',
-    detail: 'One game engine for interactive play and headless simulation.',
+    detail: 'A RuneScape-inspired world to explore and build on.',
     tools: 'C · Raylib · Python · CMake',
   },
   {
