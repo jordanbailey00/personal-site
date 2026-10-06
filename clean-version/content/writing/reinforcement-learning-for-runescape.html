@@ -56,7 +56,7 @@
   </figure>
   <h3 id="one-engine">One engine, several ways to use it</h3>
   <p>The project began with a Kotlin/JVM prototype. I moved the simulation to C in March, then used offline cache-decoding tools to produce terrain, objects, collision maps, and visual assets. Raylib supplied the rendering layer.</p>
-  <p>The useful architectural decision was to keep gameplay in one place. Drawing a projectile and resolving its damage are different jobs. If the viewer and trainer implement combat independently, a convincing replay can hide a different training environment.</p>
+  <p>The useful architectural decision was to keep gameplay in one place. Drawing a projectile and resolving its damage are different jobs. If the viewer and trainer implement combat independently, a convincing replay can hide a different training environment. One Jad was quite enough; I didn’t need two implementations disagreeing about how to kill me.</p>
   <div class="table-scroll"><table>
     <caption>The components and the responsibilities they keep.</caption>
     <thead><tr><th scope="col">Component</th><th scope="col">Responsibility</th></tr></thead>
@@ -85,7 +85,7 @@
 <section aria-labelledby="policy-interface">
   <h2 id="policy-interface">III. Give the agent eyes and hands</h2>
   <p class="chapter-deck">What the policy can observe and choose is part of the experiment.</p>
-  <p>A <strong>policy</strong> maps observations to action probabilities. This one starts with randomly initialized weights. It doesn’t know that a large red creature on wave 63 deserves special attention. It doesn’t see a large red creature at all.</p>
+  <p>A <strong>policy</strong> maps observations to action probabilities. This one starts with randomly initialized weights. It doesn’t know that a large red creature on wave 63 deserves special attention. It doesn’t see a large red creature at all. Jad arrives as numbers, which is a fairly undignified entrance for a final boss.</p>
   <h3 id="observations">A 320-number view of the cave</h3>
   <p>Each decision receives 320 floating-point values. Structured observations let me study combat decisions without first solving image recognition or mouse control.</p>
   <div class="table-scroll"><table>
@@ -181,7 +181,7 @@ gae_lambda = 0.9</code></pre></div></figure>
   <h3 id="survival-trap">Survival can be a dead end</h3>
   <p>An early 500M-step run reached mean wave 27.6 and completed zero caves in 10,174 episodes. Later, I tried a 200,000-tick episode cap with a 2B-step budget. Mean episode length reached 199,939 ticks. Mean wave stayed near 30. There were still no completions.</p>
   <p>I had made room for an exceptionally long unsuccessful cave. The cap and training budget both changed, so this isn’t a controlled estimate of the cap’s effect. It does establish that extra survival time was not becoming progress.</p>
-  <p>Rewarding protection introduced another problem. In one failed run, the correct-prayer component contributed 86.87 reward per episode, while progress contributed 2.92 before total-reward clipping. The policy spent about 83% of its time without a target. I was paying it well to defend a fight it wasn’t finishing.</p>
+  <p>Rewarding protection introduced another problem. In one failed run, the correct-prayer component contributed 86.87 reward per episode, while progress contributed 2.92 before total-reward clipping. The policy spent about 83% of its time without a target. I was paying it well to defend a fight it wasn’t finishing. The policy had found a steady job. I had meant to offer a quest.</p>
   <p>A later matched 750M-step comparison removed the remaining correct-danger-prayer reward. Completion improved from <strong>88.02% to 92.74%</strong>. That does not prove that prayer shaping is always bad. It shows that this extra payment was not helping that setup.</p>
   <h3 id="required-work">Count the work still required</h3>
   <p>The reward design I kept gives dense feedback for reducing the work left in the cave. “Dense” means feedback arrives along the way, rather than only at the final kill.</p>
@@ -222,7 +222,7 @@ print(f"{damage:+.3f}, {healing:+.3f}, {damage + healing:+.3f}")</code></pre></d
 <section aria-labelledby="results">
   <h2 id="results">VI. What the agent learned</h2>
   <p class="chapter-deck">A strong checkpoint and a dependable training recipe are different results.</p>
-  <p>The detailed baseline here is native PufferLib 5.0 trial <code>0024</code>, selected in September. It trained for 499,122,176 steps in <strong>434.08 seconds on an RTX 5070 Ti</strong>, excluding final evaluation. That is the cost of this run. It does not include building the simulator or searching for the recipe.</p>
+  <p>The detailed baseline here is native PufferLib 5.0 trial <code>0024</code>, selected in September. It trained for 499,122,176 steps in <strong>434.08 seconds on an RTX 5070 Ti</strong>, excluding final evaluation. That is the cost of this run. It does not include building the simulator or searching for the recipe. The GPU got the short assignment.</p>
   <p>The retained log contains four training-bin averages and a separate final evaluation. Early bins show the agent progressing through ordinary waves. Around the third bin it begins reaching Jad, but almost never finishes. By the fourth, it reaches him in most episodes and completion has increased sharply.</p>
   <figure class="article-figure capture-placeholder">
     <div><span class="capture-label">Visualization to add · Training results</span><h3>Learning to reach Jad, then finish</h3><p>Create three aligned plots against agent steps: mean wave reached, mean episode length in ticks, and the rates of reaching Jad and completing the cave. Use the four baseline training-bin averages in the linked results data. Show the final evaluation at 499.12M steps with a separate marker: 89.25% reached Jad and 88.61% completed.</p></div>
