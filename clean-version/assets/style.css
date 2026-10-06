@@ -82,14 +82,14 @@ svg{width:1em;height:1em;vertical-align:-.1em}
 .writing-list{list-style:none;padding:0;margin:0}
 .writing-list>li{padding:24px 0;border-bottom:1px solid var(--line)}
 .writing-entry{display:grid;gap:24px;align-items:center;min-width:0}
-.writing-entry.has-thumbnail{grid-template-columns:132px minmax(0,1fr)}
+.writing-entry.has-thumbnail{grid-template-columns:minmax(0,1fr) 132px}
 .writing-thumbnail{display:block;width:132px;height:132px;object-fit:contain;border-radius:4px;background:var(--surface)}
 .writing-summary{min-width:0;overflow-wrap:break-word}
 .writing-list h3{font-size:1.05rem;font-weight:600;line-height:1.5;margin:0 0 6px}
 .writing-entry:hover h3,.writing-entry:focus-visible h3{text-decoration:underline;text-underline-offset:3px}
 .writing-list p{font-size:.95rem;line-height:1.5;margin-bottom:9px}
 .writing-list time{font-size:.8rem;color:var(--muted)}
-@media(max-width:500px){.writing-entry{gap:16px;align-items:start}.writing-entry.has-thumbnail{grid-template-columns:88px minmax(0,1fr)}.writing-thumbnail{width:88px;height:88px}}
+@media(max-width:500px){.writing-entry{gap:16px;align-items:start}.writing-entry.has-thumbnail{grid-template-columns:minmax(0,1fr) 88px}.writing-thumbnail{width:88px;height:88px}}
 .notes{display:grid;grid-template-columns:1fr 1fr;gap:32px}
 .notes h3{font-size:1rem;font-weight:500;margin-bottom:4px}
 .notes p{font-size:.9rem;color:var(--muted)}

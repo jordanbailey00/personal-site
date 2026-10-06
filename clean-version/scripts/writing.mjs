@@ -13,7 +13,7 @@ export function writingList({ escape, limit = Infinity }) {
   return published.length ? `<ol class="writing-list">${published.map(post => {
     const thumbnail = post.thumbnail;
     const image = thumbnail ? `<img class="writing-thumbnail" src="${escape(thumbnail.src)}" alt="${escape(thumbnail.alt)}" width="${thumbnail.width}" height="${thumbnail.height}" loading="lazy" decoding="async">` : '';
-    return `<li><a class="writing-entry${thumbnail ? ' has-thumbnail' : ''}" href="/writing/${post.slug}/" aria-labelledby="writing-title-${post.slug}">${image}<div class="writing-summary"><h3 id="writing-title-${post.slug}">${escape(post.title)}</h3><p>${escape(post.subtitle)}</p><time datetime="${post.date}">${formatDate(post.date)}</time></div></a></li>`;
+    return `<li><a class="writing-entry${thumbnail ? ' has-thumbnail' : ''}" href="/writing/${post.slug}/" aria-labelledby="writing-title-${post.slug}"><div class="writing-summary"><h3 id="writing-title-${post.slug}">${escape(post.title)}</h3><p>${escape(post.subtitle)}</p><time datetime="${post.date}">${formatDate(post.date)}</time></div>${image}</a></li>`;
   }).join('')}</ol>` : '<p>No essays published yet.</p>';
 }
 
