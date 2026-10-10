@@ -32,7 +32,13 @@ To restore the original website, restore the deployment workflow from the archiv
 - RuneC and Fight Caves screenshots: the respective public project READMEs.
 - Byte World image: the original website's `public/byte_world_thumbnail.png`.
 
-The reference person's biography, projects, and other personal content are not included. Learning remains marked coming soon.
+The reference person's biography, projects, and other personal content are not included.
+
+## Books and software
+
+The homepage and `/learning/` share the book shelf and software recommendations. Edit the `books` and `software` arrays in `content/site.mjs` to add or change entries. Books have a cover filename, its pixel dimensions, an author, and an official link; software entries have a name, link, and short description. `scripts/recommendations.mjs` renders both lists, and `assets/style.css` supplies responsive layouts that use the existing theme and style choices.
+
+Cover images are local WebP assets in `public/books/`, converted from the authors' or publishers' cover images. See `public/books/SOURCES.md` for their sources. They load lazily and display without cropping.
 
 ## Writing
 
