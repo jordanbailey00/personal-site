@@ -27,7 +27,8 @@ To restore the original website, restore the deployment workflow from the archiv
 ## Assets
 
 - Favicon: the original website's `public/favicon.png`, preserved unchanged at `/favicon.png` in both light and dark mode.
-- Design and heading fonts: the user's downloaded reference in `oracle/aereeeee.github.io/`.
+- Design and name font: the user's downloaded reference in `oracle/aereeeee.github.io/`.
+- Ubuntu Sans: Canonical’s unmodified variable WOFF2 fonts (regular and italic), version 1.006, from [Ubuntu-Sans-fonts](https://github.com/canonical/Ubuntu-Sans-fonts/tree/main/fonts/webfont). Copyright 2011, 2022, 2023 Canonical Ltd.; the Ubuntu Font Licence is included in `assets/fonts/ubuntu-sans-LICENCE.txt`. These fonts are served locally, without an external font-service dependency.
 - Profile photo: Jordan's public GitHub avatar.
 - RuneC and Fight Caves screenshots: the respective public project READMEs.
 - Byte World image: the original website's `public/byte_world_thumbnail.png`.
@@ -66,7 +67,12 @@ The reading implementation is in `scripts/writing.mjs`, `assets/writing.css`, an
 
 ## Style packages
 
-The **Aa** control selects Classic or Fantasy independently of the paintbrush theme control. Classic is the default and uses the exact typography of [the reference CV](https://aereeeee.github.io/#/cv), verified against its live computed styles on October 10, 2026. Its body stack is `-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif` with the reference emoji fallbacks: 16.2px body text at 1.5 line height, 32.4px regular-weight section headings, 16.2px bold entry titles, and 14.58px light supporting descriptions. Akzidenz Grotesk is reserved for page titles (36.45px, weight 600, 1.25 line height) and profile subtitles (18.954px, weight 400, 1.2 line height). These sizes remain the same on mobile, as on the reference. Homepage, recommendations, project pages, CV, and articles share this hierarchy. Existing color themes and content layouts are retained, with the reference light palette and 48.5rem reading-column width shared across Classic pages. Fantasy follows [the supplied asitpofborscht fork](https://github.com/jordanbailey00/asitpofborscht) at commit `29c1c6341bbe0ef9f68285ca0e8d2b7c632f8fb4`: New Computer Modern serif text, its 16/24/32px type scale, real small-cap headings, Goudy Initialen drop caps, Vectorian dividers, compact tables, and notebook cells with hanging prompts. The page structure and navigation are shared. The font and decoration notices and licenses are included with the assets.
+The **Aa** control selects Classic or Fantasy independently of the paintbrush theme control. Classic explicitly loads bundled **Ubuntu Sans 1.006** for body text, subtitles, section headings, entry titles, and the CV. Akzidenz Grotesk BQ Bold is used only for Jordan's name on the homepage and CV. The user-supplied font-inspector screenshots are the typography reference; relying on `system-ui` or OS fallback stacks does not reproduce their Ubuntu Sans appearance on other systems.
+
+The homepage uses a 16.2px root: the name is 2.5rem / 1 line height / weight 600 / −0.08rem tracking; the subtitle is 1.17rem / 1.2 / 400; body copy is 1rem / 1.6 / 400; section headings are 1.4rem / 1.6 / 500; entry titles are 1rem / 1.6 / 600; date labels are 0.8rem / 1.3 / 400. Project descriptions use 0.95rem / 1.3 / 400. Homepage section underlines and 3rem gaps keep sections distinct. At the reference's 700px breakpoint, the homepage name becomes 2.2rem and its subtitle 0.85rem.
+
+The CV retains its separate scale: 2.25rem / 1.25 / 600 for the Akzidenz name, 2rem / 1.5 / 400 for section headings, and 1rem / 1.5 body copy. All CV text except the name, including the subtitle, uses Ubuntu Sans. Color themes and existing content layouts remain available.
+Fantasy follows [the supplied asitpofborscht fork](https://github.com/jordanbailey00/asitpofborscht) at commit `29c1c6341bbe0ef9f68285ca0e8d2b7c632f8fb4`: New Computer Modern serif text, its 16/24/32px type scale, real small-cap headings, Goudy Initialen drop caps, Vectorian dividers, compact tables, and notebook cells with hanging prompts. The page structure and navigation are shared. The font and decoration notices and licenses are included with the assets.
 
 `data-style` scopes the Fantasy overrides. The package consumes the shared palette variables instead of assigning a theme, so either style works with all seven theme choices. `jordan-bailey-style` and `jordan-bailey-theme` are separate local storage preferences, applied before CSS loads and synchronized across tabs. Storage failures still permit selections for the current page.
 

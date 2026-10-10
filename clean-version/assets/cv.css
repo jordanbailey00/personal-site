@@ -1,16 +1,19 @@
 /* The supplied reference's CV grid, spacing, and hierarchy, adapted to the site's themes. */
 .cv{font-family:var(--font-body);display:grid;justify-items:stretch;grid-template-columns:[screen-start] 1fr [page-start kicker-start] minmax(min-content,3.5rem) [middle-start] minmax(min-content,3.5rem) [text-start kicker-end] repeat(8,minmax(min-content,3.5rem)) [text-end gutter-start] minmax(min-content,3.5rem) [middle-end] minmax(min-content,3.5rem) [page-end gutter-end] 1fr [screen-end];column-gap:1.5rem;padding-top:1rem;padding-bottom:3rem;line-height:1.5;color:var(--cv-ink)}
 :root{--cv-ink:var(--ink);--cv-description:var(--muted);--cv-ai-bg:color-mix(in srgb,#38ad7c 20%,var(--paper));--cv-ai-ink:var(--ink);--cv-systems-bg:color-mix(in srgb,#3297c8 20%,var(--paper));--cv-systems-ink:var(--ink);--cv-management-bg:color-mix(in srgb,#c55ba1 20%,var(--paper));--cv-management-ink:var(--ink)}
+:root[data-theme="light"]{--cv-ink:#414141;--cv-description:#666}
+@media(prefers-color-scheme:light){:root:not([data-theme]){--cv-ink:#414141;--cv-description:#666}}
 /* Soft accent text on deeper tints keeps the three highlights distinct in dark themes. */
 :root[data-theme="coal"],:root[data-theme="navy"],:root[data-theme="ayu"],:root[data-theme="supernova"]{--cv-ai-bg:color-mix(in srgb,#38ad7c 30%,var(--paper));--cv-ai-ink:#b6e5d2;--cv-systems-bg:color-mix(in srgb,#3297c8 30%,var(--paper));--cv-systems-ink:#badff2;--cv-management-bg:color-mix(in srgb,#c55ba1 30%,var(--paper));--cv-management-ink:#edc9e2}
 @media(prefers-color-scheme:dark){:root:not([data-theme]){--cv-ai-bg:color-mix(in srgb,#38ad7c 30%,var(--paper));--cv-ai-ink:#b6e5d2;--cv-systems-bg:color-mix(in srgb,#3297c8 30%,var(--paper));--cv-systems-ink:#badff2;--cv-management-bg:color-mix(in srgb,#c55ba1 30%,var(--paper));--cv-management-ink:#edc9e2}}
 .cv>*{grid-column:text-start/page-end;min-width:0}
+.cv strong{font-weight:700}
 .cv a{color:inherit}
 .cv a:hover{text-decoration:underline}
 .cv-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:1rem}
-.cv #cv-title{font-family:var(--font-heading);font-weight:600;line-height:1.25;font-size:2.25rem;letter-spacing:-.08rem;color:var(--title-ink)}
+.cv #cv-title{font-family:var(--font-name);font-weight:600;line-height:1.25;font-size:2.25rem;letter-spacing:-.08rem;color:var(--title-ink)}
 .cv #cv-title a:hover{text-decoration:none}
-#cv-subtitle{font-family:var(--font-heading);font-size:1.17rem;font-weight:400;line-height:1.2;color:var(--subtitle-ink)}
+#cv-subtitle{font-family:var(--font-body);font-size:1.17rem;font-weight:400;line-height:1.2;color:var(--subtitle-ink)}
 .cv-intro{margin:.75rem 0;line-height:1.5}
 .cv-intro strong{font-weight:700;border-radius:1rem;padding:0 .5rem;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .cv-ai{background:var(--cv-ai-bg);color:var(--cv-ai-ink)}
