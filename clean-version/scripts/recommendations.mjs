@@ -1,7 +1,7 @@
 import { books, software } from '../content/site.mjs';
 
 export function bookList({ escape }) {
-  return `<ul class="book-list">${books.map(book => `<li><a class="book-entry" href="${escape(book.href)}"><div class="book-cover"><img src="/books/${escape(book.cover)}" alt="Cover of ${escape(book.title)}" width="${book.width}" height="${book.height}" loading="lazy" decoding="async"></div><h3 class="recommendation-title">${escape(book.title)}</h3><p class="book-author">${escape(book.author)}</p></a></li>`).join('')}</ul>`;
+  return `<ul class="book-list">${books.map(book => `<li><div class="book-entry"><div class="book-cover"><img src="/books/${escape(book.cover)}" alt="Cover of ${escape(book.title)}" width="${book.width}" height="${book.height}" loading="lazy" decoding="async"></div><h3 class="recommendation-title">${escape(book.title)}</h3><p class="book-author">${escape(book.author)}</p></div></li>`).join('')}</ul>`;
 }
 
 export function softwareList({ escape }) {

@@ -40,37 +40,31 @@ export const books = [
   {
     title: 'Operating Systems: Three Easy Pieces',
     author: 'Remzi H. Arpaci-Dusseau & Andrea C. Arpaci-Dusseau',
-    href: 'https://pages.cs.wisc.edu/~remzi/OSTEP/',
     cover: 'operating-systems-three-easy-pieces.webp', width: 414, height: 648,
   },
   {
     title: 'The Evolution of Civilizations',
     author: 'Carroll Quigley',
-    href: 'https://about.libertyfund.org/books/the-evolution-of-civilizations/',
     cover: 'evolution-of-civilizations.webp', width: 535, height: 800,
   },
   {
     title: 'The Mythical Man-Month',
     author: 'Frederick P. Brooks Jr.',
-    href: 'https://www.informit.com/store/mythical-man-month-essays-on-software-engineering-anniversary-9780201835953',
     cover: 'mythical-man-month.webp', width: 160, height: 238,
   },
   {
     title: 'Build a Large Language Model (From Scratch)',
     author: 'Sebastian Raschka',
-    href: 'https://www.manning.com/books/build-a-large-language-model-from-scratch',
     cover: 'build-a-large-language-model.webp', width: 360, height: 451,
   },
   {
     title: 'Reinforcement Learning from Human Feedback',
     author: 'Nathan Lambert',
-    href: 'https://rlhfbook.com/',
     cover: 'reinforcement-learning-from-human-feedback.webp', width: 500, height: 800,
   },
   {
     title: 'Information Theory, Inference, and Learning Algorithms',
     author: 'David J. C. MacKay',
-    href: 'https://www.inference.org.uk/mackay/itila/',
     cover: 'information-theory-inference-learning.webp', width: 134, height: 176,
   },
 ];

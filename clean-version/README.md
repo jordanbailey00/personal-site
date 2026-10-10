@@ -36,7 +36,7 @@ The reference person's biography, projects, and other personal content are not i
 
 ## Books and software
 
-The homepage and `/learning/` share the book shelf and software recommendations. Edit the `books` and `software` arrays in `content/site.mjs` to add or change entries. Books have a cover filename, its pixel dimensions, an author, and an official link; software entries have a name, link, and short description. `scripts/recommendations.mjs` renders both lists, and `assets/style.css` supplies responsive layouts that use the existing theme and style choices.
+The homepage and `/learning/` share the book shelf and software recommendations. Edit the `books` and `software` arrays in `content/site.mjs` to add or change entries. Books have a cover filename, its pixel dimensions, and an author; they display without hyperlinks. Software entries have a name, link, and short description. `scripts/recommendations.mjs` renders both lists, and `assets/style.css` supplies responsive layouts that use the existing theme and style choices. Main sections have full-width dividers and space above their larger headings, in both Classic and Fantasy.
 
 Cover images are local WebP assets in `public/books/`, converted from the authors' or publishers' cover images. See `public/books/SOURCES.md` for their sources. They load lazily and display without cropping.
 
