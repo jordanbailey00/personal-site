@@ -3,7 +3,7 @@
 :root[data-page="writing"]{--sidebar-width:248px;scroll-padding-top:0}
 .writing-site .skip-link{z-index:90}
 .book-sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar-width);padding:30px 24px 22px;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;z-index:40;font-size:.85rem;scrollbar-width:thin}
-.book-author{color:var(--muted);font-size:.85rem}
+.book-sidebar .book-author{color:var(--muted);font-size:.85rem}
 .book-name{font-family:var(--font-heading);font-size:1.4rem;font-weight:600;margin:5px 0 30px}
 .sidebar-label{color:var(--muted);font-size:.75rem;margin-bottom:12px}
 .book-chapters,.section-links{list-style:none;margin:0;padding:0}
@@ -29,7 +29,7 @@
 .reader-button:hover{background:var(--hover);color:var(--ink)}
 .toolbar-title{text-align:center;font-size:.85rem;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .print-button{margin-left:40px}
-.book-main{max-width:802px;padding:40px 24px 25px;margin:0 auto;outline:none;overflow-wrap:break-word}
+.book-main{max-width:calc(var(--content-width) + 48px);padding:40px 24px 25px;margin:0 auto;outline:none;overflow-wrap:break-word}
 .book-kicker{font-size:.8rem;color:var(--muted);margin-bottom:12px}
 .essay-header{margin-bottom:32px}
 .essay-meta{font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px}
@@ -100,7 +100,7 @@
 @media(max-width:800px){.book-sidebar{display:none;width:min(300px,82vw);box-shadow:8px 0 25px #0002}.book-page{--reader-space:calc(100vw - var(--sidebar-width));margin-left:0}.reading-progress{left:0}.contents-open .book-sidebar{display:flex;z-index:70}.contents-open .sidebar-shade{display:block;position:fixed;inset:0;background:#0007;border:0;z-index:60;width:100%;height:100%;cursor:pointer}.book-main{padding:24px 20px}.reader-toolbar{padding-inline:16px;gap:12px}.no-writing-js .book-sidebar{display:flex;position:static;width:auto;padding:20px;box-shadow:none}.no-writing-js .book-sidebar nav,.no-writing-js .sidebar-bottom{display:none}.no-writing-js .book-name{margin:0}}
 @media(max-width:500px){.inline-contents ol{grid-template-columns:1fr}.book-footer{flex-direction:column;gap:8px}.print-button{margin-left:0}.toolbar-title{font-size:.8rem}.reader-toolbar{gap:10px}.capture-placeholder{padding:18px}.notebook figcaption{gap:10px}}
 /* Reserve equal gutters on both sides; notes never push the article left. */
-@media screen and (min-width:1200px){.book-main{width:min(802px,calc(var(--reader-space) - 368px))}}
+@media screen and (min-width:1200px){.book-main{width:min(calc(var(--content-width) + 48px),calc(var(--reader-space) - 368px))}}
 @media print{.book-sidebar,.reader-toolbar,.sidebar-shade,.reading-progress,.chapter-navigation,.book-footer,.notebook button{display:none!important}.book-page{margin:0}.book-main{padding:0;max-width:none}.notebook pre,.notebook pre code{white-space:pre-wrap}.concept-box,.article-figure,.notebook{break-inside:avoid}.reading-prose h2,.reading-prose h3{break-after:avoid}}
 
 /* Chapter frontispiece and learning overview, before the contents and argument. */
