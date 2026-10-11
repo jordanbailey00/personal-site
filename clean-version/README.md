@@ -1,6 +1,6 @@
 # Jordan Bailey — clean version
 
-A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party services, API keys, or build dependencies are required. A shared theme picker offers Auto, Light, Rust, Coal, Navy, Ayu, Supernova, and Novasuper on every page. Auto follows the device appearance; an explicit selection persists across pages, tabs, and visits. Old dark-mode preferences map to Coal.
+A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party services, API keys, or build dependencies are required. A shared theme picker offers Auto, Light, Rust, Coal, Navy, Ayu, Supernova, and Novasuper on every page. Auto follows the device appearance; an explicit selection persists across pages, tabs, and visits. Old dark-mode preferences map to Coal. Rust is a warm ivory reading palette (`#f2e7d5`) with soft brown text and muted copper accents; Light retains its white background.
 
 ## Develop
 

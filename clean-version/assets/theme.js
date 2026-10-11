@@ -1,6 +1,6 @@
 (() => {
   const system = window.matchMedia('(prefers-color-scheme: dark)');
-  const colors = { light: '#ffffff', rust: '#e1e1db', coal: '#18191b', navy: '#161923', ayu: '#0f1419', supernova: '#000000', novasuper: '#ffffff' };
+  const colors = { light: '#ffffff', rust: '#f2e7d5', coal: '#18191b', navy: '#161923', ayu: '#0f1419', supernova: '#000000', novasuper: '#ffffff' };
   const key = 'jordan-bailey-theme';
   const normalize = value => value === 'dark' ? 'coal' : value === 'auto' || Object.hasOwn(colors, value) ? value : 'auto';
   const capitalize = value => value[0].toUpperCase() + value.slice(1);
