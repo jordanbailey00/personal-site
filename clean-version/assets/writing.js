@@ -7,7 +7,7 @@
   const page = document.querySelector('.book-page');
   const main = document.getElementById('main');
   root.classList.remove('no-writing-js');
-  let desktopOpen = true;
+  let desktopOpen = false;
 
   function setContents(open, returnFocus = false) {
     root.classList.toggle('contents-open', mobile.matches && open);
@@ -21,7 +21,7 @@
     if (returnFocus) toggle.focus({ preventScroll: true });
   }
   toggle.hidden = false;
-  setContents(!mobile.matches);
+  setContents(false);
   toggle.addEventListener('click', () => {
     const open = toggle.getAttribute('aria-expanded') !== 'true';
     if (!mobile.matches) desktopOpen = open;
