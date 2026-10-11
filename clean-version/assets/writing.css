@@ -1,8 +1,13 @@
-/* Reading layout; typography and all theme colors come from style.css. */
+/* Reading layout; shared typography and page colors come from style.css. */
 @import url('/assets/fonts/writing/initials.css');
 :root[data-page="writing"]{--sidebar-width:248px;scroll-padding-top:0}
 .writing-site .skip-link{z-index:90}
-.book-sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar-width);padding:30px 24px 22px;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;z-index:40;font-size:.85rem;scrollbar-width:thin}
+/* Medium-tone sidebars separate navigation from the light reading canvas.
+   Scope the palette here so labels, links, dividers, and focus rings agree. */
+:root[data-theme="rust"] .book-sidebar{color-scheme:dark;--surface:#756452;--ink:#fff7eb;--muted:#f3e8d8;--line:#a18b71;--focus:#fffaf3;scrollbar-color:#bca589 var(--surface)}
+:root[data-theme="light"] .book-sidebar{color-scheme:dark;--surface:#65727a;--ink:#fafcfd;--muted:#f2f5f7;--line:#91a0a8;--focus:#ffffff;scrollbar-color:#afbec6 var(--surface)}
+@media(prefers-color-scheme:light){:root:not([data-theme]) .book-sidebar{color-scheme:dark;--surface:#65727a;--ink:#fafcfd;--muted:#f2f5f7;--line:#91a0a8;--focus:#ffffff;scrollbar-color:#afbec6 var(--surface)}}
+.book-sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar-width);padding:30px 24px 22px;background:var(--surface);color:var(--ink);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;z-index:40;font-size:.85rem;scrollbar-width:thin}
 .book-sidebar .book-author{color:var(--muted);font-size:.85rem}
 .book-name{font-family:var(--font-heading);font-size:1.4rem;font-weight:600;margin:5px 0 30px}
 .sidebar-label{color:var(--muted);font-size:.75rem;margin-bottom:12px}

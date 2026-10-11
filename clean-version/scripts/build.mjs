@@ -19,8 +19,14 @@ const assetVersions = Object.fromEntries(await Promise.all(
     name, createHash('sha256').update(await readFile(path.join(root, 'assets', name))).digest('hex').slice(0, 12),
   ]),
 ));
-const versionAssets = html => html.replace(/(href|src)="\/assets\/([\w-]+\.(?:css|js))"/g,
-  (match, attr, name) => assetVersions[name] ? `${attr}="/assets/${name}?v=${assetVersions[name]}"` : match);
+// Version CV navigation too: cached HTML can otherwise refer to an older
+// palette even when the homepage already has the latest stylesheet URL.
+const cvVersion = createHash('sha256').update(
+  ['style.css', 'cv.css', 'theme.js'].map(name => assetVersions[name]).join(':'),
+).digest('hex').slice(0, 12);
+const versionLinks = html => html.replace(/(href|src)="\/assets\/([\w-]+\.(?:css|js))"/g,
+  (match, attr, name) => assetVersions[name] ? `${attr}="/assets/${name}?v=${assetVersions[name]}"` : match)
+  .replaceAll('href="/cv/"', `href="/cv/?v=${cvVersion}"`);
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const icons = {
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>',
@@ -48,7 +54,7 @@ function document(title, description, pathname, body, options = {}) {
   if (pathname !== '/' || title.startsWith('Page not found')) {
     body = body.replace(/<a class="back-link"[^>]*>.*?<\/a>/, link => `<div class="page-tools">${link}${appearanceControls()}</div>`);
   }
-  return versionAssets(`<!doctype html>
+  return versionLinks(`<!doctype html>
 <html lang="en"${reader ? ' data-page="writing" class="no-writing-js"' : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff"><title>${escape(title)}</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${domain}${pathname}">${options.noindex ? '<meta name="robots" content="noindex,follow">' : ''}<meta property="og:type" content="${options.article ? 'article' : 'website'}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${domain}${pathname}"><meta property="og:image" content="${domain}/assets/jordan.jpg"><meta name="twitter:card" content="summary"><link rel="icon" href="/favicon.png" type="image/png"><script src="/assets/theme.js"></script><script type="module" src="/assets/supernova.js"></script><link rel="stylesheet" href="/assets/style.css">${pathname === "/cv/" ? '<link rel="stylesheet" href="/assets/cv.css">' : ""}${writing ? '<link rel="stylesheet" href="/assets/writing.css">' : ''}<link rel="stylesheet" href="/assets/callouts.css"><link rel="preload" href="/assets/fonts/akzidenz-bold.otf" as="font" type="font/otf" crossorigin><link rel="preload" href="/assets/fonts/ubuntu-sans-variable.woff2" as="font" type="font/woff2" crossorigin>${reader ? '<script src="/assets/writing.js" defer></script>' : ''}</head><body${reader ? ' class="writing-site"' : ''}><a class="skip-link" href="#main">Skip to content</a>${body}${pathname === "/cv/" || reader ? "" : footer()}</body></html>\n`);
 }
 const pages = new Map();
