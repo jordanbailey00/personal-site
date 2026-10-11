@@ -1,6 +1,6 @@
 # Jordan Bailey — clean version
 
-A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party services, API keys, or build dependencies are required. A shared theme picker offers Auto, Light, Rust, Coal, Navy, Ayu, and Supernova on every page. Auto follows the device appearance; an explicit selection persists across pages, tabs, and visits. Old dark-mode preferences map to Coal.
+A small, static portfolio based on the supplied Aeree Cho website oracle. It follows the reference's white canvas, narrow column, circular profile image, quiet section dividers, and image/text project rows. No runtime framework, third-party services, API keys, or build dependencies are required. A shared theme picker offers Auto, Light, Rust, Coal, Navy, Ayu, Supernova, and Novasuper on every page. Auto follows the device appearance; an explicit selection persists across pages, tabs, and visits. Old dark-mode preferences map to Coal.
 
 ## Develop
 
@@ -8,7 +8,7 @@ A small, static portfolio based on the supplied Aeree Cho website oracle. It fol
 npm run dev
 ```
 
-Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, style/theme independence, keyboard menu dismissal, multi-article listing behavior, and the Supernova animation lifecycle.
+Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, retired style preference migration, keyboard menu dismissal, multi-article listing behavior, and both star themes’ animation lifecycle.
 
 Profile and project metadata live in `content/site.mjs`. The three project summaries in `content/*.html` give a short, plain-language introduction and a few outcomes. Keep these around 100 words, with occasional light humor; long explanations belong in Writing, and implementation details belong on GitHub. The original long case studies remain in the retired site and Git history. `scripts/import-case-studies.cjs` is a legacy importer and would overwrite the concise summaries. Layout and page generation live in `scripts/build.mjs`; styling lives in `assets/style.css`.
 
@@ -37,7 +37,7 @@ The reference person's biography, projects, and other personal content are not i
 
 ## Books and software
 
-The homepage and `/learning/` share the book shelf and software recommendations. Edit the `books` and `software` arrays in `content/site.mjs` to add or change entries. Books have a cover filename, its pixel dimensions, and an author; they display without hyperlinks. Software entries have a name, link, and short description. `scripts/recommendations.mjs` renders both lists, and `assets/style.css` supplies responsive layouts that use the existing theme and style choices. Main sections have full-width dividers and generous space above their headings, in both Classic and Fantasy.
+The homepage and `/learning/` share the book shelf and software recommendations. Edit the `books` and `software` arrays in `content/site.mjs` to add or change entries. Books have a cover filename, its pixel dimensions, and an author; they display without hyperlinks. Software entries have a name, link, and short description. `scripts/recommendations.mjs` renders both lists, and `assets/style.css` supplies responsive layouts that use the shared color themes. Main sections have full-width dividers and generous space above their headings.
 
 Cover images are local WebP assets in `public/books/`, converted from the authors' or publishers' cover images. See `public/books/SOURCES.md` for their sources. They load lazily and display without cropping.
 
@@ -47,7 +47,7 @@ The first essay, `content/writing/reinforcement-learning-for-runescape.html`, us
 
 `/writing/` is the writing hub, listing every published entry from `content/writing/posts.mjs`. The homepage uses the same listing renderer for its three most recent entries: the Writing heading and All writing link open the hub, while article titles open their individual pages. `/writing/template/` remains a labeled authoring preview, excluded from the sitemap and marked `noindex`.
 
-The reading layout retains the contents sidebar, section navigation, and code examples inspired by [Structure and Interpretation of Tensor Programs](https://sitp.ai/). Its text column is centered in the space beside the sidebar, with equal left/right padding. Font families, body and heading sizes, colors, and themes come from the main site stylesheet. Both styles put supporting footnotes in the right margin on screens at least 1200px wide. Equal gutters keep the main text centered; notes return to document flow on smaller screens and in print.
+The reading layout retains the contents sidebar, section navigation, and code examples inspired by [Structure and Interpretation of Tensor Programs](https://sitp.ai/). Its text column is centered in the space beside the sidebar, with equal left/right padding. Font families, body and heading sizes, colors, and themes come from the main site stylesheet. Articles put supporting footnotes in the right margin on screens at least 1200px wide. Equal gutters keep the main text centered; notes return to document flow on smaller screens and in print.
 
 To add or migrate an essay:
 
@@ -60,23 +60,21 @@ Add a `thumbnail` object to each essay's metadata with `src`, descriptive `alt` 
 
 The template demonstrates `.with-margin` + `.margin-note` (responsive side footnotes with reference and return links), `.concept-box`, `.example-box`, `.notebook` with copyable code and static output, `.reading-details`, `.article-figure`, `.wide-figure`, `.table-scroll`, and `.reference-list`. Code/output is presentational; it does not execute readers' code. Figures use the reading column’s width and may contain supplied images, video, or accessible iframe embeds. Equations can use semantic MathML or authored HTML; no remote rendering service is required. All writing content remains readable without JavaScript; navigation controls, reading progress, print, and copying progressively enhance it.
 
-Use `<p class="drop-cap">…</p>` for a section's opening paragraph. Both styles share Fantasy's decorative Goudy initial, with the same size, weight, and spacing. Its rule and font import live in `assets/writing.css` so switching styles does not replace the drop cap. The text remains one paragraph for selection and screen readers.
+Use `<p class="drop-cap">…</p>` for a section's opening paragraph. The decorative Goudy initial retains its size, weight, and spacing alongside Ubuntu Sans body text. Its rule and font import live in `assets/writing.css`. The text remains one paragraph for selection and screen readers.
 
-The reading implementation is in `scripts/writing.mjs`, `assets/writing.css`, and `assets/writing.js`. The shared appearance controls are in `scripts/appearance.mjs` and `assets/theme.js`. All palettes and Classic typography live in `assets/style.css`; `assets/fantasy.css` is the separate Fantasy style package. The original site and favicon are preserved.
+The reading implementation is in `scripts/writing.mjs`, `assets/writing.css`, and `assets/writing.js`. The shared appearance controls are in `scripts/appearance.mjs` and `assets/theme.js`. All palettes and shared typography live in `assets/style.css`. The original site and favicon are preserved.
 
 
-## Style packages
+## Typography
 
-The **Aa** control selects Classic or Fantasy independently of the paintbrush theme control. Classic explicitly loads bundled **Ubuntu Sans 1.006** for body text, subtitles, section headings, entry titles, and the CV. Akzidenz Grotesk BQ Bold is used only for Jordan's name on the homepage and CV. The user-supplied font-inspector screenshots are the typography reference; relying on `system-ui` or OS fallback stacks does not reproduce their Ubuntu Sans appearance on other systems.
+The site explicitly loads bundled **Ubuntu Sans 1.006** for body text, subtitles, section headings, entry titles, and the CV. Akzidenz Grotesk BQ Bold is used only for Jordan's name on the homepage and CV. The user-supplied font-inspector screenshots are the typography reference; relying on `system-ui` or OS fallback stacks does not reproduce their Ubuntu Sans appearance on other systems.
 
 The homepage uses a 16.2px root: the name is 2.5rem / 1 line height / weight 600 / −0.08rem tracking; the subtitle is 1.17rem / 1.2 / 400; body copy is 1rem / 1.6 / 400; section headings are 1.4rem / 1.6 / 500; entry titles are 1rem / 1.6 / 600; date labels are 0.8rem / 1.3 / 400. Project descriptions use 0.95rem / 1.3 / 400. Homepage section underlines and 3rem gaps keep sections distinct. At the reference's 700px breakpoint, the homepage name becomes 2.2rem and its subtitle 0.85rem.
 
 The CV retains its separate scale: 2.25rem / 1.25 / 600 for the Akzidenz name, 2rem / 1.5 / 400 for section headings, and 1rem / 1.5 body copy. All CV text except the name, including the subtitle, uses Ubuntu Sans. Color themes and existing content layouts remain available.
-Fantasy follows [the supplied asitpofborscht fork](https://github.com/jordanbailey00/asitpofborscht) at commit `29c1c6341bbe0ef9f68285ca0e8d2b7c632f8fb4`: New Computer Modern serif text, its 16/24/32px type scale, real small-cap headings, Goudy Initialen drop caps, Vectorian dividers, compact tables, and notebook cells with hanging prompts. The page structure and navigation are shared. The font and decoration notices and licenses are included with the assets.
+The paintbrush control selects among eight color themes; there is one shared typography throughout the site. The retired **Aa** style picker and Fantasy stylesheet have been removed. Existing `jordan-bailey-style` preferences are cleared on load. The `jordan-bailey-theme` preference is applied before CSS loads and synchronized across tabs. Storage failures still permit selections for the current page.
 
-`data-style` scopes the Fantasy overrides. The package consumes the shared palette variables instead of assigning a theme, so either style works with all seven theme choices. `jordan-bailey-style` and `jordan-bailey-theme` are separate local storage preferences, applied before CSS loads and synchronized across tabs. Storage failures still permit selections for the current page.
-
-The homepage About Me and Now paragraphs use 18px Fantasy text. The homepage description uses uniform regular-weight text in both styles. CV highlights share the same rounded shape and padding in Classic and Fantasy. Dark CV themes pair muted green, blue, and rose backgrounds with light accent text. Generated stylesheet URLs include content hashes to prevent stale CSS after deployments.
+The homepage description uses uniform regular-weight text. CV highlights share rounded shapes and padding across themes. Dark CV themes pair muted green, blue, and rose backgrounds with light accent text. Generated stylesheet and behavior-script URLs include content hashes to prevent stale assets after deployments.
 
 To add a footnote, use the `.with-margin` wrapper from `templates/article.html`, containing a text `<div>` and an `<aside class="margin-note">`. Put it around the paragraph that contains the reference, give each reference/note pair unique IDs and reciprocal links, and keep notes concise. The shared grid reserves enough vertical space for long notes to avoid collisions. No scripting or duplicate mobile note content is required.
 
@@ -87,11 +85,13 @@ An optional `<header class="article-opening">` at the start of an essay supplies
 
 Use `<aside class="callout" data-callout="note"><p>Supporting context.</p></aside>` for a callout. `scripts/callouts.mjs` supplies its accessible label and icon at build time. Supported types are `note`, `important`, `warning`, `tip`, `caution`, and `question`. The text stays readable without JavaScript. Use Note for context, Important for an essential condition, Warning for an easy-to-make mistake, Tip for a useful practice, Caution for a consequential risk, and Question for a short reasoning exercise. Do not add one merely to vary the page's appearance.
 
-`assets/callouts.css` matches SITP's exact per-theme blue, purple, amber, green, and red accents, plus its burnt-orange Question accent. Both Classic and Fantasy share its icon/label/4px-rule treatment and retain their own typography. Octicons are included under their MIT license in `assets/icons/OCTICONS-LICENSE.txt`. The Fight Caves article uses seven callouts and five side footnotes; the existing capture and diagram briefs are preserved.
+`assets/callouts.css` matches SITP's exact per-theme blue, purple, amber, green, and red accents, plus its burnt-orange Question accent. All themes share its icon/label/4px-rule treatment and Ubuntu Sans typography; Novasuper inverts Supernova’s accent colors. Octicons are included under their MIT license in `assets/icons/OCTICONS-LICENSE.txt`. The Fight Caves article uses seven callouts and five side footnotes; the existing capture and diagram briefs are preserved.
 
 
-## Supernova
+## Supernova and Novasuper
 
-Supernova brings back the original star field from `space-version/components/starfield/Starfield.tsx`, with its 5,000 white circular particles in a spherical shell (radii 20–80), camera at z=5 and 60° field of view, volume offset z=−60, fog at 25–120, 0.15 point size, 0.7 opacity, and rotation rates x=0.005, y=0.015, z=0.002 radians/second. The shared theme picker selects it on every page, independently of Classic/Fantasy. Layout, typography, and the favicon remain unchanged.
+Supernova brings back the original star field from `space-version/components/starfield/Starfield.tsx`, with its 5,000 white circular particles in a spherical shell (radii 20–80), camera at z=5 and 60° field of view, volume offset z=−60, fog at 25–120, 0.15 point size, 0.7 opacity, and rotation rates x=0.005, y=0.015, z=0.002 radians/second. The shared theme picker selects either star theme on every page. Layout, typography, and the favicon remain unchanged.
 
-`assets/supernova.js` loads `assets/starfield.js` only when Supernova is visible and selected. The renderer uses the same Three.js 0.183.2 build already installed for the retired site, vendored locally in `assets/vendor/three/` with its MIT license. Other themes never download the 3D renderer. The effect pauses in hidden tabs, disposes its graphics resources when deselected, and shows a still star field for reduced-motion preferences. WebGL or loading failures leave the readable black theme intact. Printing hides the canvas and uses the existing light print palette.
+Novasuper is Supernova’s exact color inverse: a white background, dark stars, and dark text. Its palette variables invert Supernova’s colors, and a CSS filter inverts only the star-field canvas. Photos, book covers, and other media retain their original colors. Switching between the two star themes reuses the same renderer and star positions.
+
+`assets/supernova.js` loads `assets/starfield.js` only when either star theme is visible and selected. The renderer uses the same Three.js 0.183.2 build already installed for the retired site, vendored locally in `assets/vendor/three/` with its MIT license. Non-star themes never download the 3D renderer. The effect pauses in hidden tabs, disposes its graphics resources when leaving both star themes, and shows a still star field for reduced-motion preferences. WebGL or loading failures leave the selected black or white palette readable. Printing hides the canvas and uses the existing light print palette.

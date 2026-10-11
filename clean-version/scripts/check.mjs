@@ -9,15 +9,17 @@ for (const file of files.filter(file => file.endsWith('.html'))) {
   const html = await readFile(path.join(root, file), 'utf8');
   if ((html.match(/<h1\b/g) || []).length !== 1) errors.push(`${file}: needs exactly one h1`);
   if (!html.includes('name="description"')) errors.push(`${file}: missing description`);
-  for (const [kind, count] of [['style', 2], ['theme', 7]]) {
+  for (const [kind, count] of [['theme', 8]]) {
     if ((html.match(new RegExp(`data-${kind}-picker`, 'g')) || []).length !== 1 ||
         (html.match(new RegExp(`name="site-${kind}"`, 'g')) || []).length !== count) {
       errors.push(`${file}: missing or duplicate ${kind} choices`);
     }
   }
-  if (!html.includes('href="/assets/fantasy.css?v=')) errors.push(`${file}: missing versioned Fantasy style package`);
+  if (/data-style-picker|name="site-style"|\/assets\/fantasy\.css/.test(html)) errors.push(`${file}: retired style picker or stylesheet`);
+  if (!html.includes('value="novasuper"')) errors.push(`${file}: missing Novasuper theme`);
+  if (!html.includes('src="/assets/theme.js?v=')) errors.push(`${file}: missing versioned theme controls`);
   if (!html.includes('href="/assets/callouts.css?v=')) errors.push(`${file}: missing versioned callout styles`);
-  if (!html.includes('src="/assets/supernova.js"')) errors.push(`${file}: missing Supernova background support`);
+  if (!html.includes('src="/assets/supernova.js?v=')) errors.push(`${file}: missing Supernova background support`);
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
   if (new Set(ids).size !== ids.length) errors.push(`${file}: duplicate IDs`);
   for (const [, fragment] of html.matchAll(/href="#([^"]+)"/g)) {

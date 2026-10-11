@@ -1,5 +1,5 @@
-// Load the original 3D effect only when its theme is selected. Theme and style
-// preferences remain owned by theme.js, including cross-tab synchronization.
+// Both star themes share one renderer; CSS inverts its canvas for Novasuper.
+// Preferences remain owned by theme.js, including cross-tab synchronization.
 export function installSupernova({ document, window, load = () => import('./starfield.js') }) {
   const root = document.documentElement;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -15,7 +15,7 @@ export function installSupernova({ document, window, load = () => import('./star
 
   async function sync() {
     const current = ++revision;
-    if (root.dataset.theme !== 'supernova') { dispose(); return; }
+    if (!['supernova', 'novasuper'].includes(root.dataset.theme)) { dispose(); return; }
     if (document.hidden) { field?.setMotion(false); return; }
     if (!field) {
       try {
@@ -24,7 +24,7 @@ export function installSupernova({ document, window, load = () => import('./star
         if (current !== revision) return;
         field = createStarfield({ document, window });
       } catch {
-        // Keep the readable black palette if WebGL or the module is unavailable.
+        // Keep the selected palette if WebGL or the module is unavailable.
         modulePromise = null;
         return;
       }

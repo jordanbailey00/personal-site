@@ -42,21 +42,23 @@ function page({ theme = 'light', reduced = false, hidden = false, pending = fals
   };
 }
 
-test('Other themes never load 3D code; Supernova starts and disposes on deselection', async () => {
+for (const theme of ['supernova', 'novasuper']) {
+
+test(`${theme}: other themes never load 3D code; starts and disposes on deselection`, async () => {
   const p = page(); await settle();
   assert.equal(p.loads(), 0);
-  p.choose('supernova'); await settle();
+  p.choose(theme); await settle();
   assert.equal(p.instances.length, 1);
   assert.equal(p.instances[0].moving, true);
   p.choose('coal');
   assert.equal(p.instances[0].disposed, true);
-  p.choose('supernova'); await settle();
+  p.choose(theme); await settle();
   assert.equal(p.loads(), 1);
   assert.equal(p.instances.length, 2);
 });
 
-test('Saved Supernova respects reduced motion and live motion/visibility changes', async () => {
-  const p = page({ theme: 'supernova', reduced: true }); await settle();
+test(`${theme}: saved selection respects reduced motion and live motion/visibility changes`, async () => {
+  const p = page({ theme, reduced: true }); await settle();
   assert.equal(p.instances[0].moving, false);
   p.reduce(false); await settle();
   assert.equal(p.instances[0].moving, true);
@@ -69,8 +71,8 @@ test('Saved Supernova respects reduced motion and live motion/visibility changes
   assert.equal(p.instances.length, 1);
 });
 
-test('Hidden pages defer loading; navigating away disposes and back navigation restores', async () => {
-  const p = page({ theme: 'supernova', hidden: true }); await settle();
+test(`${theme}: hidden pages defer loading; navigating away disposes and back navigation restores`, async () => {
+  const p = page({ theme, hidden: true }); await settle();
   assert.equal(p.loads(), 0);
   p.visibility(false); await settle();
   p.navigate();
@@ -80,21 +82,45 @@ test('Hidden pages defer loading; navigating away disposes and back navigation r
   assert.equal(p.instances[1].moving, true);
 });
 
-test('Switching away or navigating during a slow load cannot start a stale animation', async () => {
+test(`${theme}: switching away or navigating during a slow load cannot start a stale animation`, async () => {
   for (const abandon of [p => p.choose('light'), p => p.navigate(), p => p.visibility(true)]) {
-    const p = page({ theme: 'supernova', pending: true });
+    const p = page({ theme, pending: true });
     abandon(p); p.finish(); await settle();
     assert.equal(p.instances.length, 0);
   }
-  const p = page({ theme: 'supernova', pending: true });
-  p.choose('light'); p.choose('supernova'); p.finish(); await settle();
+  const p = page({ theme, pending: true });
+  p.choose('light'); p.choose(theme); p.finish(); await settle();
   assert.equal(p.instances.length, 1);
 });
 
-test('Unavailable graphics fail without breaking theme selection or retrying continuously', async () => {
-  const p = page({ theme: 'supernova', unavailable: true }); await settle();
+test(`${theme}: unavailable graphics fail without breaking theme selection or retrying continuously`, async () => {
+  const p = page({ theme, unavailable: true }); await settle();
   assert.equal(p.instances.length, 0);
   assert.equal(p.loads(), 1);
   p.choose('light'); await settle();
   assert.equal(p.loads(), 1);
+});
+
+}
+
+test('Switching between star themes reuses the canvas and renderer', async () => {
+  const p = page({ theme: 'supernova' }); await settle();
+  const field = p.instances[0];
+  for (const theme of ['novasuper', 'supernova', 'novasuper']) {
+    p.choose(theme); await settle();
+    assert.equal(p.instances.length, 1);
+    assert.equal(field.disposed, false);
+    assert.equal(field.moving, true);
+  }
+  assert.equal(p.loads(), 1);
+  p.choose('light');
+  assert.equal(field.disposed, true);
+});
+
+test('Switching star themes during a slow load starts only one renderer', async () => {
+  const p = page({ theme: 'supernova', pending: true });
+  p.choose('novasuper'); p.finish(); await settle();
+  assert.equal(p.loads(), 1);
+  assert.equal(p.instances.length, 1);
+  assert.equal(p.instances[0].moving, true);
 });

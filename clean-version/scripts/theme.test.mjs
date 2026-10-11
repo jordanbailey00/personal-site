@@ -8,19 +8,19 @@ import { writingList } from './writing.mjs';
 const script = await readFile(new URL('../assets/theme.js', import.meta.url), 'utf8');
 function page({ saved = null, savedStyle = null, dark = false, blocked = false } = {}) {
   const handlers = {}, device = {}, pickerEvents = {};
-  const root = { dataset: {} }, meta = {};
+  const root = { dataset: savedStyle ? { style: savedStyle } : {} }, meta = {};
   const stored = { 'jordan-bailey-theme': saved, 'jordan-bailey-style': savedStyle };
   const pickers = {};
-  for (const [kind, values] of Object.entries({ theme: ['auto', 'light', 'rust', 'coal', 'navy', 'ayu', 'supernova'], style: ['classic', 'fantasy'] })) {
+  for (const [kind, values] of Object.entries({ theme: ['auto', 'light', 'rust', 'coal', 'navy', 'ayu', 'supernova', 'novasuper'] })) {
     const inputs = values.map(value => ({ value, checked: false }));
     const summary = { focus() { summary.focused = true; } };
     pickerEvents[kind] = {};
     pickers[kind] = { hidden: true, inputs, summary, querySelectorAll: () => inputs, querySelector: () => summary, addEventListener: (name, fn) => { pickerEvents[kind][name] = fn; }, contains: () => false };
   }
   const system = { matches: dark, addEventListener: (name, fn) => { device[name] = fn; } };
-  const document = { documentElement: root, querySelector: () => ({ setAttribute: (name, value) => { meta[name] = value; } }), querySelectorAll: selector => [pickers[selector === '[data-theme-picker]' ? 'theme' : 'style']], addEventListener: (name, fn) => { (handlers[name] ??= []).push(fn); } };
+  const document = { documentElement: root, querySelector: () => ({ setAttribute: (name, value) => { meta[name] = value; } }), querySelectorAll: selector => selector === '[data-theme-picker]' ? [pickers.theme] : [], addEventListener: (name, fn) => { (handlers[name] ??= []).push(fn); } };
   const window = { matchMedia: () => system, addEventListener: (name, fn) => { (handlers[name] ??= []).push(fn); } };
-  const localStorage = { getItem(key) { if (blocked) throw Error('Storage unavailable'); return stored[key]; }, setItem(key, value) { if (blocked) throw Error('Storage unavailable'); stored[key] = value; } };
+  const localStorage = { getItem(key) { if (blocked) throw Error('Storage unavailable'); return stored[key]; }, setItem(key, value) { if (blocked) throw Error('Storage unavailable'); stored[key] = value; }, removeItem(key) { if (blocked) throw Error('Storage unavailable'); delete stored[key]; } };
   vm.runInNewContext(script, { document, window, localStorage });
   const initial = root.dataset.theme, initialStyle = root.dataset.style;
   handlers.DOMContentLoaded.forEach(fn => fn());
@@ -45,13 +45,14 @@ test('Auto follows live device changes; explicit themes override the device', ()
 });
 
 test('Every explicit selection persists when another page loads', () => {
-  for (const theme of ['light', 'rust', 'coal', 'navy', 'ayu', 'supernova']) {
+  for (const theme of ['light', 'rust', 'coal', 'navy', 'ayu', 'supernova', 'novasuper']) {
     const first = page(); first.choose(theme);
     const next = page({ saved: first.saved(), dark: true });
     assert.equal(next.initial, theme);
     assert.equal(next.inputs.find(input => input.checked).value, theme);
     assert.equal(next.picker.hidden, false);
     assert.match(next.meta.content, /^#[0-9a-f]{6}$/);
+    if (theme === 'novasuper') assert.equal(next.meta.content, '#ffffff');
   }
 });
 
@@ -65,7 +66,9 @@ test('Old dark preference migrates; invalid or blocked storage still works', () 
 test('Cross-tab changes synchronize; unrelated storage events do not', () => {
   const p = page({ saved: 'light', dark: true });
   p.storage('ayu'); assert.equal(p.root.dataset.theme, 'ayu');
-  p.storage('rust', 'unrelated'); assert.equal(p.root.dataset.theme, 'ayu');
+  p.storage('novasuper'); assert.equal(p.root.dataset.theme, 'novasuper');
+  assert.equal(p.meta.content, '#ffffff');
+  p.storage('rust', 'unrelated'); assert.equal(p.root.dataset.theme, 'novasuper');
   p.storage(null, null); assert.equal(p.root.dataset.theme, 'coal');
   assert.equal(p.inputs.find(input => input.checked).value, 'auto');
 });
@@ -88,46 +91,29 @@ test('Hub supports multiple essays while homepage limits entries and excludes dr
 });
 
 
-test('Both styles persist independently for every theme, including Auto', () => {
-  for (const theme of ['auto', 'light', 'rust', 'coal', 'navy', 'ayu', 'supernova']) {
-    const p = page(); p.choose(theme);
-    const resolved = p.root.dataset.theme, color = p.meta.content;
-    for (const style of ['fantasy', 'classic']) {
-      p.choose(style, 'style');
-      assert.equal(p.root.dataset.theme, resolved);
-      assert.equal(p.meta.content, color);
-      const next = page({ saved: p.saved(), savedStyle: p.savedStyle() });
-      assert.equal(next.initialStyle, style);
-      assert.equal(next.initial, resolved);
-      assert.equal(next.pickers.style.inputs.find(input => input.checked).value, style);
-      next.choose('navy'); assert.equal(next.root.dataset.style, style);
-    }
+test('Retired style preferences are removed without changing the saved theme', () => {
+  for (const savedStyle of ['fantasy', 'classic', 'unknown']) {
+    const p = page({ saved: 'novasuper', savedStyle });
+    assert.equal(p.initialStyle, undefined);
+    assert.equal(p.savedStyle(), undefined);
+    assert.equal(p.initial, 'novasuper');
+    assert.equal(p.saved(), 'novasuper');
+    p.storage('fantasy', 'jordan-bailey-style');
+    assert.deepEqual({ ...p.root.dataset }, { theme: 'novasuper' });
+    p.choose('supernova');
+    assert.deepEqual({ ...p.root.dataset }, { theme: 'supernova' });
   }
+  const p = page({ savedStyle: 'fantasy', blocked: true });
+  assert.equal(p.initialStyle, undefined);
+  p.choose('novasuper');
+  assert.deepEqual({ ...p.root.dataset }, { theme: 'novasuper' });
 });
 
-test('Style defaults safely, handles unavailable storage, and syncs without changing theme', () => {
-  assert.equal(page().initialStyle, 'classic');
-  assert.equal(page({ savedStyle: 'unknown' }).initialStyle, 'classic');
-  const p = page({ saved: 'rust', savedStyle: 'fantasy' });
-  p.storage('classic', 'jordan-bailey-style');
-  assert.equal(p.root.dataset.style, 'classic');
-  assert.equal(p.root.dataset.theme, 'rust');
-  p.choose('fantasy', 'style'); p.storage('ayu');
-  assert.equal(p.root.dataset.style, 'fantasy');
-  p.storage(null, null);
-  assert.deepEqual({ ...p.root.dataset }, { theme: 'light', style: 'classic' });
-  const blocked = page({ blocked: true }); blocked.choose('fantasy', 'style'); blocked.choose('coal');
-  assert.equal(blocked.root.dataset.style, 'fantasy');
-  assert.equal(blocked.root.dataset.theme, 'coal');
-});
-
-test('Both menus close on Escape with focus returned, and on outside clicks', () => {
+test('Theme menu closes on Escape with focus returned, and on outside clicks', () => {
   const p = page();
-  for (const kind of ['theme', 'style']) {
-    p.pickers[kind].open = true; p.escape(kind);
-    assert.equal(p.pickers[kind].open, false);
-    assert.equal(p.pickers[kind].summary.focused, true);
-    p.pickers[kind].open = true; p.outsideClick();
-    assert.equal(p.pickers[kind].open, false);
-  }
+  p.picker.open = true; p.escape('theme');
+  assert.equal(p.picker.open, false);
+  assert.equal(p.picker.summary.focused, true);
+  p.picker.open = true; p.outsideClick();
+  assert.equal(p.picker.open, false);
 });

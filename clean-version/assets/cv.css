@@ -3,6 +3,7 @@
 :root{--cv-ink:var(--ink);--cv-description:var(--muted);--cv-ai-bg:color-mix(in srgb,#38ad7c 20%,var(--paper));--cv-ai-ink:var(--ink);--cv-systems-bg:color-mix(in srgb,#3297c8 20%,var(--paper));--cv-systems-ink:var(--ink);--cv-management-bg:color-mix(in srgb,#c55ba1 20%,var(--paper));--cv-management-ink:var(--ink)}
 :root[data-theme="light"]{--cv-ink:#414141;--cv-description:#666}
 @media(prefers-color-scheme:light){:root:not([data-theme]){--cv-ink:#414141;--cv-description:#666}}
+:root[data-theme="novasuper"]{--cv-ai-bg:color-mix(in srgb,#c75283 30%,var(--paper));--cv-ai-ink:#491a2d;--cv-systems-bg:color-mix(in srgb,#cd6837 30%,var(--paper));--cv-systems-ink:#45200d;--cv-management-bg:color-mix(in srgb,#3aa45e 30%,var(--paper));--cv-management-ink:#12361d}
 /* Soft accent text on deeper tints keeps the three highlights distinct in dark themes. */
 :root[data-theme="coal"],:root[data-theme="navy"],:root[data-theme="ayu"],:root[data-theme="supernova"]{--cv-ai-bg:color-mix(in srgb,#38ad7c 30%,var(--paper));--cv-ai-ink:#b6e5d2;--cv-systems-bg:color-mix(in srgb,#3297c8 30%,var(--paper));--cv-systems-ink:#badff2;--cv-management-bg:color-mix(in srgb,#c55ba1 30%,var(--paper));--cv-management-ink:#edc9e2}
 @media(prefers-color-scheme:dark){:root:not([data-theme]){--cv-ai-bg:color-mix(in srgb,#38ad7c 30%,var(--paper));--cv-ai-ink:#b6e5d2;--cv-systems-bg:color-mix(in srgb,#3297c8 30%,var(--paper));--cv-systems-ink:#badff2;--cv-management-bg:color-mix(in srgb,#c55ba1 30%,var(--paper));--cv-management-ink:#edc9e2}}

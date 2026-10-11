@@ -39,8 +39,7 @@
 .inline-contents a:hover{text-decoration:underline;text-underline-offset:3px}
 .reading-prose h2,.reading-prose h3,.margin-note{scroll-margin-top:82px}
 .reading-prose section:first-child{margin-top:0}
-/* Keep Fantasy's decorative initial identical across both style packages.
-   100.64px preserves its original 6.29 × 16px size regardless of body type. */
+/* Preserve the article's decorative initial alongside Ubuntu Sans body text. */
 .reading-prose .drop-cap{display:flow-root}
 .reading-prose .drop-cap::first-letter{font-family:'Goudy Initialen','New Computer Modern',serif;font-weight:400;font-style:normal;float:left;font-size:100.64px;line-height:.8;letter-spacing:.32px;margin:.0547em .04em 0 0;color:var(--ink)}
 .reading-prose .heading-link{text-decoration:none;color:var(--ink)}
