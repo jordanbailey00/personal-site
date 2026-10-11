@@ -34,7 +34,7 @@
         apply();
       });
       picker.addEventListener('keydown', event => {
-        if (event.key === 'Escape') { picker.open = false; picker.querySelector('summary').focus(); }
+        if (event.key === 'Escape') { picker.open = false; picker.querySelector('summary').focus({ preventScroll: true }); }
       });
       document.addEventListener('click', event => { if (!picker.contains(event.target)) picker.open = false; });
     });

@@ -2,11 +2,15 @@
 @import url('/assets/fonts/writing/initials.css');
 :root[data-page="writing"]{--sidebar-width:248px;scroll-padding-top:0}
 .writing-site .skip-link{z-index:90}
-/* Medium-tone sidebars separate navigation from the light reading canvas.
-   Scope the palette here so labels, links, dividers, and focus rings agree. */
-:root[data-theme="rust"] .book-sidebar{color-scheme:dark;--surface:#756452;--ink:#fff7eb;--muted:#f3e8d8;--line:#a18b71;--focus:#fffaf3;scrollbar-color:#bca589 var(--surface)}
-:root[data-theme="light"] .book-sidebar{color-scheme:dark;--surface:#65727a;--ink:#fafcfd;--muted:#f2f5f7;--line:#91a0a8;--focus:#ffffff;scrollbar-color:#afbec6 var(--surface)}
-@media(prefers-color-scheme:light){:root:not([data-theme]) .book-sidebar{color-scheme:dark;--surface:#65727a;--ink:#fafcfd;--muted:#f2f5f7;--line:#91a0a8;--focus:#ffffff;scrollbar-color:#afbec6 var(--surface)}}
+/* Local navigation palettes keep each sidebar distinct from the reading area. */
+:root[data-theme="rust"] .book-sidebar{color-scheme:dark;--surface:#756452;--ink:#fff7eb;--muted:#f3e8d8;--line:#a18b71;--focus:#fffaf3;--sidebar-current-ink:#ffe29a;--sidebar-current-bg:#5b4937;scrollbar-color:#bca589 var(--surface)}
+:root[data-theme="light"] .book-sidebar{color-scheme:light;--surface:#edf0f2;--ink:#374550;--muted:#586873;--line:#cbd3d9;--focus:#1456a0;--sidebar-current-ink:#1456a0;--sidebar-current-bg:#d3e3f5;scrollbar-color:#b3bfc8 var(--surface)}
+:root[data-theme="coal"] .book-sidebar{--sidebar-current-ink:#72c8ff;--sidebar-current-bg:#18364a}
+:root[data-theme="navy"] .book-sidebar{--sidebar-current-ink:#92bfff;--sidebar-current-bg:#273855}
+:root[data-theme="ayu"] .book-sidebar{--sidebar-current-ink:#ffb454;--sidebar-current-bg:#3c3020}
+:root[data-theme="supernova"] .book-sidebar{--sidebar-current-ink:#8cd9ff;--sidebar-current-bg:#17313f}
+:root[data-theme="novasuper"] .book-sidebar{--sidebar-current-ink:#732600;--sidebar-current-bg:#e8cec0}
+@media(prefers-color-scheme:light){:root:not([data-theme]) .book-sidebar{color-scheme:light;--surface:#edf0f2;--ink:#374550;--muted:#586873;--line:#cbd3d9;--focus:#1456a0;--sidebar-current-ink:#1456a0;--sidebar-current-bg:#d3e3f5;scrollbar-color:#b3bfc8 var(--surface)}}
 .book-sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar-width);padding:30px 24px 22px;background:var(--surface);color:var(--ink);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;z-index:40;font-size:.85rem;scrollbar-width:thin}
 .book-sidebar .book-author{color:var(--muted);font-size:.85rem}
 .book-name{font-family:var(--font-heading);font-size:1.4rem;font-weight:600;margin:5px 0 30px}
@@ -14,7 +18,7 @@
 .book-chapters,.section-links{list-style:none;margin:0;padding:0}
 .book-chapters>li+li{margin-top:16px}
 .book-sidebar a{display:block}
-.book-sidebar a:hover,.book-sidebar a[aria-current]{color:var(--focus)}
+.book-sidebar a:hover,.book-sidebar a[aria-current="page"]{color:var(--focus)}
 .chapter-number{color:var(--muted);font-variant-numeric:tabular-nums}
 .sidebar-empty{color:var(--muted);margin-top:10px}
 .sidebar-preview{border-top:1px solid var(--line);margin-top:28px;padding-top:20px}
@@ -22,6 +26,9 @@
 .section-links{margin-top:16px;border-left:1px solid var(--line);padding-left:12px;font-size:.8rem;line-height:1.5}
 .section-links li{margin:12px 0}
 .section-links .subsection-link{padding-left:10px;color:var(--muted);font-size:.75rem}
+.book-sidebar .section-links a{margin:-5px -8px;padding:5px 8px;border-radius:4px}
+/* Color, weight, background, and a marker make the current subsection obvious. */
+.book-sidebar .section-links a[aria-current="location"]{color:var(--sidebar-current-ink,var(--focus));background:var(--sidebar-current-bg,var(--hover));font-weight:600;box-shadow:inset 3px 0 0 currentColor}
 .sidebar-bottom{margin-top:auto;padding-top:40px;display:flex;gap:20px;color:var(--muted);font-size:.75rem;align-items:center}
 .sidebar-bottom [data-reading-label]{margin-left:auto;font-variant-numeric:tabular-nums}
 .book-page{--reader-space:calc(100vw - var(--sidebar-width));margin-left:var(--sidebar-width);min-height:100vh}

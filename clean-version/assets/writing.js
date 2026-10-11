@@ -18,7 +18,7 @@
     else { sidebar.removeAttribute('role'); sidebar.removeAttribute('aria-modal'); }
     shade.hidden = !mobile.matches || !open;
     toggle.setAttribute('aria-expanded', String(open));
-    if (returnFocus) toggle.focus();
+    if (returnFocus) toggle.focus({ preventScroll: true });
   }
   toggle.hidden = false;
   setContents(!mobile.matches);
@@ -26,7 +26,7 @@
     const open = toggle.getAttribute('aria-expanded') !== 'true';
     if (!mobile.matches) desktopOpen = open;
     setContents(open);
-    if (mobile.matches && open) sidebar.querySelector('a').focus();
+    if (mobile.matches && open) sidebar.querySelector('a').focus({ preventScroll: true });
   });
   shade.addEventListener('click', () => setContents(false, true));
   mobile.addEventListener('change', () => setContents(mobile.matches ? false : desktopOpen));
@@ -68,7 +68,9 @@
   });
 
   const links = [...document.querySelectorAll('[data-section-link]')];
-  const sections = links.map(link => document.getElementById(link.hash.slice(1))).filter(Boolean);
+  // Sidebar and inline contents link to the same headings. Keep each heading
+  // once, in reading order, so a repeated parent cannot override its subsection.
+  const sections = [...new Set(links.map(link => document.getElementById(link.hash.slice(1))).filter(Boolean))];
   const progress = document.querySelector('[data-reading-progress]');
   const label = document.querySelector('[data-reading-label]');
   let pending = false;

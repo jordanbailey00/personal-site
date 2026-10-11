@@ -8,7 +8,7 @@ A small, static portfolio based on the supplied Aeree Cho website oracle. It fol
 npm run dev
 ```
 
-Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, retired style preference migration, keyboard menu dismissal, multi-article listing behavior, and both star themes’ animation lifecycle.
+Open http://127.0.0.1:4173. Re-run `npm run build` after editing. `npm run check` verifies the generated pages, internal links, theme persistence/device changes/storage fallbacks, retired style preference migration, keyboard menu dismissal, multi-article listing behavior, current-section tracking, and both star themes’ animation lifecycle.
 
 Profile and project metadata live in `content/site.mjs`. The three project summaries in `content/*.html` give a short, plain-language introduction and a few outcomes. Keep these around 100 words, with occasional light humor; long explanations belong in Writing, and implementation details belong on GitHub. The original long case studies remain in the retired site and Git history. `scripts/import-case-studies.cjs` is a legacy importer and would overwrite the concise summaries. Layout and page generation live in `scripts/build.mjs`; styling lives in `assets/style.css`.
 
@@ -47,7 +47,7 @@ The first essay, `content/writing/reinforcement-learning-for-runescape.html`, us
 
 `/writing/` is the writing hub, listing every published entry from `content/writing/posts.mjs`. The homepage uses the same listing renderer for its three most recent entries: the Writing heading and All writing link open the hub, while article titles open their individual pages. `/writing/template/` remains a labeled authoring preview, excluded from the sitemap and marked `noindex`.
 
-The reading layout retains the contents sidebar, section navigation, and code examples inspired by [Structure and Interpretation of Tensor Programs](https://sitp.ai/). Its text column is centered in the space beside the sidebar, with equal left/right padding. Font families, body and heading sizes, page colors, and themes come from the main site stylesheet. Rust uses a medium warm-brown writing sidebar and Light uses a medium slate sidebar, both with pale text and matching focus states to separate navigation from the reading canvas. Articles put supporting footnotes in the right margin on screens at least 1200px wide. Equal gutters keep the main text centered; notes return to document flow on smaller screens and in print.
+The reading layout retains the contents sidebar, section navigation, and code examples inspired by [Structure and Interpretation of Tensor Programs](https://sitp.ai/). Its text column is centered in the space beside the sidebar, with equal left/right padding. Font families, body and heading sizes, page colors, and themes come from the main site stylesheet. Rust uses a medium warm-brown writing sidebar with pale text; Light uses a pale-gray sidebar with dark text. Every theme gives the current section or subsection its own accent color, tinted background, heavier text, and a left marker. Reading position deduplicates headings shared by the sidebar and inline contents, so subsections remain selected until the next heading. Articles put supporting footnotes in the right margin on screens at least 1200px wide. Equal gutters keep the main text centered; notes return to document flow on smaller screens and in print.
 
 To add or migrate an essay:
 
