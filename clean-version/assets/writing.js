@@ -42,9 +42,6 @@
   sidebar.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', () => {
     if (mobile.matches) { setContents(false); main.focus({ preventScroll: true }); }
   }));
-  const print = document.querySelector('[data-print]');
-  print.hidden = false;
-  print.addEventListener('click', () => window.print());
 
   document.querySelectorAll('[data-copy-code]').forEach(button => {
     button.hidden = false;

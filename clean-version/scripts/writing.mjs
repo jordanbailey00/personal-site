@@ -6,7 +6,6 @@ import { renderCallouts } from './callouts.mjs';
 const stripTags = value => value.replace(/<[^>]*>/g, '');
 const formatDate = value => new Intl.DateTimeFormat('en', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`));
 const menuIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
-const printIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 8V3h10v5M7 17H3V8h18v9h-4M7 14h10v7H7Z"/></svg>';
 
 export function writingList({ escape, limit = Infinity }) {
   const published = posts.filter(post => post.status === 'published').slice(0, limit);
@@ -30,7 +29,7 @@ export async function writingPages({ root, escape, appearanceControls }) {
   const linkTo = post => `/writing/${post.slug}/`;
   const contents = headings => headings.map(heading => `<li class="${heading.level === '3' ? 'subsection-link' : ''}"><a href="#${escape(heading.id)}" data-section-link>${heading.title}</a></li>`).join('');
 
-  function shell({ title, body, current = '', headings = [], preview = false, previous, next }) {
+  function shell({ body, current = '', headings = [], preview = false, previous, next }) {
     return `<div class="reading-progress" aria-hidden="true"><span data-reading-progress></span></div>
 <aside class="book-sidebar" id="writing-sidebar" aria-label="Writing navigation">
   <a class="book-author" href="/">Jordan Bailey</a><a class="book-name" href="/writing/">Writing</a>
@@ -40,7 +39,7 @@ export async function writingPages({ root, escape, appearanceControls }) {
 </aside>
 <button class="sidebar-shade" type="button" aria-label="Close contents" tabindex="-1" hidden></button>
 <div class="book-page">
-  <header class="reader-toolbar"><div class="reader-actions"><button class="reader-button" type="button" data-contents-toggle aria-label="Toggle contents" aria-expanded="false" aria-controls="writing-sidebar" hidden>${menuIcon}</button>${appearanceControls()}</div><a class="toolbar-title" href="/writing/">${escape(title)}</a><button class="reader-button print-button" type="button" data-print aria-label="Print this page" title="Print this page" hidden>${printIcon}</button></header>
+  <div class="reader-controls" role="group" aria-label="Reading controls"><button class="reader-button" type="button" data-contents-toggle aria-label="Toggle contents" aria-expanded="false" aria-controls="writing-sidebar" hidden>${menuIcon}</button>${appearanceControls()}</div>
   <main class="book-main ${current ? 'book-article' : 'book-index'}" id="main" tabindex="-1">${body}
   ${current ? `<nav class="chapter-navigation" aria-label="Essay navigation">${previous ? `<a href="${linkTo(previous)}"><small>Previous essay</small>← ${escape(previous.title)}</a>` : '<a href="/writing/"><small>Contents</small>← All writing</a>'}${next ? `<a href="${linkTo(next)}"><small>Next essay</small>${escape(next.title)} →</a>` : '<a href="#main"><small>Return</small>Back to top ↑</a>'}</nav>` : ''}
   <footer class="book-footer"><span>Jordan Bailey</span><span>Reading design inspired by <a href="https://sitp.ai/">SITP</a></span></footer></main>
@@ -67,7 +66,7 @@ export async function writingPages({ root, escape, appearanceControls }) {
     const position = published.indexOf(post);
     const minutes = Math.max(1, Math.ceil(stripTags(opening + html).split(/\s+/).length / 220));
     const body = `${post.preview ? '<div class="template-notice"><strong>Template preview</strong><span>Sample layout only · No essay published</span></div>' : ''}<header class="essay-header"><p class="book-kicker">${post.preview ? 'An unwritten chapter' : `Essay ${String(position + 1).padStart(2, '0')}`}</p><h1 class="page-title">${escape(post.title)}</h1><p class="page-subtitle">${escape(post.subtitle)}</p><p class="essay-meta">Jordan Bailey <span aria-hidden="true">·</span> ${post.preview ? 'Undated draft' : `<time datetime="${post.date}">${formatDate(post.date)}</time> <span aria-hidden="true">·</span> ${minutes} min read`}</p></header>${opening ? `<div class="prose reading-prose opening-prose">${opening}</div>` : ''}<nav class="inline-contents" aria-label="On this page"><details open><summary>In this article</summary><ol>${contents(headings.filter(heading => heading.level === '2'))}</ol></details></nav><article class="prose reading-prose">${html}</article>`;
-    pages.push({ pathname: linkTo(post), title: `${post.title} | Jordan Bailey`, description: post.subtitle, noindex: !!post.preview, article: !post.preview, body: shell({ title: post.preview ? 'Article template' : post.title, body, current: post.slug, headings, preview: post.preview, previous: published[position - 1], next: post.preview ? null : published[position + 1] }) });
+    pages.push({ pathname: linkTo(post), title: `${post.title} | Jordan Bailey`, description: post.subtitle, noindex: !!post.preview, article: !post.preview, body: shell({ body, current: post.slug, headings, preview: post.preview, previous: published[position - 1], next: post.preview ? null : published[position + 1] }) });
   }
   return pages;
 }

@@ -28,7 +28,7 @@ function reader(initialScroll = 0, { mobile = false } = {}) {
   const sidebar = Object.assign(element(), { querySelectorAll: () => sidebarLinks, querySelector: () => sidebarLinks[0] });
   const main = element();
   const elements = Object.fromEntries([
-    '[data-contents-toggle]', '.sidebar-shade', '.book-page', '[data-print]',
+    '[data-contents-toggle]', '.sidebar-shade', '.book-page',
     '[data-reading-progress]', '[data-reading-label]',
   ].map(selector => [selector, element()]));
   let scroll = initialScroll;
