@@ -191,18 +191,13 @@ function beamOf(context, beam, colors, clock) {
   context.lineWidth = 1.3;
   for (const phase of [0, Math.PI]) {
     context.beginPath();
-    for (let x = 0; x <= length; x += 6) context.lineTo(x, Math.sin(x * 0.07 - clock * 32 + phase) * width * 0.6);
+    for (let x = 0; x <= length; x += 10) context.lineTo(x, Math.sin(x * 0.07 - clock * 32 + phase) * width * 0.6);
     context.stroke();
   }
-  const radius = (14 + 6 * grow) * pulse, flare = context.createRadialGradient(0, 0, 0, 0, 0, radius);
-  flare.addColorStop(0, colors.hot);
-  flare.addColorStop(0.35, colors.tail);
-  flare.addColorStop(1, colors.clear);
+  // The flare is a glow stamped from a sprite the page paints once per palette.
+  const radius = (14 + 6 * grow) * pulse;
   context.globalAlpha = 1;
-  context.fillStyle = flare;
-  context.beginPath();
-  context.arc(0, 0, radius, 0, TAU);
-  context.fill();
+  context.drawImage(colors.glow, -radius, -radius, radius * 2, radius * 2);
   context.globalAlpha = 0.8;
   context.lineWidth = 1.2;
   for (let spike = 0; spike < 4; spike++) {

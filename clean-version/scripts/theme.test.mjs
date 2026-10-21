@@ -34,10 +34,14 @@ function page({ saved = null, savedStyle = null, dark = false, blocked = false }
   };
 }
 
-test('Auto follows live device changes; explicit themes override the device', () => {
+test('Supernova is the default; Auto follows live device changes; explicit themes override the device', () => {
   const p = page();
-  assert.equal(p.initial, 'light');
-  p.device(true); assert.equal(p.root.dataset.theme, 'coal');
+  assert.equal(p.initial, 'supernova');
+  assert.equal(p.inputs.find(input => input.checked).value, 'supernova');
+  assert.equal(p.meta.content, '#000000');
+  p.device(true); assert.equal(p.root.dataset.theme, 'supernova', 'the default ignores the device');
+  p.choose('auto'); assert.equal(p.root.dataset.theme, 'coal');
+  p.device(false); assert.equal(p.root.dataset.theme, 'light');
   p.choose('rust'); p.device(false); p.device(true);
   assert.equal(p.root.dataset.theme, 'rust');
   p.choose('auto'); assert.equal(p.root.dataset.theme, 'coal');
@@ -58,7 +62,8 @@ test('Every explicit selection persists when another page loads', () => {
 
 test('Old dark preference migrates; invalid or blocked storage still works', () => {
   assert.equal(page({ saved: 'dark' }).initial, 'coal');
-  assert.equal(page({ saved: 'unknown', dark: true }).initial, 'coal');
+  assert.equal(page({ saved: 'unknown', dark: true }).initial, 'supernova');
+  assert.equal(page({ saved: 'auto', dark: true }).initial, 'coal', 'a saved Auto choice still follows the device');
   const p = page({ blocked: true }); p.choose('navy');
   assert.equal(p.root.dataset.theme, 'navy');
 });
@@ -69,8 +74,8 @@ test('Cross-tab changes synchronize; unrelated storage events do not', () => {
   p.storage('novasuper'); assert.equal(p.root.dataset.theme, 'novasuper');
   assert.equal(p.meta.content, '#ffffff');
   p.storage('rust', 'unrelated'); assert.equal(p.root.dataset.theme, 'novasuper');
-  p.storage(null, null); assert.equal(p.root.dataset.theme, 'coal');
-  assert.equal(p.inputs.find(input => input.checked).value, 'auto');
+  p.storage(null, null); assert.equal(p.root.dataset.theme, 'supernova');
+  assert.equal(p.inputs.find(input => input.checked).value, 'supernova');
 });
 
 test('Hub supports multiple essays while homepage limits entries and excludes drafts', () => {

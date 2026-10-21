@@ -15,9 +15,11 @@ const year = new Date().getUTCFullYear();
 // Changed stylesheets and behavior scripts get new URLs to avoid stale
 // GitHub Pages caches after deployment. A script's version also covers the
 // local modules it imports, whose import URLs are versioned in the output.
-const localImports = source => [...source.toString().matchAll(/from '\.\/([\w-]+\.js)'/g)].map(match => match[1]);
+// Static (from './x.js') and dynamic (import('./x.js')) local module imports.
+const MODULE_IMPORT = /(from |import\()'\.\/([\w-]+\.js)'/g;
+const localImports = source => [...source.toString().matchAll(MODULE_IMPORT)].map(match => match[2]);
 const assetVersions = Object.fromEntries(await Promise.all(
-  ['style.css', 'cv.css', 'writing.css', 'callouts.css', 'lander.css', 'theme.js', 'supernova.js', 'writing.js', 'lander.js', 'space-targets.js', 'guns.js', 'lander-sound.js'].map(async name => {
+  ['style.css', 'cv.css', 'writing.css', 'callouts.css', 'lander.css', 'theme.js', 'supernova.js', 'starfield.js', 'writing.js', 'lander.js', 'space-targets.js', 'guns.js', 'lander-sound.js'].map(async name => {
     const source = await readFile(path.join(root, 'assets', name));
     const hash = createHash('sha256').update(source);
     for (const dependency of localImports(source)) hash.update(await readFile(path.join(root, 'assets', dependency)));
@@ -61,7 +63,7 @@ function document(title, description, pathname, body, options = {}) {
     body = body.replace(/<a class="back-link"[^>]*>.*?<\/a>/, link => `<div class="page-tools">${link}${appearanceControls()}</div>`);
   }
   return versionLinks(`<!doctype html>
-<html lang="en"${reader ? ' data-page="writing" class="no-writing-js contents-hidden"' : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff"><title>${escape(title)}</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${domain}${pathname}">${options.noindex ? '<meta name="robots" content="noindex,follow">' : ''}<meta property="og:type" content="${options.article ? 'article' : 'website'}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${domain}${pathname}"><meta property="og:image" content="${domain}/assets/jordan.jpg"><meta name="twitter:card" content="summary"><link rel="icon" href="/favicon.png" type="image/png"><script src="/assets/theme.js"></script><script type="module" src="/assets/supernova.js"></script><link rel="stylesheet" href="/assets/style.css">${pathname === "/cv/" ? '<link rel="stylesheet" href="/assets/cv.css">' : ""}${writing ? '<link rel="stylesheet" href="/assets/writing.css">' : ''}<link rel="stylesheet" href="/assets/callouts.css">${options.lander ? '<link rel="stylesheet" href="/assets/lander.css"><script type="module" src="/assets/lander.js"></script>' : ''}<link rel="preload" href="/assets/fonts/akzidenz-bold.otf" as="font" type="font/otf" crossorigin><link rel="preload" href="/assets/fonts/ubuntu-sans-variable.woff2" as="font" type="font/woff2" crossorigin>${reader ? '<script src="/assets/writing.js" defer></script>' : ''}</head><body${reader ? ' class="writing-site"' : ''}><a class="skip-link" href="#main">Skip to content</a>${body}${pathname === "/cv/" || reader ? "" : footer()}</body></html>\n`);
+<html lang="en"${reader ? ' data-page="writing" class="no-writing-js contents-hidden"' : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>${escape(title)}</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${domain}${pathname}">${options.noindex ? '<meta name="robots" content="noindex,follow">' : ''}<meta property="og:type" content="${options.article ? 'article' : 'website'}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${domain}${pathname}"><meta property="og:image" content="${domain}/assets/jordan.jpg"><meta name="twitter:card" content="summary"><link rel="icon" href="/favicon.png" type="image/png"><script src="/assets/theme.js"></script><script type="module" src="/assets/supernova.js"></script><link rel="modulepreload" href="/assets/starfield.js"><link rel="stylesheet" href="/assets/style.css">${pathname === "/cv/" ? '<link rel="stylesheet" href="/assets/cv.css">' : ""}${writing ? '<link rel="stylesheet" href="/assets/writing.css">' : ''}<link rel="stylesheet" href="/assets/callouts.css">${options.lander ? '<link rel="stylesheet" href="/assets/lander.css"><script type="module" src="/assets/lander.js"></script>' : ''}<link rel="preload" href="/assets/fonts/akzidenz-bold.otf" as="font" type="font/otf" crossorigin><link rel="preload" href="/assets/fonts/ubuntu-sans-variable.woff2" as="font" type="font/woff2" crossorigin>${reader ? '<script src="/assets/writing.js" defer></script>' : ''}</head><body${reader ? ' class="writing-site"' : ''}><a class="skip-link" href="#main">Skip to content</a>${body}${pathname === "/cv/" || reader ? "" : footer()}</body></html>\n`);
 }
 const pages = new Map();
 const noindexPages = new Set();
@@ -92,7 +94,7 @@ await cp(path.join(root, 'assets'), path.join(out, 'assets'), { recursive: true 
 for (const name of Object.keys(assetVersions).filter(name => name.endsWith('.js'))) {
   const file = path.join(out, 'assets', name);
   const source = await readFile(file, 'utf8');
-  const versioned = source.replace(/from '\.\/([\w-]+\.js)'/g, (match, dependency) => assetVersions[dependency] ? `from './${dependency}?v=${assetVersions[dependency]}'` : match);
+  const versioned = source.replace(MODULE_IMPORT, (match, lead, dependency) => assetVersions[dependency] ? `${lead}'./${dependency}?v=${assetVersions[dependency]}'` : match);
   if (versioned !== source) await writeFile(file, versioned);
 }
 await cp(path.join(root, 'public'), out, { recursive: true });

@@ -16,7 +16,8 @@
 @media(prefers-color-scheme:light){:root:not([data-theme]){--title-ink:#1a1a1a;--subtitle-ink:#0006}}
 /* Keep one fixed, non-interactive star field behind every page's content. */
 :root:is([data-theme="supernova"],[data-theme="novasuper"]) body{isolation:isolate}
-.supernova-background{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+.supernova-background{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease}
+.supernova-background.is-ready{opacity:1}
 :root[data-theme="novasuper"] .supernova-background{filter:invert(1)}
 @media print{.supernova-background{display:none}}
 @media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--ink:#e5e5e5;--muted:#a6a6ab;--line:#35363a;--paper:#18191b;--surface:#222326;--hover:#2d2e32;--underline:#77787f;--tag-border:#51525a;--tag-ink:#b7b7bd;--badge-bg:#38311e;--badge-ink:#e5c779;--icon:#a6a6ab;--note-bg:#232427;--note-border:#64656d;--code-bg:#292a2e;--focus:#94c6e5}}

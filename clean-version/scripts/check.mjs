@@ -37,7 +37,7 @@ for (const file of files.filter(file => file.endsWith('.html'))) {
 }
 // Local module imports must resolve and carry a version.
 for (const name of (await readdir(path.join(root, 'assets'))).filter(name => name.endsWith('.js'))) {
-  for (const [, dependency, version] of (await readFile(path.join(root, 'assets', name), 'utf8')).matchAll(/from '\.\/([\w-]+\.js)(\?v=\w+)?'/g)) {
+  for (const [, dependency, version] of (await readFile(path.join(root, 'assets', name), 'utf8')).matchAll(/(?:from |import\()'\.\/([\w-]+\.js)(\?v=\w+)?'/g)) {
     if (!version) errors.push(`assets/${name}: unversioned import ${dependency}`);
     try { await stat(path.join(root, 'assets', dependency)); checked++; } catch { errors.push(`assets/${name}: missing import ${dependency}`); }
   }

@@ -251,7 +251,7 @@ function page({ usable = true, reduced = false, stored = {}, scrolled = null } =
     removeEventListener(name, fn) { windowListeners[name]?.delete(fn); },
     clearTimeout() {},
     setTimeout: (fn, delay) => { if (delay === 0) fn(); return 0; },
-    localStorage: { getItem: name => stored[name] ?? null, setItem: (name, value) => { stored[name] = String(value); } },
+    localStorage: { getItem: name => stored[name] ?? null, setItem: (name, value) => { stored[name] = String(value); }, removeItem: name => { delete stored[name]; } },
     scrollBy({ top }) { scroller.scrollTop = Math.max(0, Math.min(scroller.scrollHeight - scroller.clientHeight, Math.round(scroller.scrollTop + top))); },
   };
   const { flight, game } = installLander({ document, window });
@@ -380,8 +380,8 @@ test('The laser fires with the right button and drains its meter in the gun bar'
   p.advance(1);
   assert.ok(p.flight.beam, 'the laser fires');
   const meter = p.bar.children[3].children[0].children[0];
-  assert.match(meter.style.width, /^\d+%$/);
-  assert.ok(parseInt(meter.style.width) < 70);
+  const charge = Number(meter.style.transform.match(/^scaleX\(([\d.]+)\)$/)[1]);
+  assert.ok(charge > 0 && charge < 0.7, `${charge} of the laser's energy left`);
   p.mouse('mouseup', { button: 2 });
   p.advance(0.1);
   assert.equal(p.flight.beam, null);
@@ -414,18 +414,19 @@ test('Each round lasts a minute; the result and best score follow', () => {
   assert.match(p.results.innerHTML, /Landed.*<strong>0<\/strong>.*Best 25/);
 });
 
-test('A note points first-time visitors at the lander until they fly', () => {
+test('A note points at the lander on every page load until the visitor flies', () => {
   const p = page();
-  assert.equal(p.hint.hidden, false);
+  assert.ok(!p.hint.hidden);
   assert.match(p.hint.innerHTML, /<span class="lander-hint-text">play here<\/span><svg viewBox="0 0 150 80"/);
   assert.equal(p.hint.classList.contains('is-ready'), true, 'it writes itself in once its font is ready');
   assert.equal(p.hint.attributes['aria-hidden'], 'true', 'the lander itself is labeled for screen readers');
   p.button.dispatch('click');
   assert.equal(p.hint.hidden, true);
-  assert.equal(p.stored['jordan-bailey-lander-played'], 'true');
   p.press('Escape');
-  assert.equal(p.hint.hidden, true, 'it does not come back');
-  assert.equal(page({ stored: { 'jordan-bailey-lander-played': 'true' } }).hint.hidden, true, 'nor on later visits');
+  assert.equal(p.hint.hidden, true, 'it stays away for the rest of the visit');
+  const again = page({ stored: { 'jordan-bailey-lander-played': 'true' } });
+  assert.ok(!again.hint.hidden, 'a refresh brings it back, even for earlier players');
+  assert.equal('jordan-bailey-lander-played' in again.stored, false, 'and the old flag is cleared');
 });
 
 test('The page scrolls with a lander flying up past the window, all the way to the top', () => {

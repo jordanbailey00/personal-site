@@ -2,9 +2,11 @@
   const system = window.matchMedia('(prefers-color-scheme: dark)');
   const colors = { light: '#ffffff', rust: '#f2e7d5', coal: '#18191b', navy: '#161923', ayu: '#0f1419', supernova: '#000000', novasuper: '#ffffff' };
   const key = 'jordan-bailey-theme';
-  const normalize = value => value === 'dark' ? 'coal' : value === 'auto' || Object.hasOwn(colors, value) ? value : 'auto';
+  // Supernova is the default; Auto (follow the device) remains a choice.
+  const fallback = 'supernova';
+  const normalize = value => value === 'dark' ? 'coal' : value === 'auto' || Object.hasOwn(colors, value) ? value : fallback;
   const capitalize = value => value[0].toUpperCase() + value.slice(1);
-  let value = 'auto';
+  let value = fallback;
 
   function apply() {
     const resolved = value === 'auto' ? (system.matches ? 'coal' : 'light') : value;
@@ -21,7 +23,7 @@
   delete document.documentElement.dataset.style;
   try { localStorage.removeItem('jordan-bailey-style'); } catch { /* Storage may be unavailable. */ }
   // Resolve the theme before CSS loads to avoid a flash of the wrong palette.
-  try { value = normalize(localStorage.getItem(key)); } catch { /* Auto works without storage. */ }
+  try { value = normalize(localStorage.getItem(key)); } catch { /* The default works without storage. */ }
   apply();
 
   document.addEventListener('DOMContentLoaded', () => {

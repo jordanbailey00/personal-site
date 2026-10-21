@@ -77,9 +77,10 @@ export function floorBelow(flight, platforms = [], x = flight.x) {
 // itself ends. The lander keeps its place on the page while the page moves
 // under it, and the page never moves faster than the lander (or a gentle
 // catch-up pace when it starts a dive from the window's floor).
+export const edgeZone = flight => Math.max(110, flight.height * 0.22);
 export function cameraShift(flight, scrollTop, scrollRoom, dt = 1 / 60) {
   if (!flight.piloting) return 0;
-  const zone = Math.max(110, flight.height * 0.22), most = Math.max(Math.abs(flight.vy), 400) * dt;
+  const zone = edgeZone(flight), most = Math.max(Math.abs(flight.vy), 400) * dt;
   if (flight.vy < 0 && flight.y < zone) {
     const up = Math.max(0, Math.min(scrollTop, zone - flight.y, most));
     return up ? -up : 0;
@@ -201,12 +202,16 @@ const controlFor = event => KEYS[event.code] ?? KEYS[`Key${(event.key || '').toU
 const isSpace = event => event.code === 'Space' || event.key === ' ';
 // Either main mouse button fires.
 const isTrigger = event => event.button === 0 || event.button === 2;
-const BEST = 'jordan-bailey-lander-best-60', MUTED = 'jordan-bailey-lander-muted', PLAYED = 'jordan-bailey-lander-played';
+const BEST = 'jordan-bailey-lander-best-60', MUTED = 'jordan-bailey-lander-muted';
 // The "play here" note's arrow: a curving shaft and its head, drawn on the
 // note's 150 × 80 grid and ending just above the middle of the parked lander.
 const ARROW = ['M111 13C140 12 164 30 166 60', 'M161.2 52.4Q163.8 56.5 166 60Q167.6 56 169.7 51.8'];
 // Shots spark on compact page elements; text blocks are wider than their words.
 const SOLID = 'img, .social a, .name';
+// The effects canvas draws near device resolution, up to this many pixels:
+// big, sharp full-window canvases are what slow modest graphics chips down.
+const PIXEL_BUDGET = 2_000_000;
+const MAX_PARTICLES = 360;
 const DIVIDERS = '.section-title, .writing-heading';
 const FLAME = ['#fff1c1', '#ffb13b', '#ff6a2b'];
 // How hard each gun shakes the game when it fires.
@@ -259,7 +264,7 @@ export function installLander({ document, window }) {
   button.innerHTML = SPRITE;
   help.textContent = 'Click to fly';
   canvas.hidden = true;
-  // First-time visitors see a handwritten note pointing at the lander until they fly it.
+  // A handwritten note points at the lander on every page load until the visitor flies it.
   const hint = make('div', 'lander-hint', { 'aria-hidden': 'true' });
   hint.innerHTML = `<span class="lander-hint-text">play here</span><svg viewBox="0 0 150 80" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ARROW.map((d, index) => `<path pathLength="1" style="--stroke:${index}" d="${d}"/>`).join('')}</svg>`;
   document.body.append(canvas, pad, button, help, hint, score, bar, results, status);
@@ -269,7 +274,8 @@ export function installLander({ document, window }) {
   try {
     game.best = Number(window.localStorage.getItem(BEST)) || 0;
     sounds.muted = window.localStorage.getItem(MUTED) === 'true';
-    hint.hidden = window.localStorage.getItem(PLAYED) === 'true';
+    // The note once stayed away after a visitor's first flight; it now returns on every page load.
+    window.localStorage.removeItem('jordan-bailey-lander-played');
   } catch { /* Storage may be unavailable. */ }
   // The note waits for its handwriting font, so it never appears in a
   // fallback face, and loads the font only where the note can show.
@@ -284,6 +290,8 @@ export function installLander({ document, window }) {
   roomy.addEventListener('change', prepareHint);
   let particles = [], popups = [], frame = null, last = null, scale = 1, colors = null, helpTimer = null, endTimer = null;
   let shownEnergy = null, shownSecond = null, startBest = 0, shake = 0, offsetX = 0, offsetY = 0, clock = 0, wheel = 0, lastWheel = -Infinity;
+  // The display's refresh interval, measured as frames arrive.
+  let interval = 1000 / 60, lastCall = null, skipped = false;
 
   const rand = (min, max) => min + Math.random() * (max - min);
   const count = rate => Math.floor(rate) + (Math.random() < rate % 1 ? 1 : 0);
@@ -291,7 +299,7 @@ export function installLander({ document, window }) {
     const sin = Math.sin(flight.tilt), cos = Math.cos(flight.tilt);
     return { x: flight.x + x * cos - y * sin, y: flight.y + x * sin + y * cos };
   };
-  const emit = (kind, x, y, vx, vy, life, size, details) => { if (particles.length < 700) particles.push({ kind, x, y, vx, vy, life, size, age: 0, ...details }); };
+  const emit = (kind, x, y, vx, vy, life, size, details) => { if (particles.length < MAX_PARTICLES) particles.push({ kind, x, y, vx, vy, life, size, age: 0, ...details }); };
   function burst(kind, x, y, number, speed, life, size) {
     for (let i = 0; i < number; i++) {
       const angle = rand(0, TAU), velocity = rand(speed * 0.3, speed);
@@ -311,6 +319,9 @@ export function installLander({ document, window }) {
   // Images, section dividers, and the gun bar are landing platforms while a visitor flies.
   const perches = [...document.querySelectorAll(`main img, ${DIVIDERS}`)].filter(node => !node.matches('.writing-heading .section-title'));
   perches.push(bar);
+  // Page elements that shots spark against, measured once a frame instead of
+  // hit-testing the page for every shot.
+  const solids = [...document.querySelectorAll(SOLID)];
   function platforms() {
     if (!flight.piloting) return [];
     const list = [];
@@ -326,7 +337,21 @@ export function installLander({ document, window }) {
   function readColors() {
     const style = window.getComputedStyle(root);
     const read = (name, fallback) => style.getPropertyValue(name).trim() || fallback;
-    return { ...targetPalette(read), flame: FLAME[1], dark: style.colorScheme === 'dark' };
+    const palette = targetPalette(read);
+    return { ...palette, flame: FLAME[1], dark: style.colorScheme === 'dark', glow: glowSprite(palette) };
+  }
+  // A soft glow painted once per palette and stamped for muzzle flashes and
+  // the laser's flare, instead of building a gradient every frame.
+  function glowSprite(palette) {
+    const sprite = document.createElement('canvas');
+    sprite.width = sprite.height = 64;
+    const paint = sprite.getContext('2d'), glow = paint.createRadialGradient(32, 32, 0, 32, 32, 32);
+    glow.addColorStop(0, palette.hot);
+    glow.addColorStop(0.4, palette.tail);
+    glow.addColorStop(1, palette.clear);
+    paint.fillStyle = glow;
+    paint.fillRect(0, 0, 64, 64);
+    return sprite;
   }
 
   function place() {
@@ -337,7 +362,7 @@ export function installLander({ document, window }) {
     pad.style.transform = `translate(${target.x - 28}px, ${target.y + HALF}px)`;
   }
   function fit() {
-    scale = Math.min(window.devicePixelRatio || 1, 2);
+    scale = Math.max(0.5, Math.min(window.devicePixelRatio || 1, 1.5, Math.sqrt(PIXEL_BUDGET / Math.max(1, flight.width * flight.height))));
     const width = Math.round(flight.width * scale), height = Math.round(flight.height * scale);
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
   }
@@ -346,6 +371,7 @@ export function installLander({ document, window }) {
     if (frame !== null) window.cancelAnimationFrame(frame);
     frame = null;
     last = null;
+    lastCall = null;
     canvas.hidden = true;
     canvas.width = 0;
     canvas.height = 0;
@@ -362,16 +388,16 @@ export function installLander({ document, window }) {
     const sin = Math.sin(flight.tilt), cos = Math.cos(flight.tilt);
     if (main > 0.05) {
       const nozzle = at(0, NOZZLE);
-      for (let i = count(110 * main * dt); i > 0; i--) {
+      for (let i = count(70 * main * dt); i > 0; i--) {
         const angle = flight.tilt + rand(-0.3, 0.3), velocity = rand(110, 210);
         emit('flame', nozzle.x, nozzle.y, -Math.sin(angle) * velocity + flight.vx, Math.cos(angle) * velocity + flight.vy, rand(0.16, 0.34), rand(1.6, 2.8));
       }
       // The plume kicks up dust from whatever is below.
       const floor = floorBelow(flight, surfaces, nozzle.x), altitude = floor - nozzle.y;
-      if (altitude < 80) dust(nozzle.x, floor, count(70 * main * (1 - altitude / 80) * dt), 5);
+      if (altitude < 80) dust(nozzle.x, floor, count(45 * main * (1 - altitude / 80) * dt), 5);
     }
     const puff = (x, y, dx, dy, power) => {
-      for (let i = count(45 * power * dt); i > 0; i--) {
+      for (let i = count(30 * power * dt); i > 0; i--) {
         const velocity = rand(50, 110);
         emit('puff', x, y, dx * velocity + rand(-12, 12) + flight.vx, dy * velocity + rand(-12, 12) + flight.vy, rand(0.15, 0.32), rand(1.2, 2));
       }
@@ -385,7 +411,7 @@ export function installLander({ document, window }) {
     for (const shot of flight.shots) {
       if (!shot.homing) continue;
       const speed = Math.hypot(shot.vx, shot.vy) || 1, tailX = shot.x - shot.vx / speed * 9, tailY = shot.y - shot.vy / speed * 9;
-      for (let i = count(70 * dt); i > 0; i--) emit('puff', tailX, tailY, rand(-15, 15) - shot.vx * 0.1, rand(-15, 15) - shot.vy * 0.1, rand(0.3, 0.6), rand(1.2, 2.2));
+      for (let i = count(40 * dt); i > 0; i--) emit('puff', tailX, tailY, rand(-15, 15) - shot.vx * 0.1, rand(-15, 15) - shot.vy * 0.1, rand(0.3, 0.6), rand(1.2, 2.2));
     }
   }
 
@@ -396,11 +422,11 @@ export function installLander({ document, window }) {
     const ux = (x1 - x0) / length, uy = (y1 - y0) / length;
     shake = Math.max(shake, reducedMotion.matches ? 0 : 2.2);
     sounds.energy(flight.energy);
-    for (let i = count(45 * dt); i > 0; i--) {
+    for (let i = count(25 * dt); i > 0; i--) {
       const angle = Math.atan2(uy, ux) + rand(-0.9, 0.9), velocity = rand(120, 320);
       emit('spark', x0, y0, Math.cos(angle) * velocity, Math.sin(angle) * velocity, rand(0.1, 0.3), rand(1, 1.8));
     }
-    for (let i = count(70 * dt); i > 0; i--) {
+    for (let i = count(40 * dt); i > 0; i--) {
       const along = Math.random() * length, side = rand(-1, 1);
       emit('spark', x0 + ux * along, y0 + uy * along, -uy * side * 90 + ux * 40, ux * side * 90 + uy * 40, rand(0.15, 0.4), rand(0.8, 1.6));
     }
@@ -427,7 +453,7 @@ export function installLander({ document, window }) {
     const percent = Math.round(flight.energy * 100);
     if (percent === shownEnergy) return;
     shownEnergy = percent;
-    energyFill.style.width = `${percent}%`;
+    energyFill.style.transform = `scaleX(${percent / 100})`;
     laserSlot.classList.toggle('is-overheated', flight.overheated);
   }
   function saveBest() {
@@ -473,12 +499,12 @@ export function installLander({ document, window }) {
     const { x, y, radius, kind } = target;
     sounds.hit(kind, panOf(x));
     jolt(2 + radius / 8);
-    burst('spark', x, y, 18, 280, 0.6, 2.4);
-    burst('puff', x, y, 10, 90, 0.7, 2.8);
+    burst('spark', x, y, 12, 280, 0.6, 2.4);
+    burst('puff', x, y, 7, 90, 0.7, 2.8);
     emit('flash', x, y, 0, 0, 0.32, radius / 8);
     emit('ring', x, y, 0, 0, 0.4, radius * 2.4);
     const tones = { satellite: [colors.foil, colors.accent], ufo: [colors.paper, colors.accent], comet: [colors.hot, colors.accent] }[kind] ?? [colors.surface, colors.smoke];
-    for (let i = 0; i < 5 + Math.round(radius / 3); i++) {
+    for (let i = 0; i < 4 + Math.round(radius / 4); i++) {
       const angle = rand(0, TAU), velocity = rand(60, 230);
       emit('chunk', x, y, Math.cos(angle) * velocity + target.vx, Math.sin(angle) * velocity + target.vy, rand(0.5, 0.9), rand(2, 2 + radius / 5), { angle: rand(0, TAU), spin: rand(-12, 12), color: tones[i % 2] });
     }
@@ -490,9 +516,9 @@ export function installLander({ document, window }) {
     jolt(radius / 9);
     emit('flash', x, y, 0, 0, 0.35, radius / 14);
     emit('ring', x, y, 0, 0, 0.45, radius * 1.1);
-    burst('spark', x, y, 22, 300, 0.7, 2.6);
-    burst('flame', x, y, 22, 170, 0.45, 3.4);
-    burst('puff', x, y, 16, 120, 0.9, 3.4);
+    burst('spark', x, y, 14, 300, 0.7, 2.6);
+    burst('flame', x, y, 14, 170, 0.45, 3.4);
+    burst('puff', x, y, 10, 120, 0.9, 3.4);
   }
 
   function react(event) {
@@ -504,7 +530,7 @@ export function installLander({ document, window }) {
     if (event.type === 'overheat') {
       // Steam vents from the lander until the laser cools.
       sounds.overheat();
-      burst('puff', flight.x, flight.y, 16, 90, 1, 3);
+      burst('puff', flight.x, flight.y, 10, 90, 1, 3);
     }
     if (event.type === 'timeup') finish('time');
     if (event.type === 'touchdown' || event.type === 'bounce') {
@@ -516,6 +542,8 @@ export function installLander({ document, window }) {
   // Scroll the page with a lander flying past the top (or diving past the
   // bottom with S); the targets and effects stay with the window.
   function follow(dt) {
+    const zone = edgeZone(flight);
+    if (!flight.piloting || (flight.y >= zone && flight.y <= flight.height - zone)) return;
     const scroller = document.scrollingElement ?? root, before = scroller.scrollTop || 0;
     const shift = cameraShift(flight, before, (scroller.scrollHeight || 0) - (scroller.clientHeight || 0), dt);
     if (!shift) return;
@@ -524,12 +552,18 @@ export function installLander({ document, window }) {
   }
 
   function strike() {
+    if (!flight.shots.length) return;
+    const rects = [];
+    for (const node of solids) {
+      const rect = node.getBoundingClientRect();
+      if (rect.width && rect.bottom > 0 && rect.top < flight.height) rects.push([node, rect]);
+    }
     flight.shots = flight.shots.filter(shot => {
-      const target = document.elementFromPoint(shot.x, shot.y)?.closest(SOLID);
+      const target = rects.find(([, rect]) => shot.x >= rect.left && shot.x <= rect.right && shot.y >= rect.top && shot.y <= rect.bottom)?.[0];
       if (!target) return true;
       if (shot.homing) { blast(shot.x, shot.y, 24); sounds.boom(0.4, panOf(shot.x)); }
       else {
-        burst('spark', shot.x, shot.y, 12, 220, 0.5, 2.2);
+        burst('spark', shot.x, shot.y, 8, 220, 0.5, 2.2);
         emit('flash', shot.x, shot.y, 0, 0, 0.22, 1);
       }
       if (!reducedMotion.matches) target.animate?.([{ translate: '0 0' }, { translate: '-2px 1px' }, { translate: '2px -1px' }, { translate: '0 0' }], { duration: 180, easing: 'ease-out' });
@@ -554,7 +588,6 @@ export function installLander({ document, window }) {
 
   function drawParticle(particle) {
     const t = particle.age / particle.life;
-    context.globalCompositeOperation = (particle.kind === 'flame' || particle.kind === 'muzzle') && colors.dark ? 'lighter' : 'source-over';
     if (particle.kind === 'flash' || particle.kind === 'ring') {
       // Flashes widen quickly; shockwave rings sweep out and thin.
       context.globalAlpha = 1 - t;
@@ -566,15 +599,9 @@ export function installLander({ document, window }) {
       return;
     }
     if (particle.kind === 'muzzle') {
-      const radius = particle.size * (1 - t * 0.5), glow = context.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, radius);
-      glow.addColorStop(0, colors.hot);
-      glow.addColorStop(0.4, colors.tail);
-      glow.addColorStop(1, colors.clear);
+      const radius = particle.size * (1 - t * 0.5);
       context.globalAlpha = 1 - t;
-      context.fillStyle = glow;
-      context.beginPath();
-      context.arc(particle.x, particle.y, radius, 0, TAU);
-      context.fill();
+      context.drawImage(colors.glow, particle.x - radius, particle.y - radius, radius * 2, radius * 2);
       return;
     }
     if (particle.kind === 'chunk') {
@@ -599,6 +626,8 @@ export function installLander({ document, window }) {
     context.globalAlpha = particle.kind === 'flame' ? 1 - t : particle.kind === 'spark' ? 1 - t * t : 0.55 * (1 - t);
     context.fillStyle = particle.kind === 'flame' ? FLAME[Math.min(2, Math.floor(t * 3))] : particle.kind === 'spark' ? colors.accent : colors.smoke;
     const radius = particle.kind === 'flame' ? particle.size * (1 - t * 0.5) : particle.kind === 'spark' ? particle.size : particle.size * (1 + t * 1.5);
+    // Sparks, embers, and dust are tiny: squares need no path. Smoke stays round.
+    if (particle.kind !== 'puff') return context.fillRect(particle.x - radius, particle.y - radius, radius * 2, radius * 2);
     context.beginPath();
     context.arc(particle.x, particle.y, radius, 0, TAU);
     context.fill();
@@ -649,7 +678,11 @@ export function installLander({ document, window }) {
       context.fill();
       context.restore();
     }
-    for (const particle of particles) drawParticle(particle);
+    // Flames and flashes add light on dark themes; everything else paints over.
+    const glowing = particle => particle.kind === 'flame' || particle.kind === 'muzzle';
+    for (const particle of particles) if (!glowing(particle)) drawParticle(particle);
+    if (colors.dark) context.globalCompositeOperation = 'lighter';
+    for (const particle of particles) if (glowing(particle)) drawParticle(particle);
     context.globalCompositeOperation = 'source-over';
     drawShots(context, flight, colors, clock);
     // Points pop up from each hit; gun names and sound changes from the lander.
@@ -669,6 +702,14 @@ export function installLander({ document, window }) {
   function tick(now) {
     frame = null;
     if (!usable.matches) return sleep();
+    // On displays above 90 Hz, update every other frame: 60-odd updates a
+    // second are plenty, and they halve the drawing work.
+    if (lastCall !== null) interval += (now - lastCall - interval) * 0.1;
+    lastCall = now;
+    if (interval < 11 && (skipped = !skipped)) {
+      frame = window.requestAnimationFrame(tick);
+      return;
+    }
     const dt = last === null ? 1 / 60 : clamp((now - last) / 1000, 0, 1 / 30);
     last = now;
     clock += dt;
@@ -755,7 +796,6 @@ export function installLander({ document, window }) {
     startBest = game.best;
     shownSecond = null;
     hint.hidden = true;
-    try { window.localStorage.setItem(PLAYED, 'true'); } catch { /* The note still goes away for this visit. */ }
     wheel = 0;
     button.setAttribute('aria-pressed', 'true');
     root.classList.add('lander-aiming');
