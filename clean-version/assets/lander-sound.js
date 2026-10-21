@@ -8,7 +8,7 @@
 
 export function createSounds(window) {
   const Context = window.AudioContext ?? window.webkitAudioContext;
-  let audio = null, master = null, space = null, noise = null, laser = null, muted = false;
+  let audio = null, master = null, space = null, noise = null, laser = null, muted = false, recentHits = [];
 
   function ready() {
     if (!Context || muted) return false;
@@ -142,18 +142,48 @@ export function createSounds(window) {
     },
   };
   // Each kind of target breaks apart with its own sound.
+  // Breaking-material building blocks. `v` nudges the pitch so repeated hits
+  // never sound identical.
+  // A sharp crack: a very short, bright transient.
+  function crack(pan, delay = 0, peak = 0.3) {
+    hiss({ filter: 'highpass', from: 5000, to: 2500, duration: 0.025, peak, delay, pan, echo: 0.1, attack: 0.001 });
+  }
+  // A low knock that falls in pitch.
+  function thud(from, length, peak, pan, v, delay = 0) {
+    voice({ from: from * v, to: from * 0.38, duration: length, peak, delay, pan, echo: 0.15 });
+  }
+  // A cluster of short, resonant noise grains: material breaking into pieces.
+  function grains({ count, center, spread = 0.8, q = 3, spacing = 0.018, jitter = 0.01, peak = 0.24, length = 0.05, fall = 0.5, decay = 1, delay = 0, pan, v }) {
+    for (let index = 0; index < count; index++) {
+      const frequency = center * v * (1 - spread / 2 + Math.random() * spread);
+      hiss({ filter: 'bandpass', from: frequency, to: frequency * fall, duration: length, peak: peak * decay ** index, q, delay: delay + index * spacing + Math.random() * jitter, pan, echo: 0.2 });
+    }
+  }
+  // A metallic ping, like a bolt or a plate ringing as it flies off.
+  function ping(frequency, pan, v, delay = 0, length = 0.2, peak = 0.045) {
+    voice({ from: frequency * v, to: frequency * v * 0.97, duration: length, peak, delay, ratio: 1.414, index: frequency * 0.7, pan, echo: 0.45 });
+  }
   const HIT = {
-    asteroid(pan) {
-      hiss({ from: 1600, to: 120, duration: 0.45, peak: 0.3, pan, echo: 0.35 });
-      voice({ from: 420, to: 60, duration: 0.35, peak: 0.25, ratio: 0.5, index: 300, pan });
+    // Deep fracture: a low groan as the rock gives way, a crack, a heavy
+    // boom, and crumbling.
+    asteroid(pan, v) {
+      hiss({ filter: 'bandpass', from: 900 * v, to: 180, duration: 0.18, peak: 0.3, q: 6, pan, echo: 0.3 });
+      crack(pan, 0.1, 0.3);
+      thud(70, 0.55, 0.5, pan, v, 0.1);
+      grains({ count: 12, center: 800, spread: 1, q: 2, spacing: 0.025, peak: 0.18, length: 0.06, decay: 0.92, delay: 0.14, pan, v });
     },
-    rock(pan) {
-      hiss({ from: 2400, to: 200, duration: 0.3, peak: 0.24, pan });
-      voice({ from: 600, to: 90, duration: 0.25, peak: 0.2, ratio: 0.5, index: 250, pan });
+    // The smaller rocks an asteroid splits into fracture quicker and higher.
+    rock(pan, v) {
+      hiss({ filter: 'bandpass', from: 1400 * v, to: 300, duration: 0.12, peak: 0.22, q: 6, pan, echo: 0.3 });
+      crack(pan, 0.06, 0.2);
+      grains({ count: 6, center: 1200, spread: 1, q: 2, spacing: 0.02, peak: 0.15, length: 0.05, delay: 0.08, pan, v });
     },
-    satellite(pan) {
-      voice({ from: 900, to: 300, duration: 0.4, peak: 0.16, ratio: 1.414, index: 900, pan, echo: 0.45 });
-      hiss({ filter: 'highpass', from: 5000, to: 2000, duration: 0.25, peak: 0.12, pan });
+    // Panel blowout: an explosion that throws bolts and plates, ringing as
+    // they fly off.
+    satellite(pan, v) {
+      hiss({ from: 3200 * v, to: 90, duration: 0.5, peak: 0.42, pan, echo: 0.4 });
+      thud(110, 0.45, 0.45, pan, v);
+      for (const [delay, frequency] of [[0.05, 2900], [0.11, 3700], [0.16, 2300], [0.24, 4100], [0.33, 3100]]) ping(frequency, pan + (Math.random() - 0.5) * 0.6, v, delay, 0.15, 0.04);
     },
     ufo(pan) {
       voice({ from: 1900, to: 140, duration: 0.45, peak: 0.14, ratio: 2.5, index: 1200, pan, echo: 0.5 });
@@ -223,7 +253,16 @@ export function createSounds(window) {
     // Call from the click or key press that starts a flight.
     start: ready,
     fire(gun, pan = 0) { if (FIRE[gun] && ready()) FIRE[gun](pan); },
-    hit(kind, pan = 0) { if (HIT[kind] && ready()) HIT[kind](pan); },
+    hit(kind, pan = 0) {
+      if (!HIT[kind] || !ready()) return;
+      // A missile burst or the laser can break many targets at once; a few
+      // sounds carry that, and more would only add mud and audio work.
+      const now = audio.currentTime;
+      recentHits = recentHits.filter(time => now - time < 0.08);
+      if (recentHits.length >= 3) return;
+      recentHits.push(now);
+      HIT[kind](pan, 0.94 + Math.random() * 0.12);
+    },
     // An explosion: a falling roar, a metallic plasma boom, and a deep thud.
     boom(size = 1, pan = 0) {
       if (!ready()) return;
