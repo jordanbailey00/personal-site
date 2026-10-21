@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createFlight, step, pilot, release, resize, resting, home, surfaceAt, installLander, SIZE, SAFE_LANDING } from '../assets/lander.js';
+import { createFlight, step, pilot, release, resize, resting, home, surfaceAt, cameraShift, installLander, SIZE, SAFE_LANDING } from '../assets/lander.js';
 
 const HALF = SIZE / 2;
 const run = (flight, seconds, each, platforms = []) => {
@@ -172,15 +172,46 @@ test('The autopilot flies home through platforms', () => {
   assert.deepEqual([flight.x, flight.y, flight.returning], [home(flight).x, home(flight).y, false]);
 });
 
-function page({ usable = true, reduced = false, stored = {} } = {}) {
+test('Flying past the top of the window scrolls the page up until it ends', () => {
+  const flight = createFlight(1280, 800);
+  pilot(flight);
+  Object.assign(flight, { x: 600, y: 120, vy: -200, landed: false });
+  // A whole second's allowance shows the distances; a frame's shows the pace.
+  assert.equal(cameraShift(flight, 3000, 3200, 1), -(176 - 120), 'enough to keep the lander at the edge of the zone');
+  assert.equal(cameraShift(flight, 20, 3200, 1), -20, 'no further than the top of the page');
+  assert.equal(cameraShift(flight, 0, 3200, 1), 0);
+  assert.equal(cameraShift(flight, 3000, 3200, 1 / 60), -400 / 60, 'at most a gentle pace per frame');
+  flight.vy = 50;
+  assert.equal(cameraShift(flight, 3000, 3200, 1), 0, 'falling does not scroll');
+});
+
+test('Diving with S held scrolls the page down; falling and the autopilot never scroll', () => {
+  const flight = createFlight(1280, 800);
+  pilot(flight);
+  Object.assign(flight, { x: 600, y: 700, vy: 200, landed: false });
+  assert.equal(cameraShift(flight, 1000, 3200, 1), 0, 'falling lands on the window floor');
+  flight.input.down = true;
+  assert.equal(cameraShift(flight, 1000, 3200, 1), 700 - (800 - 176));
+  assert.equal(cameraShift(flight, 3190, 3200, 1), 10, 'no further than the end of the page');
+  Object.assign(flight, { y: home(flight).y, vy: 0, landed: true });
+  assert.ok(cameraShift(flight, 1000, 3200, 1 / 60) > 0, 'a dive can start from the window floor');
+  release(flight);
+  Object.assign(flight, { y: 100, vy: -200 });
+  assert.equal(cameraShift(flight, 1000, 3200, 1), 0);
+});
+
+function page({ usable = true, reduced = false, stored = {}, scrolled = null } = {}) {
   let frames = [], now = 0;
   const media = query => ({ matches: query.includes('reduced-motion') ? reduced : usable, addEventListener() {} });
   const nodes = [], windowListeners = {};
   const gradient = { addColorStop() {} };
   const context = new Proxy({}, { get: (target, name) => name in target ? target[name] : () => gradient });
   const event = (type, init) => ({ type, defaultPrevented: false, timeStamp: now, preventDefault() { this.defaultPrevented = true; }, stopPropagation() { this.stopped = true; }, ...init });
+  // An optional page taller than the window, scrolled to `scrolled.top`.
+  const scroller = scrolled && { scrollTop: scrolled.top, scrollHeight: scrolled.height, clientHeight: 800 };
   const document = {
     documentElement: { clientWidth: 1280, clientHeight: 800, dataset: { theme: 'light' }, classList: classes() },
+    scrollingElement: scroller,
     body: { append: (...children) => nodes.push(...children) },
     elementFromPoint: () => null,
     querySelectorAll: () => [],
@@ -221,6 +252,7 @@ function page({ usable = true, reduced = false, stored = {} } = {}) {
     clearTimeout() {},
     setTimeout: (fn, delay) => { if (delay === 0) fn(); return 0; },
     localStorage: { getItem: name => stored[name] ?? null, setItem: (name, value) => { stored[name] = String(value); } },
+    scrollBy({ top }) { scroller.scrollTop = Math.max(0, Math.min(scroller.scrollHeight - scroller.clientHeight, Math.round(scroller.scrollTop + top))); },
   };
   const { flight, game } = installLander({ document, window });
   const find = name => nodes.find(node => node.classList.contains(name));
@@ -229,7 +261,7 @@ function page({ usable = true, reduced = false, stored = {} } = {}) {
   const keyOf = { Space: ' ', KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', KeyM: 'm' };
   const key = (type, code, init) => button.dispatch(type, { code, key: keyOf[code] ?? code, ...init }).defaultPrevented;
   return {
-    flight, game, button, document, stored, root: document.documentElement, hint, score, bar, results, status, pending: () => frames.length,
+    flight, game, button, document, stored, scroller, root: document.documentElement, hint, score, bar, results, status, pending: () => frames.length,
     press: (code, init) => key('keydown', code, init), lift: code => key('keyup', code),
     // Mouse and wheel events reach the window, as in a browser.
     mouse(type, init = {}) {
@@ -385,7 +417,8 @@ test('Each round lasts a minute; the result and best score follow', () => {
 test('A note points first-time visitors at the lander until they fly', () => {
   const p = page();
   assert.equal(p.hint.hidden, false);
-  assert.match(p.hint.innerHTML, /<svg viewBox="0 0 150 80"/);
+  assert.match(p.hint.innerHTML, /<span class="lander-hint-text">play here<\/span><svg viewBox="0 0 150 80"/);
+  assert.equal(p.hint.classList.contains('is-ready'), true, 'it writes itself in once its font is ready');
   assert.equal(p.hint.attributes['aria-hidden'], 'true', 'the lander itself is labeled for screen readers');
   p.button.dispatch('click');
   assert.equal(p.hint.hidden, true);
@@ -393,6 +426,25 @@ test('A note points first-time visitors at the lander until they fly', () => {
   p.press('Escape');
   assert.equal(p.hint.hidden, true, 'it does not come back');
   assert.equal(page({ stored: { 'jordan-bailey-lander-played': 'true' } }).hint.hidden, true, 'nor on later visits');
+});
+
+test('The page scrolls with a lander flying up past the window, all the way to the top', () => {
+  const p = page({ scrolled: { top: 1200, height: 4000 } });
+  p.button.dispatch('click');
+  p.game.spawnIn = Infinity;
+  p.press('KeyW');
+  p.advance(3.5);
+  assert.ok(p.scroller.scrollTop < 1200, 'the page scrolled up');
+  assert.ok(p.flight.y > 150, 'while the lander stays in view below the top');
+  p.advance(8);
+  assert.equal(p.scroller.scrollTop, 0, 'until the top of the page');
+  assert.ok(p.flight.y < 60, 'then the lander flies on to the top of the window');
+  p.lift('KeyW');
+  p.advance(6);
+  assert.equal(p.scroller.scrollTop, 0, 'falling back down leaves the page where it is');
+  p.press('KeyS');
+  p.advance(4);
+  assert.ok(p.scroller.scrollTop > 0, 'diving with S scrolls down again');
 });
 
 test('M mutes and unmutes the sound, and the choice is remembered', () => {

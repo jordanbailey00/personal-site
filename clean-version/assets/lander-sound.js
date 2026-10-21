@@ -1,11 +1,14 @@
-// Sound effects for the homepage lander game, synthesized with the Web Audio
-// API so no audio files are needed. Nothing plays until a visitor starts
-// flying (browsers allow audio only after a click or key press), and every
-// call is silent where Web Audio is unavailable or the sound is muted.
+// Sci-fi sound effects for the homepage lander game, synthesized with the Web
+// Audio API so no audio files are needed: frequency-modulated zaps and bells,
+// resonant filter sweeps, filtered noise, and a dark echo that gives every
+// sound some empty space around it. Sounds pan toward where they happen.
+// Nothing plays until a visitor starts flying (browsers allow audio only
+// after a click or key press), and every call is silent where Web Audio is
+// unavailable or the sound is muted.
 
 export function createSounds(window) {
   const Context = window.AudioContext ?? window.webkitAudioContext;
-  let audio = null, master = null, noise = null, laser = null, muted = false;
+  let audio = null, master = null, space = null, noise = null, laser = null, muted = false;
 
   function ready() {
     if (!Context || muted) return false;
@@ -18,6 +21,16 @@ export function createSounds(window) {
       limiter.threshold.value = -12;
       limiter.ratio.value = 12;
       master.connect(limiter).connect(audio.destination);
+      // A repeating, darkening echo: the sound of empty space.
+      space = audio.createDelay(1);
+      space.delayTime.value = 0.19;
+      const damping = audio.createBiquadFilter(), feedback = audio.createGain(), wet = audio.createGain();
+      damping.type = 'lowpass';
+      damping.frequency.value = 2600;
+      feedback.gain.value = 0.38;
+      wet.gain.value = 0.5;
+      space.connect(damping).connect(feedback).connect(space);
+      damping.connect(wet).connect(master);
       noise = audio.createBuffer(1, audio.sampleRate, audio.sampleRate);
       const samples = noise.getChannelData(0);
       for (let index = 0; index < samples.length; index++) samples[index] = Math.random() * 2 - 1;
@@ -25,60 +38,142 @@ export function createSounds(window) {
     if (audio.state === 'suspended') audio.resume();
     return true;
   }
-  function envelope(gain, at, peak, duration) {
+
+  // Sends a sound to the speakers, panned toward where it happened, and into the echo.
+  function route(node, pan = 0, echo = 0.3) {
+    let out = node;
+    if (pan && audio.createStereoPanner) {
+      const panner = audio.createStereoPanner();
+      panner.pan.value = Math.max(-1, Math.min(1, pan));
+      out = node.connect(panner);
+    }
+    out.connect(master);
+    if (echo) {
+      const send = audio.createGain();
+      send.gain.value = echo;
+      out.connect(send).connect(space);
+    }
+  }
+  function envelope(gain, at, peak, duration, attack) {
     gain.gain.setValueAtTime(0.0001, at);
-    gain.gain.exponentialRampToValueAtTime(peak, at + 0.005);
+    gain.gain.exponentialRampToValueAtTime(peak, at + attack);
     gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
   }
-  // A pitched blip that glides from one frequency to another.
-  function tone(type, from, to, duration, peak, delay = 0) {
-    const at = audio.currentTime + delay, oscillator = audio.createOscillator(), gain = audio.createGain();
-    oscillator.type = type;
-    oscillator.frequency.setValueAtTime(from, at);
-    oscillator.frequency.exponentialRampToValueAtTime(to, at + duration);
-    envelope(gain, at, peak, duration);
-    oscillator.connect(gain).connect(master);
-    oscillator.start(at);
-    oscillator.stop(at + duration + 0.05);
+  // A swept tone. With a modulator (ratio and index) it becomes an FM voice:
+  // bright zaps when the modulation falls away, metallic clangs at odd
+  // ratios, and bells when it rings on.
+  function voice({ type = 'sine', from, to = from, duration, peak, delay = 0, ratio = 0, index = 0, pan = 0, echo = 0.3, attack = 0.004 }) {
+    const at = audio.currentTime + delay, carrier = audio.createOscillator(), gain = audio.createGain();
+    carrier.type = type;
+    carrier.frequency.setValueAtTime(from, at);
+    carrier.frequency.exponentialRampToValueAtTime(to, at + duration);
+    if (ratio) {
+      const modulator = audio.createOscillator(), depth = audio.createGain();
+      modulator.frequency.setValueAtTime(from * ratio, at);
+      modulator.frequency.exponentialRampToValueAtTime(to * ratio, at + duration);
+      depth.gain.setValueAtTime(index, at);
+      depth.gain.exponentialRampToValueAtTime(Math.max(1, index * 0.02), at + duration);
+      modulator.connect(depth).connect(carrier.frequency);
+      modulator.start(at);
+      modulator.stop(at + duration + 0.05);
+    }
+    envelope(gain, at, peak, duration, attack);
+    carrier.connect(gain);
+    route(gain, pan, echo);
+    carrier.start(at);
+    carrier.stop(at + duration + 0.05);
   }
-  // Filtered noise, swept from one cutoff to another: blasts, whooshes, hiss.
-  function hiss(filterType, from, to, duration, peak, delay = 0, q = 1) {
-    const at = audio.currentTime + delay, source = audio.createBufferSource(), filter = audio.createBiquadFilter(), gain = audio.createGain();
-    source.buffer = noise;
-    source.loop = true;
-    filter.type = filterType;
+  // A buzzing tone through a resonant filter that sweeps: the "vwoom" of
+  // charging and launching.
+  function sweep({ type = 'sawtooth', frequency, from, to, duration, peak, q = 12, delay = 0, pan = 0, echo = 0.3, attack = 0.01 }) {
+    const at = audio.currentTime + delay, oscillator = audio.createOscillator(), filter = audio.createBiquadFilter(), gain = audio.createGain();
+    oscillator.type = type;
+    oscillator.frequency.value = frequency;
+    filter.type = 'lowpass';
     filter.Q.value = q;
     filter.frequency.setValueAtTime(from, at);
     filter.frequency.exponentialRampToValueAtTime(to, at + duration);
-    envelope(gain, at, peak, duration);
-    source.connect(filter).connect(gain).connect(master);
+    envelope(gain, at, peak, duration, attack);
+    oscillator.connect(filter).connect(gain);
+    route(gain, pan, echo);
+    oscillator.start(at);
+    oscillator.stop(at + duration + 0.05);
+  }
+  // Filtered noise swept between two cutoffs: blasts, rumbles, and venting.
+  function hiss({ filter: type = 'lowpass', from, to = from, duration, peak, delay = 0, q = 1, pan = 0, echo = 0.3, attack = 0.006 }) {
+    const at = audio.currentTime + delay, source = audio.createBufferSource(), filter = audio.createBiquadFilter(), gain = audio.createGain();
+    source.buffer = noise;
+    source.loop = true;
+    filter.type = type;
+    filter.Q.value = q;
+    filter.frequency.setValueAtTime(from, at);
+    filter.frequency.exponentialRampToValueAtTime(to, at + duration);
+    envelope(gain, at, peak, duration, attack);
+    source.connect(filter).connect(gain);
+    route(gain, pan, echo);
     source.start(at, Math.random() * 0.5);
     source.stop(at + duration + 0.05);
   }
 
   const FIRE = {
-    blaster() { tone('square', 1500, 160, 0.13, 0.09); tone('sawtooth', 760, 90, 0.11, 0.05); hiss('highpass', 4000, 1500, 0.05, 0.05); },
-    scatter() { hiss('lowpass', 4500, 180, 0.38, 0.6); tone('sine', 170, 38, 0.32, 0.55); tone('square', 90, 40, 0.12, 0.12); },
-    rapid() { tone('square', 1100 + Math.random() * 300, 380, 0.045, 0.045); hiss('bandpass', 3000, 1800, 0.03, 0.06, 0, 2); },
-    missiles() { hiss('bandpass', 500, 3200, 0.55, 0.22, 0, 1.5); tone('sawtooth', 90, 300, 0.4, 0.04); },
+    // A classic laser zap with a bright click at the front.
+    blaster(pan) {
+      voice({ type: 'triangle', from: 1700, to: 240, duration: 0.16, peak: 0.16, ratio: 2, index: 700, pan, echo: 0.35 });
+      voice({ from: 3200, to: 1200, duration: 0.05, peak: 0.05, pan, echo: 0 });
+    },
+    // A plasma spread: a quick charge, a fan of falling zaps, a resonant
+    // "vwomp", and a sub-bass punch.
+    scatter(pan) {
+      voice({ from: 500, to: 1900, duration: 0.05, peak: 0.07, pan, echo: 0 });
+      [2300, 1900, 1550].forEach((from, index) => voice({ type: 'triangle', from, to: from / 8, duration: 0.32, peak: 0.08, delay: 0.035, ratio: 1.5, index: 260, pan: pan + (index - 1) * 0.25, echo: 0.45 }));
+      sweep({ frequency: 70, from: 2400, to: 160, duration: 0.36, peak: 0.22, q: 9, delay: 0.03, pan, echo: 0.4 });
+      voice({ from: 140, to: 38, duration: 0.3, peak: 0.4, delay: 0.03, pan, echo: 0 });
+    },
+    // Short, bright blips with a little random pitch.
+    rapid(pan) {
+      voice({ from: 1500 + Math.random() * 400, to: 650, duration: 0.07, peak: 0.06, ratio: 3, index: 400, pan, echo: 0.15 });
+    },
+    // A rising resonant launch, two quick lock-on beeps, and a soft thrust.
+    missiles(pan) {
+      sweep({ frequency: 95, from: 220, to: 3200, duration: 0.5, peak: 0.2, q: 14, pan, echo: 0.4, attack: 0.04 });
+      voice({ from: 1568, duration: 0.05, peak: 0.06, delay: 0.06, pan, echo: 0.5 });
+      voice({ from: 2093, duration: 0.05, peak: 0.06, delay: 0.13, pan, echo: 0.5 });
+      hiss({ filter: 'bandpass', from: 900, to: 2400, duration: 0.45, peak: 0.08, q: 3, pan, echo: 0.2, attack: 0.05 });
+    },
   };
+  // Each kind of target breaks apart with its own sound.
   const HIT = {
-    asteroid() { hiss('lowpass', 1800, 120, 0.4, 0.35); tone('sine', 140, 45, 0.3, 0.35); },
-    rock() { hiss('lowpass', 2600, 200, 0.25, 0.28); tone('sine', 200, 70, 0.2, 0.25); },
-    satellite() { tone('triangle', 620, 600, 0.35, 0.12); tone('triangle', 1393, 1350, 0.25, 0.08); hiss('highpass', 5000, 2000, 0.2, 0.15); },
-    ufo() { tone('sawtooth', 1800, 120, 0.4, 0.08); hiss('bandpass', 2000, 400, 0.35, 0.2, 0, 3); },
-    comet() { [1568, 2093, 2637].forEach((frequency, index) => tone('triangle', frequency, frequency, 0.25, 0.08, index * 0.05)); hiss('lowpass', 3000, 150, 0.5, 0.3); },
+    asteroid(pan) {
+      hiss({ from: 1600, to: 120, duration: 0.45, peak: 0.3, pan, echo: 0.35 });
+      voice({ from: 420, to: 60, duration: 0.35, peak: 0.25, ratio: 0.5, index: 300, pan });
+    },
+    rock(pan) {
+      hiss({ from: 2400, to: 200, duration: 0.3, peak: 0.24, pan });
+      voice({ from: 600, to: 90, duration: 0.25, peak: 0.2, ratio: 0.5, index: 250, pan });
+    },
+    satellite(pan) {
+      voice({ from: 900, to: 300, duration: 0.4, peak: 0.16, ratio: 1.414, index: 900, pan, echo: 0.45 });
+      hiss({ filter: 'highpass', from: 5000, to: 2000, duration: 0.25, peak: 0.12, pan });
+    },
+    ufo(pan) {
+      voice({ from: 1900, to: 140, duration: 0.45, peak: 0.14, ratio: 2.5, index: 1200, pan, echo: 0.5 });
+      voice({ type: 'triangle', from: 600, to: 2400, duration: 0.2, peak: 0.05, pan });
+    },
+    comet(pan) {
+      [1568, 2093, 2637, 3136].forEach((from, index) => voice({ from, duration: 0.3, peak: 0.07, delay: index * 0.045, ratio: 3.5, index: 500, pan, echo: 0.55 }));
+      hiss({ from: 3000, to: 200, duration: 0.5, peak: 0.2, pan });
+    },
   };
 
   // The laser: a rising charge, then a growling, wobbling hum under a high
   // whine and crackle, until it powers down.
-  function laserOn() {
+  function laserOn(pan) {
     const at = audio.currentTime, out = audio.createGain();
     out.gain.setValueAtTime(0.0001, at);
     out.gain.exponentialRampToValueAtTime(0.45, at + 0.08);
-    out.connect(master);
-    tone('sawtooth', 180, 2200, 0.16, 0.12);
-    hiss('bandpass', 800, 5000, 0.16, 0.1, 0, 2);
+    route(out, pan, 0.25);
+    voice({ type: 'sawtooth', from: 180, to: 2200, duration: 0.16, peak: 0.12, pan, echo: 0 });
+    hiss({ filter: 'bandpass', from: 800, to: 5000, duration: 0.16, peak: 0.1, q: 2, pan, echo: 0 });
     const growl = audio.createBiquadFilter(), wobble = audio.createOscillator(), depth = audio.createGain(), body = audio.createGain();
     growl.type = 'lowpass';
     growl.frequency.value = 700;
@@ -112,7 +207,7 @@ export function createSounds(window) {
     crackle.connect(band).connect(crackleGain).connect(out);
     const sources = [...saws, wobble, whine, vibrato, crackle];
     for (const source of sources) source.start(at);
-    laser = { out, sources, whine };
+    laser = { out, sources, whine, pan };
   }
   function silenceLaser() {
     if (!laser) return;
@@ -127,22 +222,42 @@ export function createSounds(window) {
   return {
     // Call from the click or key press that starts a flight.
     start: ready,
-    fire(gun) { if (FIRE[gun] && ready()) FIRE[gun](); },
-    hit(kind) { if (HIT[kind] && ready()) HIT[kind](); },
-    boom(size = 1) { if (ready()) { hiss('lowpass', 2400, 50, 0.5 + size * 0.5, 0.55 + size * 0.2); tone('sine', 120, 28, 0.45 + size * 0.4, 0.6); } },
-    laser(on) {
+    fire(gun, pan = 0) { if (FIRE[gun] && ready()) FIRE[gun](pan); },
+    hit(kind, pan = 0) { if (HIT[kind] && ready()) HIT[kind](pan); },
+    // An explosion: a falling roar, a metallic plasma boom, and a deep thud.
+    boom(size = 1, pan = 0) {
+      if (!ready()) return;
+      hiss({ from: 2600, to: 60, duration: 0.6 + size * 0.5, peak: 0.45 + size * 0.2, pan, echo: 0.45 });
+      voice({ from: 320, to: 35, duration: 0.5 + size * 0.4, peak: 0.35, ratio: 1.5, index: 600, pan, echo: 0.35 });
+      voice({ from: 90, to: 28, duration: 0.6 + size * 0.3, peak: 0.5, pan, echo: 0 });
+    },
+    laser(on, pan = 0) {
       if (!on) {
         if (!laser) return;
+        const { pan: where } = laser;
         silenceLaser();
-        if (ready()) tone('sawtooth', 900, 110, 0.28, 0.07);
-      } else if (!laser && ready()) laserOn();
+        if (ready()) voice({ type: 'sawtooth', from: 900, to: 110, duration: 0.28, peak: 0.07, pan: where });
+      } else if (!laser && ready()) laserOn(pan);
     },
     // The whine climbs as the laser's energy runs down.
     energy(level) { if (laser) laser.whine.frequency.setTargetAtTime(1200 + (1 - level) * 700, audio.currentTime, 0.05); },
-    overheat() { if (ready()) { hiss('highpass', 6000, 1200, 0.7, 0.18); tone('sawtooth', 700, 70, 0.6, 0.08); } },
-    select() { if (ready()) tone('triangle', 1400, 1900, 0.07, 0.06); },
-    tick() { if (ready()) tone('sine', 1250, 1250, 0.09, 0.12); },
-    finish() { if (ready()) [523, 659, 784, 1047].forEach((frequency, index) => tone('triangle', frequency, frequency, 0.22, 0.12, index * 0.11)); },
+    // Venting steam under two warning beeps and a falling tone.
+    overheat() {
+      if (!ready()) return;
+      hiss({ filter: 'highpass', from: 7000, to: 1800, duration: 0.8, peak: 0.16 });
+      for (const delay of [0, 0.14]) voice({ type: 'square', from: 880, duration: 0.09, peak: 0.04, delay, echo: 0.4 });
+      voice({ from: 900, to: 120, duration: 0.6, peak: 0.07 });
+    },
+    // A two-tone interface chirp.
+    select() {
+      if (!ready()) return;
+      voice({ from: 1320, duration: 0.04, peak: 0.06 });
+      voice({ from: 1760, duration: 0.05, peak: 0.06, delay: 0.045 });
+    },
+    // A sonar ping for the last seconds of a round.
+    tick() { if (ready()) voice({ from: 1050, to: 1000, duration: 0.25, peak: 0.12, echo: 0.5, attack: 0.002 }); },
+    // A rising chord of bells when time runs out.
+    finish() { if (ready()) [523.25, 659.25, 783.99, 1046.5].forEach((from, index) => voice({ from, duration: 0.5, peak: 0.1, delay: index * 0.11, ratio: 3.5, index: 400, echo: 0.5 })); },
     get muted() { return muted; },
     set muted(value) {
       if (value) silenceLaser();

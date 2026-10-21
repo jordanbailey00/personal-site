@@ -34,6 +34,15 @@ export const projects = [
     tools: 'Python · Pyodide · JavaScript',
     demo: 'https://jordanbailey00.github.io/byte_world_ai/',
   },
+  {
+    slug: 'visualiz3r', repo: 'visualiz3r', title: 'visualiz3r',
+    category: 'Interactive 3D', badge: '',
+    image: 'visualiz3r.webp', alt: 'A desktop processor pulled apart in 3D: its lid, compute dies, and socket separated',
+    description: 'Look inside the machines we use every day, in 3D, right in the browser. Take apart hardware layer by layer, or watch a tiny language model predict the next word.',
+    detail: 'Hardware and a language model, taken apart in 3D.',
+    tools: 'TypeScript · JavaScript · Python',
+    demo: 'https://visualiz3r.vercel.app/',
+  },
 ];
 
 export const books = [

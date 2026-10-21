@@ -72,6 +72,22 @@ export function floorBelow(flight, platforms = [], x = flight.x) {
   return floor;
 }
 
+// How far to scroll the page this frame so a pilot can keep flying past the
+// top of the window, or dive past the bottom while holding S, until the page
+// itself ends. The lander keeps its place on the page while the page moves
+// under it, and the page never moves faster than the lander (or a gentle
+// catch-up pace when it starts a dive from the window's floor).
+export function cameraShift(flight, scrollTop, scrollRoom, dt = 1 / 60) {
+  if (!flight.piloting) return 0;
+  const zone = Math.max(110, flight.height * 0.22), most = Math.max(Math.abs(flight.vy), 400) * dt;
+  if (flight.vy < 0 && flight.y < zone) {
+    const up = Math.max(0, Math.min(scrollTop, zone - flight.y, most));
+    return up ? -up : 0;
+  }
+  if (flight.input.down && flight.y > flight.height - zone) return Math.max(0, Math.min(scrollRoom - scrollTop, flight.y - (flight.height - zone), most));
+  return 0;
+}
+
 export function pilot(flight) {
   flight.piloting = true;
   flight.returning = false;
@@ -186,19 +202,9 @@ const isSpace = event => event.code === 'Space' || event.key === ' ';
 // Either main mouse button fires.
 const isTrigger = event => event.button === 0 || event.button === 2;
 const BEST = 'jordan-bailey-lander-best-60', MUTED = 'jordan-bailey-lander-muted', PLAYED = 'jordan-bailey-lander-played';
-// A hand-lettered "play here" and a curving arrow down to the parked lander,
-// as strokes on a 150 × 80 grid, drawn in writing order.
-const HINT = [
-  'M6 14C6 20 5.8 27 5.5 33', 'M6.2 16.5C9 12.5 15 13 14.6 18.5C14.3 23.5 9 25 6.3 22.5',
-  'M19 4C18.6 10 18.5 18 19.5 24.5C20 25.5 21.5 25 22 24',
-  'M31 16C28 13 23.5 15 23.6 20C23.7 24.5 28.5 25.5 31 21.5', 'M31.2 14.8C31 18 31.1 22 32 25',
-  'M35.5 14.5C35.7 19 37 23.5 40.5 23.5C43 23.4 44 19 44 14.5', 'M44 15C44.3 23 44 30 40 33C38 34.3 35.5 33.5 35 31.5',
-  'M53 4C52.8 11 52.7 18 53 25', 'M53.1 18.5C54 14.8 57.5 13.6 59.5 15C61.2 16.3 61 20.5 61.6 25',
-  'M65.5 19.5C68.5 19.8 72.5 19 72.6 16.8C72.6 14.4 69.5 13.6 67.6 14.7C65 16.2 64.6 21 66.8 23.6C68.7 25.7 72 25 73.6 23',
-  'M77.5 14.5C77.6 18 77.4 21.5 77.8 25', 'M77.7 18.5C78.8 15.4 81 14 83.6 14.6',
-  'M86.5 19.5C89.5 19.8 93.5 19 93.6 16.8C93.6 14.4 90.5 13.6 88.6 14.7C86 16.2 85.6 21 87.8 23.6C89.7 25.7 93 25 94.6 23',
-  'M98 28C118 28 131 38 136 66', 'M130.6 58.7Q133.5 62.5 136 66Q137 61.5 138.9 57.3',
-];
+// The "play here" note's arrow: a curving shaft and its head, drawn on the
+// note's 150 × 80 grid and ending just above the middle of the parked lander.
+const ARROW = ['M111 13C140 12 164 30 166 60', 'M161.2 52.4Q163.8 56.5 166 60Q167.6 56 169.7 51.8'];
 // Shots spark on compact page elements; text blocks are wider than their words.
 const SOLID = 'img, .social a, .name';
 const DIVIDERS = '.section-title, .writing-heading';
@@ -253,9 +259,9 @@ export function installLander({ document, window }) {
   button.innerHTML = SPRITE;
   help.textContent = 'Click to fly';
   canvas.hidden = true;
-  // First-time visitors see a note pointing at the lander until they fly it.
+  // First-time visitors see a handwritten note pointing at the lander until they fly it.
   const hint = make('div', 'lander-hint', { 'aria-hidden': 'true' });
-  hint.innerHTML = `<svg viewBox="0 0 150 80" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${HINT.map((d, index) => `<path pathLength="1" style="--stroke:${index}" d="${d}"/>`).join('')}</svg>`;
+  hint.innerHTML = `<span class="lander-hint-text">play here</span><svg viewBox="0 0 150 80" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ARROW.map((d, index) => `<path pathLength="1" style="--stroke:${index}" d="${d}"/>`).join('')}</svg>`;
   document.body.append(canvas, pad, button, help, hint, score, bar, results, status);
   const context = canvas.getContext('2d');
   const flight = createFlight(root.clientWidth, root.clientHeight);
@@ -265,6 +271,17 @@ export function installLander({ document, window }) {
     sounds.muted = window.localStorage.getItem(MUTED) === 'true';
     hint.hidden = window.localStorage.getItem(PLAYED) === 'true';
   } catch { /* Storage may be unavailable. */ }
+  // The note waits for its handwriting font, so it never appears in a
+  // fallback face, and loads the font only where the note can show.
+  const roomy = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 1240px)');
+  function prepareHint() {
+    if (hint.hidden || !roomy.matches || hint.classList.contains('is-ready')) return;
+    const show = () => hint.classList.add('is-ready');
+    if (!document.fonts?.load) return show();
+    Promise.race([document.fonts.load('34px "Reenie Beanie"'), new Promise(resolve => window.setTimeout(resolve, 1500))]).then(show, show);
+  }
+  prepareHint();
+  roomy.addEventListener('change', prepareHint);
   let particles = [], popups = [], frame = null, last = null, scale = 1, colors = null, helpTimer = null, endTimer = null;
   let shownEnergy = null, shownSecond = null, startBest = 0, shake = 0, offsetX = 0, offsetY = 0, clock = 0, wheel = 0, lastWheel = -Infinity;
 
@@ -287,6 +304,8 @@ export function installLander({ document, window }) {
       emit('dust', x + rand(-spread, spread), floor - 1, side * rand(50, 170), -rand(5, 35), rand(0.4, 0.8), rand(1.5, 3), { floor });
     }
   }
+  // Sounds pan toward where they happen.
+  const panOf = x => clamp(x / flight.width * 2 - 1, -1, 1) * 0.7;
   // Shake the game layer (never the page) for heavy guns and explosions.
   const jolt = amount => { if (!reducedMotion.matches) shake = Math.min(12, shake + amount); };
   // Images, section dividers, and the gun bar are landing platforms while a visitor flies.
@@ -432,7 +451,7 @@ export function installLander({ document, window }) {
   }
 
   function fired({ gun, x, y, aim, shots }) {
-    sounds.fire(gun);
+    sounds.fire(gun, panOf(x));
     jolt(KICK[gun]);
     // A muzzle flash, bigger for heavier guns, and sparks thrown forward.
     const heading = Math.atan2(aim.y, aim.x);
@@ -452,7 +471,7 @@ export function installLander({ document, window }) {
   // A destroyed target bursts into sparks, smoke, and pieces in its own colors.
   function shatter({ target, points }) {
     const { x, y, radius, kind } = target;
-    sounds.hit(kind);
+    sounds.hit(kind, panOf(x));
     jolt(2 + radius / 8);
     burst('spark', x, y, 18, 280, 0.6, 2.4);
     burst('puff', x, y, 10, 90, 0.7, 2.8);
@@ -479,9 +498,9 @@ export function installLander({ document, window }) {
   function react(event) {
     if (event.type === 'fire') fired(event);
     if (event.type === 'hit') shatter(event);
-    if (event.type === 'explode') { blast(event.x, event.y, event.radius); sounds.boom(1); }
-    if (event.type === 'fizzle') { blast(event.x, event.y, 20); sounds.boom(0.3); }
-    if (event.type === 'beam') sounds.laser(event.on);
+    if (event.type === 'explode') { blast(event.x, event.y, event.radius); sounds.boom(1, panOf(event.x)); }
+    if (event.type === 'fizzle') { blast(event.x, event.y, 20); sounds.boom(0.3, panOf(event.x)); }
+    if (event.type === 'beam') sounds.laser(event.on, panOf(flight.x));
     if (event.type === 'overheat') {
       // Steam vents from the lander until the laser cools.
       sounds.overheat();
@@ -494,11 +513,21 @@ export function installLander({ document, window }) {
     }
   }
 
+  // Scroll the page with a lander flying past the top (or diving past the
+  // bottom with S); the targets and effects stay with the window.
+  function follow(dt) {
+    const scroller = document.scrollingElement ?? root, before = scroller.scrollTop || 0;
+    const shift = cameraShift(flight, before, (scroller.scrollHeight || 0) - (scroller.clientHeight || 0), dt);
+    if (!shift) return;
+    window.scrollBy({ top: shift, behavior: 'instant' });
+    flight.y -= (scroller.scrollTop || 0) - before;
+  }
+
   function strike() {
     flight.shots = flight.shots.filter(shot => {
       const target = document.elementFromPoint(shot.x, shot.y)?.closest(SOLID);
       if (!target) return true;
-      if (shot.homing) { blast(shot.x, shot.y, 24); sounds.boom(0.4); }
+      if (shot.homing) { blast(shot.x, shot.y, 24); sounds.boom(0.4, panOf(shot.x)); }
       else {
         burst('spark', shot.x, shot.y, 12, 220, 0.5, 2.2);
         emit('flash', shot.x, shot.y, 0, 0, 0.22, 1);
@@ -646,6 +675,7 @@ export function installLander({ document, window }) {
     colors ??= readColors();
     const surfaces = platforms();
     for (const event of step(flight, dt, surfaces)) react(event);
+    follow(dt);
     for (const event of updateGuns(flight, game, dt)) react(event);
     for (const event of updateGame(game, flight, dt)) react(event);
     if (flight.beam) laserEffects(dt);

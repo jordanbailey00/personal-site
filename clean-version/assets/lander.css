@@ -1,14 +1,18 @@
 /* Homepage lunar lander. It appears only where a keyboard and a fine pointer can
    fly it, and where the window leaves room beside the text column. */
+/* Reenie Beanie, for the handwritten "play here" note; licence in reenie-beanie-OFL.txt. */
+@font-face{font-family:'Reenie Beanie';src:url('/assets/fonts/reenie-beanie.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}
 .lander,.lander-pad,.lander-help,.lander-hint,.lander-effects,.lander-score,.lander-guns,.lander-results{display:none}
 @media (hover:hover) and (pointer:fine) and (min-width:900px){
 .lander{position:fixed;left:0;top:0;z-index:81;display:block;width:44px;height:44px;margin:0;padding:0;border:0;border-radius:50%;background:none;color:var(--ink);cursor:pointer;transform-origin:50% 50%;will-change:transform;-webkit-tap-highlight-color:transparent}
 .lander svg{display:block;width:100%;height:100%;overflow:visible}
 .lander:focus-visible{outline-offset:3px;border-radius:50%}
-/* The hand-drawn note writes itself in, then steps aside while the lander
-   is hovered, focused, or flying. */
-.lander-hint path{stroke-dasharray:1 2;stroke-dashoffset:1.02;animation:lander-hint-draw .3s ease-out forwards;animation-delay:calc(.8s + var(--stroke) * .11s)}
-.lander:hover~.lander-hint,.lander:focus-visible~.lander-hint,.lander-aiming .lander-hint{opacity:0}
+/* Once its font is ready, the note writes itself in and its arrow draws
+   toward the lander; it steps aside while the lander is hovered, focused,
+   or flying. */
+.lander-hint:not(.is-ready),.lander:hover~.lander-hint,.lander:focus-visible~.lander-hint,.lander-aiming .lander-hint{opacity:0}
+.lander-hint.is-ready .lander-hint-text{animation:lander-hint-write .45s ease-out .1s both}
+.lander-hint.is-ready path{stroke-dasharray:1 2;stroke-dashoffset:1.02;animation:lander-hint-draw .25s ease-out forwards;animation-delay:calc(.5s + var(--stroke) * .2s)}
 /* While flying, the game draws its own crosshair. */
 .lander-aiming,.lander-aiming *{cursor:none!important}
 .lander-effects:not([hidden]){position:fixed;inset:0;z-index:80;display:block;width:100%;height:100%;pointer-events:none}
@@ -51,9 +55,11 @@
 .lander[aria-pressed="true"] .lander-beacon{fill:var(--focus);stroke:var(--focus)}
 /* The note needs a margin wide enough to sit beside the text column. */
 @media (hover:hover) and (pointer:fine) and (min-width:1240px){
-.lander-hint:not([hidden]){position:fixed;right:66px;bottom:38px;z-index:78;display:block;width:150px;height:80px;color:var(--focus);pointer-events:none;transition:opacity .2s ease}
-.lander-hint svg{display:block;width:100%;height:100%;overflow:visible}
+.lander-hint:not([hidden]){position:fixed;right:66px;bottom:38px;z-index:78;display:block;width:150px;height:80px;color:var(--ink);pointer-events:none;transition:opacity .2s ease}
+.lander-hint svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.lander-hint-text{position:absolute;left:-6px;top:-10px;font:400 36px/1 'Reenie Beanie',cursive;white-space:nowrap;-webkit-text-stroke:.35px currentColor;transform:rotate(-6deg);transform-origin:0 100%}
 }
+@keyframes lander-hint-write{from{clip-path:inset(-30% 100% -30% 0)}to{clip-path:inset(-30% 0 -30% 0)}}
 @keyframes lander-hint-draw{to{stroke-dashoffset:0}}
-@media (prefers-reduced-motion:reduce){.lander-hint path{animation:none;stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.lander-hint.is-ready .lander-hint-text,.lander-hint.is-ready path{animation:none;stroke-dashoffset:0}}
 @media print{.lander,.lander-pad,.lander-help,.lander-hint,.lander-effects,.lander-score,.lander-guns,.lander-results{display:none!important}}
