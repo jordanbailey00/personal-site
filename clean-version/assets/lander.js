@@ -477,7 +477,7 @@ export function installLander({ document, window }) {
   }
 
   function fired({ gun, x, y, aim, shots }) {
-    sounds.fire(gun, panOf(x));
+    sounds.fire(gun, panOf(x), panOf(x + aim.x * 400));
     jolt(KICK[gun]);
     // A muzzle flash, bigger for heavier guns, and sparks thrown forward.
     const heading = Math.atan2(aim.y, aim.x);

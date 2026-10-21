@@ -39,12 +39,14 @@ export function createSounds(window) {
     return true;
   }
 
-  // Sends a sound to the speakers, panned toward where it happened, and into the echo.
-  function route(node, pan = 0, echo = 0.3) {
+  // Sends a sound to the speakers, panned toward where it happened (or gliding
+  // to another pan, like a missile flying across), and into the echo.
+  function route(node, pan = 0, echo = 0.3, at = 0, duration = 0, panTo) {
     let out = node;
-    if (pan && audio.createStereoPanner) {
+    if ((pan || panTo !== undefined) && audio.createStereoPanner) {
       const panner = audio.createStereoPanner();
-      panner.pan.value = Math.max(-1, Math.min(1, pan));
+      panner.pan.setValueAtTime(Math.max(-1, Math.min(1, pan)), at);
+      if (panTo !== undefined) panner.pan.linearRampToValueAtTime(Math.max(-1, Math.min(1, panTo)), at + duration);
       out = node.connect(panner);
     }
     out.connect(master);
@@ -62,7 +64,7 @@ export function createSounds(window) {
   // A swept tone. With a modulator (ratio and index) it becomes an FM voice:
   // bright zaps when the modulation falls away, metallic clangs at odd
   // ratios, and bells when it rings on.
-  function voice({ type = 'sine', from, to = from, duration, peak, delay = 0, ratio = 0, index = 0, pan = 0, echo = 0.3, attack = 0.004 }) {
+  function voice({ type = 'sine', from, to = from, duration, peak, delay = 0, ratio = 0, index = 0, pan = 0, panTo, echo = 0.3, attack = 0.004 }) {
     const at = audio.currentTime + delay, carrier = audio.createOscillator(), gain = audio.createGain();
     carrier.type = type;
     carrier.frequency.setValueAtTime(from, at);
@@ -79,7 +81,7 @@ export function createSounds(window) {
     }
     envelope(gain, at, peak, duration, attack);
     carrier.connect(gain);
-    route(gain, pan, echo);
+    route(gain, pan, echo, at, duration, panTo);
     carrier.start(at);
     carrier.stop(at + duration + 0.05);
   }
@@ -99,8 +101,31 @@ export function createSounds(window) {
     oscillator.start(at);
     oscillator.stop(at + duration + 0.05);
   }
+  // A rocket motor: low exhaust noise whose loudness flutters many times a
+  // second, speeding up as it goes.
+  function motor({ duration, peak, rate = 30, from = 1500, to = 700, delay = 0, pan = 0, panTo, echo = 0.3, attack = 0.03 }) {
+    const at = audio.currentTime + delay, source = audio.createBufferSource(), filter = audio.createBiquadFilter(), body = audio.createGain(), out = audio.createGain(), flutter = audio.createOscillator(), depth = audio.createGain();
+    source.buffer = noise;
+    source.loop = true;
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(from, at);
+    filter.frequency.exponentialRampToValueAtTime(to, at + duration);
+    flutter.type = 'sawtooth';
+    flutter.frequency.setValueAtTime(rate, at);
+    flutter.frequency.linearRampToValueAtTime(rate * 1.6, at + duration);
+    depth.gain.value = 0.5;
+    body.gain.value = 0.5;
+    flutter.connect(depth).connect(body.gain);
+    envelope(out, at, peak, duration, attack);
+    source.connect(filter).connect(body).connect(out);
+    route(out, pan, echo, at, duration, panTo);
+    source.start(at, Math.random() * 0.5);
+    source.stop(at + duration + 0.05);
+    flutter.start(at);
+    flutter.stop(at + duration + 0.05);
+  }
   // Filtered noise swept between two cutoffs: blasts, rumbles, and venting.
-  function hiss({ filter: type = 'lowpass', from, to = from, duration, peak, delay = 0, q = 1, pan = 0, echo = 0.3, attack = 0.006 }) {
+  function hiss({ filter: type = 'lowpass', from, to = from, duration, peak, delay = 0, q = 1, pan = 0, panTo, echo = 0.3, attack = 0.006 }) {
     const at = audio.currentTime + delay, source = audio.createBufferSource(), filter = audio.createBiquadFilter(), gain = audio.createGain();
     source.buffer = noise;
     source.loop = true;
@@ -110,7 +135,7 @@ export function createSounds(window) {
     filter.frequency.exponentialRampToValueAtTime(to, at + duration);
     envelope(gain, at, peak, duration, attack);
     source.connect(filter).connect(gain);
-    route(gain, pan, echo);
+    route(gain, pan, echo, at, duration, panTo);
     source.start(at, Math.random() * 0.5);
     source.stop(at + duration + 0.05);
   }
@@ -133,12 +158,13 @@ export function createSounds(window) {
     rapid(pan) {
       voice({ from: 1500 + Math.random() * 400, to: 650, duration: 0.07, peak: 0.06, ratio: 3, index: 400, pan, echo: 0.15 });
     },
-    // A rising resonant launch, two quick lock-on beeps, and a soft thrust.
-    missiles(pan) {
-      sweep({ frequency: 95, from: 220, to: 3200, duration: 0.5, peak: 0.2, q: 14, pan, echo: 0.4, attack: 0.04 });
-      voice({ from: 1568, duration: 0.05, peak: 0.06, delay: 0.06, pan, echo: 0.5 });
-      voice({ from: 2093, duration: 0.05, peak: 0.06, delay: 0.13, pan, echo: 0.5 });
-      hiss({ filter: 'bandpass', from: 900, to: 2400, duration: 0.45, peak: 0.08, q: 3, pan, echo: 0.2, attack: 0.05 });
+    // Ignition roar: a low pop and puff, then a crackling rocket motor with a
+    // faint whistle, flying off the way the missile goes.
+    missiles(pan, toward = pan) {
+      voice({ from: 140, to: 50, duration: 0.12, peak: 0.3, pan, echo: 0.1 });
+      hiss({ from: 3000, to: 600, duration: 0.08, peak: 0.21, pan, echo: 0.1 });
+      motor({ duration: 0.7, peak: 0.34, rate: 32, from: 1600, to: 700, pan, panTo: toward, echo: 0.3 });
+      voice({ from: 900, to: 1900, duration: 0.6, peak: 0.025, attack: 0.08, pan, panTo: toward, echo: 0.3 });
     },
   };
   // Each kind of target breaks apart with its own sound.
@@ -159,9 +185,9 @@ export function createSounds(window) {
       hiss({ filter: 'bandpass', from: frequency, to: frequency * fall, duration: length, peak: peak * decay ** index, q, delay: delay + index * spacing + Math.random() * jitter, pan, echo: 0.2 });
     }
   }
-  // A metallic ping, like a bolt or a plate ringing as it flies off.
-  function ping(frequency, pan, v, delay = 0, length = 0.2, peak = 0.045) {
-    voice({ from: frequency * v, to: frequency * v * 0.97, duration: length, peak, delay, ratio: 1.414, index: frequency * 0.7, pan, echo: 0.45 });
+  // Electrical sparks: brief, scattered bursts of bright noise.
+  function sparks(count, pan, v, delay = 0, span = 0.3) {
+    for (let index = 0; index < count; index++) hiss({ filter: 'bandpass', from: (2500 + Math.random() * 3500) * v, to: 2000, duration: 0.012 + Math.random() * 0.02, peak: 0.08 + Math.random() * 0.2, q: 6, delay: delay + Math.random() * span, pan: pan + (Math.random() - 0.5) * 0.4, echo: 0.15 });
   }
   const HIT = {
     // Deep fracture: a low groan as the rock gives way, a crack, a heavy
@@ -178,12 +204,13 @@ export function createSounds(window) {
       crack(pan, 0.06, 0.2);
       grains({ count: 6, center: 1200, spread: 1, q: 2, spacing: 0.02, peak: 0.15, length: 0.05, delay: 0.08, pan, v });
     },
-    // Panel blowout: an explosion that throws bolts and plates, ringing as
-    // they fly off.
+    // Electrical failure: a pop, a burst of sparks, and the hum and whine of
+    // power dying.
     satellite(pan, v) {
-      hiss({ from: 3200 * v, to: 90, duration: 0.5, peak: 0.42, pan, echo: 0.4 });
-      thud(110, 0.45, 0.45, pan, v);
-      for (const [delay, frequency] of [[0.05, 2900], [0.11, 3700], [0.16, 2300], [0.24, 4100], [0.33, 3100]]) ping(frequency, pan + (Math.random() - 0.5) * 0.6, v, delay, 0.15, 0.04);
+      hiss({ filter: 'highpass', from: 4000, to: 3000, duration: 0.02, peak: 0.3, pan, echo: 0, attack: 0.001 });
+      sparks(9, pan, v, 0.02, 0.35);
+      voice({ from: 1800 * v, to: 140, duration: 0.6, peak: 0.06, delay: 0.03, pan, echo: 0.4 });
+      voice({ type: 'sawtooth', from: 120, to: 60, duration: 0.4, peak: 0.04, delay: 0.02, pan, echo: 0.1 });
     },
     ufo(pan) {
       voice({ from: 1900, to: 140, duration: 0.45, peak: 0.14, ratio: 2.5, index: 1200, pan, echo: 0.5 });
@@ -252,7 +279,7 @@ export function createSounds(window) {
   return {
     // Call from the click or key press that starts a flight.
     start: ready,
-    fire(gun, pan = 0) { if (FIRE[gun] && ready()) FIRE[gun](pan); },
+    fire(gun, pan = 0, toward = pan) { if (FIRE[gun] && ready()) FIRE[gun](pan, toward); },
     hit(kind, pan = 0) {
       if (!HIT[kind] || !ready()) return;
       // A missile burst or the laser can break many targets at once; a few
@@ -263,12 +290,13 @@ export function createSounds(window) {
       recentHits.push(now);
       HIT[kind](pan, 0.94 + Math.random() * 0.12);
     },
-    // An explosion: a falling roar, a metallic plasma boom, and a deep thud.
+    // Deep space boom: huge but muffled, as if heard far off through the hull,
+    // with a long echo. Size 1 is a full burst; about 0.3 a fizzle.
     boom(size = 1, pan = 0) {
       if (!ready()) return;
-      hiss({ from: 2600, to: 60, duration: 0.6 + size * 0.5, peak: 0.45 + size * 0.2, pan, echo: 0.45 });
-      voice({ from: 320, to: 35, duration: 0.5 + size * 0.4, peak: 0.35, ratio: 1.5, index: 600, pan, echo: 0.35 });
-      voice({ from: 90, to: 28, duration: 0.6 + size * 0.3, peak: 0.5, pan, echo: 0 });
+      hiss({ from: 900, to: 60, duration: 0.8 + 0.6 * size, peak: 0.45 * size + 0.15, attack: 0.01, pan, echo: 0.6 });
+      voice({ from: 55, to: 25, duration: 0.7 + 0.4 * size, peak: 0.5 * size + 0.1, pan, echo: 0.1 });
+      voice({ from: 1200, to: 400, duration: 0.3, peak: 0.03, pan, echo: 0.5 });
     },
     laser(on, pan = 0) {
       if (!on) {
