@@ -20,6 +20,8 @@ for (const file of files.filter(file => file.endsWith('.html'))) {
   if (!html.includes('src="/assets/theme.js?v=')) errors.push(`${file}: missing versioned theme controls`);
   if (!html.includes('href="/assets/callouts.css?v=')) errors.push(`${file}: missing versioned callout styles`);
   if (!html.includes('src="/assets/supernova.js?v=')) errors.push(`${file}: missing Supernova background support`);
+  // Only the homepage carries the lunar lander.
+  if ((file === 'index.html') !== html.includes('src="/assets/lander.js?v=')) errors.push(`${file}: lunar lander belongs on the homepage only`);
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
   if (new Set(ids).size !== ids.length) errors.push(`${file}: duplicate IDs`);
   for (const [, fragment] of html.matchAll(/href="#([^"]+)"/g)) {
@@ -31,6 +33,13 @@ for (const file of files.filter(file => file.endsWith('.html'))) {
     const target = path.join(root, decodeURIComponent(match[1]));
     try { const info = await stat(target); if (info.isDirectory()) await stat(path.join(target, 'index.html')); checked++; }
     catch { errors.push(`${file}: missing ${match[1]}`); }
+  }
+}
+// Local module imports must resolve and carry a version.
+for (const name of (await readdir(path.join(root, 'assets'))).filter(name => name.endsWith('.js'))) {
+  for (const [, dependency, version] of (await readFile(path.join(root, 'assets', name), 'utf8')).matchAll(/from '\.\/([\w-]+\.js)(\?v=\w+)?'/g)) {
+    if (!version) errors.push(`assets/${name}: unversioned import ${dependency}`);
+    try { await stat(path.join(root, 'assets', dependency)); checked++; } catch { errors.push(`assets/${name}: missing import ${dependency}`); }
   }
 }
 if (errors.length) { console.error(errors.join('\n')); process.exit(1); }

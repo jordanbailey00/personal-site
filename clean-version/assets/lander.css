@@ -1,0 +1,26 @@
+/* Homepage lunar lander. It appears only where a keyboard and a fine pointer can
+   fly it, and where the window leaves room beside the text column. */
+.lander,.lander-pad,.lander-help,.lander-effects,.lander-score{display:none}
+@media (hover:hover) and (pointer:fine) and (min-width:900px){
+.lander{position:fixed;left:0;top:0;z-index:81;display:block;width:44px;height:44px;margin:0;padding:0;border:0;border-radius:50%;background:none;color:var(--ink);cursor:pointer;transform-origin:50% 50%;will-change:transform;-webkit-tap-highlight-color:transparent}
+.lander svg{display:block;width:100%;height:100%;overflow:visible}
+.lander:focus-visible{outline-offset:3px;border-radius:50%}
+.lander-effects:not([hidden]){position:fixed;inset:0;z-index:80;display:block;width:100%;height:100%;pointer-events:none}
+.lander-pad{position:fixed;left:0;top:0;z-index:79;display:block;width:56px;height:3px;border-radius:2px;background:var(--tag-border);pointer-events:none}
+.lander-help{position:fixed;right:16px;bottom:62px;z-index:82;display:block;margin:0;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--paper);box-shadow:0 4px 16px #0001;color:var(--muted);font-size:.75rem;line-height:1.5;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .2s ease,transform .2s ease}
+.lander:hover+.lander-help,.lander:focus-visible+.lander-help,.lander-help.is-shown{opacity:1;transform:none}
+.lander-help kbd{font:inherit;font-size:.7rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:0 4px}
+.lander-help kbd+kbd{margin-left:2px}
+.lander-score{position:fixed;top:16px;right:16px;z-index:82;display:flex;align-items:baseline;gap:8px;margin:0;padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--paper);box-shadow:0 4px 16px #0001;color:var(--muted);font-size:.75rem;line-height:1.4;font-variant-numeric:tabular-nums;pointer-events:none;opacity:0;transform:translateY(-4px);transition:opacity .2s ease,transform .2s ease}
+.lander-score.is-shown{opacity:1;transform:none}
+.lander-score-value{display:inline-block;min-width:2ch;color:var(--ink);font-size:1.05rem;font-weight:600}
+.lander-score-best:not(:empty){padding-left:8px;border-left:1px solid var(--line)}
+}
+.lander-status{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.lander-foil{fill:var(--badge-bg);fill:color-mix(in srgb,var(--badge-ink) 40%,var(--paper))}
+.lander-cabin{fill:var(--paper)}
+.lander-engine{fill:var(--surface)}
+.lander-window{fill:currentColor}
+.lander-beacon{fill:var(--paper);transition:fill .2s ease,stroke .2s ease}
+.lander[aria-pressed="true"] .lander-beacon{fill:var(--focus);stroke:var(--focus)}
+@media print{.lander,.lander-pad,.lander-help,.lander-effects,.lander-score{display:none!important}}
