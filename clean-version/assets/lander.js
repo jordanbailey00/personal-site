@@ -1,9 +1,12 @@
 // A little lunar lander parked in the homepage's bottom-right corner. It flies
 // only after a visitor chooses it (click, or Enter on the focused lander), so
-// Space and other keys keep working on the page for everyone else. Flying
-// starts a game: shoot space targets for points.
+// keys, clicks, and scrolling keep working on the page for everyone else.
+// Flying starts a one-minute round: aim with the mouse, fire with either
+// button, and scroll to change guns while shooting space targets for points.
 // The flight model has no DOM dependencies and is tested directly.
 import { createGame, startGame, endGame, updateGame, drawTargets, targetPalette } from './space-targets.js';
+import { GUNS, switchGun, updateGuns, drawShots } from './guns.js';
+import { createSounds } from './lander-sound.js';
 
 export const SIZE = 44;
 const HALF = SIZE / 2;
@@ -12,11 +15,10 @@ export const GRAVITY = 150; // px/s²: a slow, lunar fall.
 const MAIN_THRUST = 420, DOWN_THRUST = 220, SIDE_THRUST = 340, MAX_SPEED = 480;
 const DRAG_X = 1.2, DRAG_Y = 0.25, GROUND_FRICTION = 10;
 export const SAFE_LANDING = 170; // Faster touchdowns bounce.
-export const SHOT_INTERVAL = 0.14;
-const SHOT_SPEED = 760, SHOT_LIFE = 2.5, MAX_SHOTS = 24;
 const HOME_MARGIN = 28, GROUND_MARGIN = 6;
 // Sprite landmarks relative to its center, in CSS pixels.
-const NOSE = 13.5 * UNIT, NOZZLE = 18 * UNIT, RCS_X = 12.5 * UNIT, RCS_Y = -4.5 * UNIT, FOOT_X = 19.5 * UNIT;
+const NOZZLE = 18 * UNIT, RCS_X = 12.5 * UNIT, RCS_Y = -4.5 * UNIT, FOOT_X = 19.5 * UNIT;
+const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const ground = flight => flight.height - GROUND_MARGIN - HALF;
 
@@ -29,7 +31,10 @@ export function park(flight) {
 
 export function createFlight(width, height) {
   return park({
-    width, height, piloting: false, firing: false, cooldown: 0, shots: [],
+    width, height, piloting: false, firing: false, shots: [],
+    // Gun state: where the mouse is, the chosen gun, its reload, the laser's
+    // beam and energy, and which side the next missile leaves from.
+    aim: null, aimDirection: null, gun: 0, cooldown: 0, beam: null, energy: 1, overheated: false, salvo: 0,
     input: { up: false, down: false, left: false, right: false },
     engine: { main: 0, down: 0, left: 0, right: 0 },
   });
@@ -76,6 +81,7 @@ export function pilot(flight) {
 export function release(flight, { instant = false } = {}) {
   flight.piloting = false;
   flight.firing = false;
+  flight.beam = null;
   for (const key in flight.input) flight.input[key] = false;
   if (instant || (flight.landed && !flight.perch && Math.abs(flight.x - home(flight).x) < 3)) park(flight);
   else flight.returning = true;
@@ -83,7 +89,7 @@ export function release(flight, { instant = false } = {}) {
 
 export function resting(flight) {
   const engaged = flight.piloting && (flight.firing || Object.values(flight.input).some(Boolean));
-  return !engaged && !flight.returning && flight.landed && flight.vx === 0 && flight.tilt === 0 && !flight.shots.length;
+  return !engaged && !flight.returning && flight.landed && flight.vx === 0 && flight.tilt === 0 && !flight.shots.length && !flight.beam;
 }
 
 // Cruise a little above the ground, then settle gently onto the pad.
@@ -156,17 +162,6 @@ export function step(flight, dt, platforms = []) {
   flight.tilt += (lean - flight.tilt) * (1 - Math.exp(-8 * dt));
   if (flight.landed && Math.abs(flight.tilt) < 0.002) flight.tilt = 0;
 
-  for (const shot of flight.shots) { shot.x += shot.vx * dt; shot.y += shot.vy * dt; shot.age += dt; }
-  flight.shots = flight.shots.filter(shot => shot.age < SHOT_LIFE && shot.x > -20 && shot.x < flight.width + 20 && shot.y > -20 && shot.y < flight.height + 20);
-  flight.cooldown = Math.max(0, flight.cooldown - dt);
-  if (flight.piloting && flight.firing && flight.cooldown === 0 && flight.shots.length < MAX_SHOTS) {
-    // Shots leave the docking port along the lander's lean.
-    const sin = Math.sin(flight.tilt), cos = Math.cos(flight.tilt);
-    const shot = { x: flight.x + NOSE * sin, y: flight.y - NOSE * cos, vx: SHOT_SPEED * sin + flight.vx * 0.4, vy: -SHOT_SPEED * cos + flight.vy * 0.4, age: 0 };
-    flight.shots.push(shot);
-    flight.cooldown = SHOT_INTERVAL;
-    events.push({ type: 'shot', shot });
-  }
   if (flight.returning && flight.landed && Math.abs(home(flight).x - flight.x) < 3) {
     park(flight);
     events.push({ type: 'parked' });
@@ -183,17 +178,41 @@ const SPRITE = `<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" fi
 <path d="M21 13.5v-3h6v3m4.5 0 3.3-4.8M10 19.5h3m22 0h3M11.5 18v3m25-3v3"/>
 <circle class="lander-beacon" cx="35.6" cy="7.6" r="1.6"/>
 </svg>`;
-const CONTROLS = '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> fly · <kbd>Space</kbd> fires · <kbd>Esc</kbd> lands';
-// Physical key positions, so other keyboard layouts fly the same way. The
-// arrow keys stay free for the page (and later, for choosing weapons).
+const CONTROLS = '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> fly · <kbd>Mouse</kbd> aims · <kbd>Click</kbd> fires · <kbd>Scroll</kbd> changes guns · <kbd>M</kbd> sound · <kbd>Esc</kbd> lands';
+// Physical key positions, so other keyboard layouts fly the same way.
 const KEYS = { KeyW: 'up', KeyA: 'left', KeyS: 'down', KeyD: 'right' };
 const controlFor = event => KEYS[event.code] ?? KEYS[`Key${(event.key || '').toUpperCase()}`];
-const isFire = event => event.code === 'Space' || event.key === ' ';
-const BEST = 'jordan-bailey-lander-best';
+const isSpace = event => event.code === 'Space' || event.key === ' ';
+// Either main mouse button fires.
+const isTrigger = event => event.button === 0 || event.button === 2;
+const BEST = 'jordan-bailey-lander-best-60', MUTED = 'jordan-bailey-lander-muted', PLAYED = 'jordan-bailey-lander-played';
+// A hand-lettered "play here" and a curving arrow down to the parked lander,
+// as strokes on a 150 × 80 grid, drawn in writing order.
+const HINT = [
+  'M6 14C6 20 5.8 27 5.5 33', 'M6.2 16.5C9 12.5 15 13 14.6 18.5C14.3 23.5 9 25 6.3 22.5',
+  'M19 4C18.6 10 18.5 18 19.5 24.5C20 25.5 21.5 25 22 24',
+  'M31 16C28 13 23.5 15 23.6 20C23.7 24.5 28.5 25.5 31 21.5', 'M31.2 14.8C31 18 31.1 22 32 25',
+  'M35.5 14.5C35.7 19 37 23.5 40.5 23.5C43 23.4 44 19 44 14.5', 'M44 15C44.3 23 44 30 40 33C38 34.3 35.5 33.5 35 31.5',
+  'M53 4C52.8 11 52.7 18 53 25', 'M53.1 18.5C54 14.8 57.5 13.6 59.5 15C61.2 16.3 61 20.5 61.6 25',
+  'M65.5 19.5C68.5 19.8 72.5 19 72.6 16.8C72.6 14.4 69.5 13.6 67.6 14.7C65 16.2 64.6 21 66.8 23.6C68.7 25.7 72 25 73.6 23',
+  'M77.5 14.5C77.6 18 77.4 21.5 77.8 25', 'M77.7 18.5C78.8 15.4 81 14 83.6 14.6',
+  'M86.5 19.5C89.5 19.8 93.5 19 93.6 16.8C93.6 14.4 90.5 13.6 88.6 14.7C86 16.2 85.6 21 87.8 23.6C89.7 25.7 93 25 94.6 23',
+  'M98 28C118 28 131 38 136 66', 'M130.6 58.7Q133.5 62.5 136 66Q137 61.5 138.9 57.3',
+];
 // Shots spark on compact page elements; text blocks are wider than their words.
 const SOLID = 'img, .social a, .name';
-const PERCHES = 'main img, .section-title, .writing-heading';
+const DIVIDERS = '.section-title, .writing-heading';
 const FLAME = ['#fff1c1', '#ffb13b', '#ff6a2b'];
+// How hard each gun shakes the game when it fires.
+const KICK = { blaster: 1.2, scatter: 5, rapid: 0.8, missiles: 2 };
+// Gun bar icons, on the site's 24-unit icon grid.
+const ICONS = {
+  blaster: '<path d="M5 19 15 9"/><circle cx="17.5" cy="6.5" r="2.5"/>',
+  scatter: '<path d="M5 19 9 5M5 19 15 8M5 19l14-5"/>',
+  rapid: '<path d="m3 21 2-2m3.5-3.5 2-2m3.5-3.5 2-2"/><circle cx="6.5" cy="17.5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="17.5" cy="6.5" r="1.6" fill="currentColor"/>',
+  laser: '<path d="M4 20 15 9" stroke-width="3"/><path d="M18 2v3m0 4v3m-6-6h3m4 0h3"/>',
+  missiles: '<path d="M20 4c-5 0-9 3-11 8l3 3c5-2 8-6 8-11Z"/><path d="M9 12 5 13l-1 3 3-1m5 0-1 4 3-1 1-3"/><circle cx="15.5" cy="8.5" r="1.2"/>',
+};
 
 export function installLander({ document, window }) {
   const root = document.documentElement;
@@ -210,22 +229,44 @@ export function installLander({ document, window }) {
   const pad = make('div', 'lander-pad', { 'aria-hidden': 'true' });
   const button = make('button', 'lander', { type: 'button', 'aria-label': 'Fly the lunar lander', 'aria-pressed': 'false', 'aria-describedby': 'lander-help' });
   const help = make('p', 'lander-help', { id: 'lander-help' });
-  // The score sits in the top-right corner; the status line tells screen
-  // readers the result when the lander lands.
+  // The score, best score, and time left sit in the top-right corner.
   const score = make('div', 'lander-score', { 'aria-hidden': 'true' });
-  const scoreLabel = make('span', 'lander-score-label'), scoreValue = make('strong', 'lander-score-value'), bestValue = make('span', 'lander-score-best');
-  const status = make('p', 'lander-status', { role: 'status' });
+  const scoreLabel = make('span', 'lander-score-label'), scoreValue = make('strong', 'lander-score-value'), bestValue = make('span', 'lander-score-best'), timeValue = make('span', 'lander-score-time');
   scoreLabel.textContent = 'Score';
-  score.append(scoreLabel, scoreValue, bestValue);
+  score.append(scoreLabel, scoreValue, bestValue, timeValue);
+  // The gun bar sits at the bottom center: every gun, with the chosen one
+  // raised and the laser's energy under its slot.
+  const bar = make('ol', 'lander-guns', { 'aria-hidden': 'true' });
+  const slots = GUNS.map(gun => {
+    const slot = make('li', `lander-gun gun-${gun.id}`);
+    slot.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[gun.id]}</svg><span>${gun.name}</span>`;
+    bar.append(slot);
+    return slot;
+  });
+  const laserSlot = slots[GUNS.findIndex(gun => gun.beam)], energy = make('span', 'lander-gun-energy'), energyFill = make('i', 'lander-gun-charge');
+  energy.append(energyFill);
+  laserSlot.append(energy);
+  // After a round, the result shows where the gun bar was; the status line
+  // tells screen readers.
+  const results = make('p', 'lander-results', { 'aria-hidden': 'true' });
+  const status = make('p', 'lander-status', { role: 'status' });
   button.innerHTML = SPRITE;
   help.textContent = 'Click to fly';
   canvas.hidden = true;
-  document.body.append(canvas, pad, button, help, score, status);
+  // First-time visitors see a note pointing at the lander until they fly it.
+  const hint = make('div', 'lander-hint', { 'aria-hidden': 'true' });
+  hint.innerHTML = `<svg viewBox="0 0 150 80" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${HINT.map((d, index) => `<path pathLength="1" style="--stroke:${index}" d="${d}"/>`).join('')}</svg>`;
+  document.body.append(canvas, pad, button, help, hint, score, bar, results, status);
   const context = canvas.getContext('2d');
   const flight = createFlight(root.clientWidth, root.clientHeight);
-  const game = createGame();
-  try { game.best = Number(window.localStorage.getItem(BEST)) || 0; } catch { /* Storage may be unavailable. */ }
-  let particles = [], popups = [], frame = null, last = null, scale = 1, colors = null, helpTimer = null, scoreTimer = null;
+  const game = createGame(), sounds = createSounds(window);
+  try {
+    game.best = Number(window.localStorage.getItem(BEST)) || 0;
+    sounds.muted = window.localStorage.getItem(MUTED) === 'true';
+    hint.hidden = window.localStorage.getItem(PLAYED) === 'true';
+  } catch { /* Storage may be unavailable. */ }
+  let particles = [], popups = [], frame = null, last = null, scale = 1, colors = null, helpTimer = null, endTimer = null;
+  let shownEnergy = null, shownSecond = null, startBest = 0, shake = 0, offsetX = 0, offsetY = 0, clock = 0, wheel = 0, lastWheel = -Infinity;
 
   const rand = (min, max) => min + Math.random() * (max - min);
   const count = rate => Math.floor(rate) + (Math.random() < rate % 1 ? 1 : 0);
@@ -233,21 +274,24 @@ export function installLander({ document, window }) {
     const sin = Math.sin(flight.tilt), cos = Math.cos(flight.tilt);
     return { x: flight.x + x * cos - y * sin, y: flight.y + x * sin + y * cos };
   };
-  const emit = (kind, x, y, vx, vy, life, size, floor) => { if (particles.length < 600) particles.push({ kind, x, y, vx, vy, life, size, floor, age: 0 }); };
+  const emit = (kind, x, y, vx, vy, life, size, details) => { if (particles.length < 700) particles.push({ kind, x, y, vx, vy, life, size, age: 0, ...details }); };
   function burst(kind, x, y, number, speed, life, size) {
     for (let i = 0; i < number; i++) {
-      const angle = rand(0, Math.PI * 2), velocity = rand(speed * 0.3, speed);
+      const angle = rand(0, TAU), velocity = rand(speed * 0.3, speed);
       emit(kind, x, y, Math.cos(angle) * velocity, Math.sin(angle) * velocity, rand(life * 0.5, life), rand(size * 0.6, size));
     }
   }
   function dust(x, floor, number, spread) {
     for (let i = 0; i < number; i++) {
       const side = Math.random() < 0.5 ? -1 : 1;
-      emit('dust', x + rand(-spread, spread), floor - 1, side * rand(50, 170), -rand(5, 35), rand(0.4, 0.8), rand(1.5, 3), floor);
+      emit('dust', x + rand(-spread, spread), floor - 1, side * rand(50, 170), -rand(5, 35), rand(0.4, 0.8), rand(1.5, 3), { floor });
     }
   }
-  // Images and section dividers are landing platforms while a visitor flies.
-  const perches = [...document.querySelectorAll(PERCHES)].filter(node => !node.matches('.writing-heading .section-title'));
+  // Shake the game layer (never the page) for heavy guns and explosions.
+  const jolt = amount => { if (!reducedMotion.matches) shake = Math.min(12, shake + amount); };
+  // Images, section dividers, and the gun bar are landing platforms while a visitor flies.
+  const perches = [...document.querySelectorAll(`main img, ${DIVIDERS}`)].filter(node => !node.matches('.writing-heading .section-title'));
+  perches.push(bar);
   function platforms() {
     if (!flight.piloting) return [];
     const list = [];
@@ -255,7 +299,7 @@ export function installLander({ document, window }) {
       const rect = node.getBoundingClientRect();
       if (!rect.width || rect.bottom < 0 || rect.top > flight.height) continue;
       // Dividers are each block's 1px bottom border.
-      const top = node.tagName === 'IMG' ? rect.top : rect.bottom - 1;
+      const top = node.matches(DIVIDERS) ? rect.bottom - 1 : rect.top;
       list.push({ id: node, left: rect.left, right: rect.right, top, round: node.classList.contains('portrait') });
     }
     return list;
@@ -263,11 +307,11 @@ export function installLander({ document, window }) {
   function readColors() {
     const style = window.getComputedStyle(root);
     const read = (name, fallback) => style.getPropertyValue(name).trim() || fallback;
-    return { ...targetPalette(read), dark: style.colorScheme === 'dark' };
+    return { ...targetPalette(read), flame: FLAME[1], dark: style.colorScheme === 'dark' };
   }
 
   function place() {
-    button.style.transform = `translate(${(flight.x - HALF).toFixed(2)}px, ${(flight.y - HALF).toFixed(2)}px) rotate(${flight.tilt.toFixed(4)}rad)`;
+    button.style.transform = `translate(${(flight.x - HALF + offsetX).toFixed(2)}px, ${(flight.y - HALF + offsetY).toFixed(2)}px) rotate(${flight.tilt.toFixed(4)}rad)`;
   }
   function placePad() {
     const target = home(flight);
@@ -318,27 +362,132 @@ export function installLander({ document, window }) {
     if (left > 0.05) puff(rightJet.x, rightJet.y, cos, sin, left);
     if (right > 0.05) puff(leftJet.x, leftJet.y, -cos, -sin, right);
     if (down > 0.05) { puff(leftJet.x, leftJet.y, sin, -cos, down); puff(rightJet.x, rightJet.y, sin, -cos, down); }
+    // Missiles leave a smoke trail.
+    for (const shot of flight.shots) {
+      if (!shot.homing) continue;
+      const speed = Math.hypot(shot.vx, shot.vy) || 1, tailX = shot.x - shot.vx / speed * 9, tailY = shot.y - shot.vy / speed * 9;
+      for (let i = count(70 * dt); i > 0; i--) emit('puff', tailX, tailY, rand(-15, 15) - shot.vx * 0.1, rand(-15, 15) - shot.vy * 0.1, rand(0.3, 0.6), rand(1.2, 2.2));
+    }
+  }
+
+  // The laser shakes the game, throws sparks from the muzzle, and sheds
+  // motes along its length.
+  function laserEffects(dt) {
+    const { x0, y0, x1, y1 } = flight.beam, length = Math.hypot(x1 - x0, y1 - y0) || 1;
+    const ux = (x1 - x0) / length, uy = (y1 - y0) / length;
+    shake = Math.max(shake, reducedMotion.matches ? 0 : 2.2);
+    sounds.energy(flight.energy);
+    for (let i = count(45 * dt); i > 0; i--) {
+      const angle = Math.atan2(uy, ux) + rand(-0.9, 0.9), velocity = rand(120, 320);
+      emit('spark', x0, y0, Math.cos(angle) * velocity, Math.sin(angle) * velocity, rand(0.1, 0.3), rand(1, 1.8));
+    }
+    for (let i = count(70 * dt); i > 0; i--) {
+      const along = Math.random() * length, side = rand(-1, 1);
+      emit('spark', x0 + ux * along, y0 + uy * along, -uy * side * 90 + ux * 40, ux * side * 90 + uy * 40, rand(0.15, 0.4), rand(0.8, 1.6));
+    }
   }
 
   function showScore() {
     scoreValue.textContent = String(game.score);
     bestValue.textContent = game.best ? `Best ${game.best}` : '';
   }
+  function showTime() {
+    const seconds = Math.ceil(game.remaining);
+    if (seconds === shownSecond) return;
+    // The last five seconds tick.
+    if (game.playing && shownSecond !== null && seconds < shownSecond && seconds <= 5) sounds.tick();
+    shownSecond = seconds;
+    timeValue.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+    timeValue.classList.toggle('is-ending', seconds <= 10);
+  }
+  function showGun() {
+    slots.forEach((slot, index) => slot.classList.toggle('is-current', index === flight.gun));
+  }
+  // The laser's meter changes every frame it fires or recharges.
+  function showEnergy() {
+    const percent = Math.round(flight.energy * 100);
+    if (percent === shownEnergy) return;
+    shownEnergy = percent;
+    energyFill.style.width = `${percent}%`;
+    laserSlot.classList.toggle('is-overheated', flight.overheated);
+  }
   function saveBest() {
     try { window.localStorage.setItem(BEST, String(game.best)); } catch { /* The best score still lasts for this visit. */ }
   }
+  function chooseGun(step) {
+    const gun = switchGun(flight, step);
+    showGun();
+    sounds.select();
+    popups.push({ x: flight.x, y: flight.y - HALF - 10, text: gun.name, color: 'ink', size: 13, age: 0, life: 0.9 });
+    status.textContent = `${gun.name} selected.`;
+    wake();
+  }
+  function toggleSound() {
+    sounds.muted = !sounds.muted;
+    try { window.localStorage.setItem(MUTED, String(sounds.muted)); } catch { /* The choice still lasts for this visit. */ }
+    const text = sounds.muted ? 'Sound off' : 'Sound on';
+    popups.push({ x: flight.x, y: flight.y - HALF - 10, text, color: 'ink', size: 13, age: 0, life: 0.9 });
+    status.textContent = `${text}.`;
+    wake();
+  }
+
+  function fired({ gun, x, y, aim, shots }) {
+    sounds.fire(gun);
+    jolt(KICK[gun]);
+    // A muzzle flash, bigger for heavier guns, and sparks thrown forward.
+    const heading = Math.atan2(aim.y, aim.x);
+    emit('muzzle', x, y, flight.vx, flight.vy, gun === 'scatter' ? 0.1 : 0.06, gun === 'scatter' ? 18 : gun === 'rapid' ? 7 : 11);
+    for (let i = gun === 'scatter' ? 12 : gun === 'rapid' ? 1 : 3; i > 0; i--) {
+      const angle = heading + rand(-0.5, 0.5), velocity = rand(80, 280);
+      emit('spark', x, y, Math.cos(angle) * velocity, Math.sin(angle) * velocity, rand(0.08, 0.22), rand(1, 1.8));
+    }
+    if (gun === 'scatter') {
+      for (let i = 0; i < 10; i++) {
+        const angle = heading + rand(-0.4, 0.4), velocity = rand(120, 260);
+        emit('flame', x, y, Math.cos(angle) * velocity, Math.sin(angle) * velocity, rand(0.08, 0.18), rand(2, 3.4));
+      }
+    }
+    if (gun === 'missiles') for (const shot of shots) burst('puff', shot.x, shot.y, 6, 60, 0.4, 2);
+  }
+  // A destroyed target bursts into sparks, smoke, and pieces in its own colors.
+  function shatter({ target, points }) {
+    const { x, y, radius, kind } = target;
+    sounds.hit(kind);
+    jolt(2 + radius / 8);
+    burst('spark', x, y, 18, 280, 0.6, 2.4);
+    burst('puff', x, y, 10, 90, 0.7, 2.8);
+    emit('flash', x, y, 0, 0, 0.32, radius / 8);
+    emit('ring', x, y, 0, 0, 0.4, radius * 2.4);
+    const tones = { satellite: [colors.foil, colors.accent], ufo: [colors.paper, colors.accent], comet: [colors.hot, colors.accent] }[kind] ?? [colors.surface, colors.smoke];
+    for (let i = 0; i < 5 + Math.round(radius / 3); i++) {
+      const angle = rand(0, TAU), velocity = rand(60, 230);
+      emit('chunk', x, y, Math.cos(angle) * velocity + target.vx, Math.sin(angle) * velocity + target.vy, rand(0.5, 0.9), rand(2, 2 + radius / 5), { angle: rand(0, TAU), spin: rand(-12, 12), color: tones[i % 2] });
+    }
+    popups.push({ x, y: y - radius - 6, text: `+${points}`, color: 'accent', size: points >= 50 ? 20 : 16, age: 0, life: 1 });
+    showScore();
+    if (!reducedMotion.matches) scoreValue.animate?.([{ transform: 'scale(1.4)' }, { transform: 'scale(1)' }], { duration: 240, easing: 'ease-out' });
+  }
+  function blast(x, y, radius) {
+    jolt(radius / 9);
+    emit('flash', x, y, 0, 0, 0.35, radius / 14);
+    emit('ring', x, y, 0, 0, 0.45, radius * 1.1);
+    burst('spark', x, y, 22, 300, 0.7, 2.6);
+    burst('flame', x, y, 22, 170, 0.45, 3.4);
+    burst('puff', x, y, 16, 120, 0.9, 3.4);
+  }
 
   function react(event) {
-    if (event.type === 'shot') burst('spark', event.shot.x, event.shot.y, 3, 70, 0.18, 1.6);
-    if (event.type === 'hit') {
-      const { target, points } = event;
-      burst('spark', target.x, target.y, 16, 240, 0.6, 2.4);
-      burst('puff', target.x, target.y, 10, 90, 0.6, 2.6);
-      emit('flash', target.x, target.y, 0, 0, 0.3, target.radius / 8);
-      popups.push({ x: target.x, y: target.y - target.radius - 6, text: `+${points}`, age: 0, life: 0.9 });
-      showScore();
-      if (!reducedMotion.matches) scoreValue.animate?.([{ transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
+    if (event.type === 'fire') fired(event);
+    if (event.type === 'hit') shatter(event);
+    if (event.type === 'explode') { blast(event.x, event.y, event.radius); sounds.boom(1); }
+    if (event.type === 'fizzle') { blast(event.x, event.y, 20); sounds.boom(0.3); }
+    if (event.type === 'beam') sounds.laser(event.on);
+    if (event.type === 'overheat') {
+      // Steam vents from the lander until the laser cools.
+      sounds.overheat();
+      burst('puff', flight.x, flight.y, 16, 90, 1, 3);
     }
+    if (event.type === 'timeup') finish('time');
     if (event.type === 'touchdown' || event.type === 'bounce') {
       const strength = Math.min(1, event.speed / 160);
       for (const side of [-1, 1]) dust(at(side * FOOT_X, HALF).x, event.floor, Math.round((event.type === 'bounce' ? 10 : 6) * strength), 4);
@@ -349,8 +498,11 @@ export function installLander({ document, window }) {
     flight.shots = flight.shots.filter(shot => {
       const target = document.elementFromPoint(shot.x, shot.y)?.closest(SOLID);
       if (!target) return true;
-      burst('spark', shot.x, shot.y, 12, 220, 0.5, 2.2);
-      emit('flash', shot.x, shot.y, 0, 0, 0.22, 1);
+      if (shot.homing) { blast(shot.x, shot.y, 24); sounds.boom(0.4); }
+      else {
+        burst('spark', shot.x, shot.y, 12, 220, 0.5, 2.2);
+        emit('flash', shot.x, shot.y, 0, 0, 0.22, 1);
+      }
       if (!reducedMotion.matches) target.animate?.([{ translate: '0 0' }, { translate: '-2px 1px' }, { translate: '2px -1px' }, { translate: '0 0' }], { duration: 180, easing: 'ease-out' });
       return false;
     });
@@ -364,16 +516,89 @@ export function installLander({ document, window }) {
       particle.vy = particle.vy * drag + (particle.kind === 'spark' ? 140 : particle.kind === 'dust' ? 25 : 0) * dt;
       particle.x += particle.vx * dt;
       particle.y = particle.kind === 'dust' ? Math.min(particle.floor - 0.5, particle.y + particle.vy * dt) : particle.y + particle.vy * dt;
+      if (particle.spin) particle.angle += particle.spin * dt;
     }
     particles = particles.filter(particle => particle.age < particle.life);
     for (const popup of popups) popup.age += dt;
     popups = popups.filter(popup => popup.age < popup.life);
   }
 
+  function drawParticle(particle) {
+    const t = particle.age / particle.life;
+    context.globalCompositeOperation = (particle.kind === 'flame' || particle.kind === 'muzzle') && colors.dark ? 'lighter' : 'source-over';
+    if (particle.kind === 'flash' || particle.kind === 'ring') {
+      // Flashes widen quickly; shockwave rings sweep out and thin.
+      context.globalAlpha = 1 - t;
+      context.strokeStyle = colors.accent;
+      context.lineWidth = particle.kind === 'ring' ? 3 * (1 - t) + 0.5 : 1.5;
+      context.beginPath();
+      context.arc(particle.x, particle.y, particle.kind === 'ring' ? particle.size * (0.3 + 0.7 * Math.sqrt(t)) : 3 + 14 * t * particle.size, 0, TAU);
+      context.stroke();
+      return;
+    }
+    if (particle.kind === 'muzzle') {
+      const radius = particle.size * (1 - t * 0.5), glow = context.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, radius);
+      glow.addColorStop(0, colors.hot);
+      glow.addColorStop(0.4, colors.tail);
+      glow.addColorStop(1, colors.clear);
+      context.globalAlpha = 1 - t;
+      context.fillStyle = glow;
+      context.beginPath();
+      context.arc(particle.x, particle.y, radius, 0, TAU);
+      context.fill();
+      return;
+    }
+    if (particle.kind === 'chunk') {
+      const size = particle.size;
+      context.save();
+      context.globalAlpha = t > 0.6 ? (1 - t) / 0.4 : 1;
+      context.translate(particle.x, particle.y);
+      context.rotate(particle.angle);
+      context.fillStyle = particle.color;
+      context.strokeStyle = colors.ink;
+      context.lineWidth = 0.8;
+      context.beginPath();
+      context.moveTo(size, 0);
+      context.lineTo(-size * 0.6, size * 0.75);
+      context.lineTo(-size * 0.5, -size * 0.65);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+      return;
+    }
+    context.globalAlpha = particle.kind === 'flame' ? 1 - t : particle.kind === 'spark' ? 1 - t * t : 0.55 * (1 - t);
+    context.fillStyle = particle.kind === 'flame' ? FLAME[Math.min(2, Math.floor(t * 3))] : particle.kind === 'spark' ? colors.accent : colors.smoke;
+    const radius = particle.kind === 'flame' ? particle.size * (1 - t * 0.5) : particle.kind === 'spark' ? particle.size : particle.size * (1 + t * 1.5);
+    context.beginPath();
+    context.arc(particle.x, particle.y, radius, 0, TAU);
+    context.fill();
+  }
+
+  // A crosshair where the mouse aims; it does not shake.
+  function reticle() {
+    if (!flight.piloting || !flight.aim) return;
+    const { x, y } = flight.aim, radius = flight.firing ? 11 : 9;
+    context.globalAlpha = 0.9;
+    context.strokeStyle = colors.accent;
+    context.fillStyle = colors.accent;
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.arc(x, y, radius, 0, TAU);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      context.moveTo(x + dx * (radius - 3), y + dy * (radius - 3));
+      context.lineTo(x + dx * (radius + 5), y + dy * (radius + 5));
+    }
+    context.stroke();
+    context.beginPath();
+    context.arc(x, y, 1.4, 0, TAU);
+    context.fill();
+    context.globalAlpha = 1;
+  }
+
   function draw() {
-    colors ??= readColors();
-    context.setTransform(scale, 0, 0, scale, 0, 0);
-    context.clearRect(0, 0, flight.width, flight.height);
+    context.setTransform(scale, 0, 0, scale, offsetX * scale, offsetY * scale);
+    context.clearRect(-20, -20, flight.width + 40, flight.height + 40);
     drawTargets(context, game, colors);
     const { main } = flight.engine;
     if (main > 0.05) {
@@ -395,48 +620,21 @@ export function installLander({ document, window }) {
       context.fill();
       context.restore();
     }
-    for (const particle of particles) {
-      const t = particle.age / particle.life;
-      context.globalCompositeOperation = particle.kind === 'flame' && colors.dark ? 'lighter' : 'source-over';
-      if (particle.kind === 'flash') {
-        context.globalAlpha = 1 - t;
-        context.strokeStyle = colors.accent;
-        context.lineWidth = 1.5;
-        context.beginPath();
-        context.arc(particle.x, particle.y, 3 + 14 * t * particle.size, 0, Math.PI * 2);
-        context.stroke();
-        continue;
-      }
-      context.globalAlpha = particle.kind === 'flame' ? 1 - t : particle.kind === 'spark' ? 1 - t * t : 0.55 * (1 - t);
-      context.fillStyle = particle.kind === 'flame' ? FLAME[Math.min(2, Math.floor(t * 3))] : particle.kind === 'spark' ? colors.accent : colors.smoke;
-      const radius = particle.kind === 'flame' ? particle.size * (1 - t * 0.5) : particle.kind === 'spark' ? particle.size : particle.size * (1 + t * 1.5);
-      context.beginPath();
-      context.arc(particle.x, particle.y, radius, 0, Math.PI * 2);
-      context.fill();
-    }
+    for (const particle of particles) drawParticle(particle);
     context.globalCompositeOperation = 'source-over';
-    context.strokeStyle = colors.accent;
-    context.lineCap = 'round';
-    for (const shot of flight.shots) {
-      for (const [width, alpha] of [[5, 0.25], [2, 1]]) {
-        context.globalAlpha = alpha;
-        context.lineWidth = width;
-        context.beginPath();
-        context.moveTo(shot.x - shot.vx * 0.016, shot.y - shot.vy * 0.016);
-        context.lineTo(shot.x, shot.y);
-        context.stroke();
-      }
-    }
-    // Points float up from each hit.
-    context.font = '600 13px "Ubuntu Sans", Arial, sans-serif';
+    drawShots(context, flight, colors, clock);
+    // Points pop up from each hit; gun names and sound changes from the lander.
     context.textAlign = 'center';
-    context.fillStyle = colors.accent;
     for (const popup of popups) {
       const t = popup.age / popup.life;
       context.globalAlpha = 1 - t * t;
+      context.fillStyle = colors[popup.color];
+      context.font = `600 ${(popup.size * (1 + 0.5 * Math.max(0, 1 - t * 6))).toFixed(1)}px "Ubuntu Sans", Arial, sans-serif`;
       context.fillText(popup.text, popup.x, popup.y - 26 * t);
     }
     context.globalAlpha = 1;
+    context.setTransform(scale, 0, 0, scale, 0, 0);
+    reticle();
   }
 
   function tick(now) {
@@ -444,16 +642,26 @@ export function installLander({ document, window }) {
     if (!usable.matches) return sleep();
     const dt = last === null ? 1 / 60 : clamp((now - last) / 1000, 0, 1 / 30);
     last = now;
+    clock += dt;
+    colors ??= readColors();
     const surfaces = platforms();
     for (const event of step(flight, dt, surfaces)) react(event);
+    for (const event of updateGuns(flight, game, dt)) react(event);
     for (const event of updateGame(game, flight, dt)) react(event);
+    if (flight.beam) laserEffects(dt);
     exhaust(dt, surfaces);
     strike();
     age(dt);
+    showEnergy();
+    showTime();
+    shake = reducedMotion.matches || shake < 0.05 ? 0 : shake * Math.exp(-10 * dt);
+    offsetX = shake ? rand(-shake, shake) : 0;
+    offsetY = shake ? rand(-shake, shake) : 0;
     place();
     draw();
-    if (!game.playing && !game.targets.length && resting(flight) && !particles.length && !popups.length) return sleep();
-    frame = window.requestAnimationFrame(tick);
+    if (!game.playing && !game.targets.length && resting(flight) && !particles.length && !popups.length && !shake) return sleep();
+    // Ending a round inside this frame may already have asked for the next.
+    if (frame === null) frame = window.requestAnimationFrame(tick);
   }
 
   const idleHint = () => { help.textContent = button.matches?.(':focus-visible') ? 'Press Enter to fly' : 'Click to fly'; };
@@ -461,68 +669,144 @@ export function installLander({ document, window }) {
     window.clearTimeout(helpTimer);
     if (flying) help.innerHTML = CONTROLS;
     else idleHint();
+    help.classList.toggle('is-flying', flying);
     help.classList.toggle('is-shown', flying);
-    if (flying) helpTimer = window.setTimeout(() => help.classList.remove('is-shown'), 4000);
+    if (flying) helpTimer = window.setTimeout(() => help.classList.remove('is-shown'), 6000);
   }
+  function showResults(reason) {
+    const best = game.score > startBest;
+    results.innerHTML = `<span>${reason === 'time' ? 'Time’s up!' : 'Landed'}</span><strong>${game.score}</strong><span>${best ? '<em>New best!</em>' : `points · Best ${game.best}`}</span>`;
+    results.classList.add('is-shown');
+    status.textContent = `${reason === 'time' ? 'Time’s up.' : 'Landed.'} ${game.score} points${best ? ', a new best' : `. Best ${game.best}`}.`;
+  }
+
+  // While flying, the mouse aims, either button fires, and the wheel changes
+  // guns. These listeners exist only during a flight.
+  const mouse = [
+    ['mousemove', event => { flight.aim = { x: event.clientX, y: event.clientY }; }, { passive: true }],
+    ['mousedown', event => {
+      if (!isTrigger(event)) return;
+      // Keep focus, and the keys, on the lander, and select nothing.
+      event.preventDefault();
+      flight.aim = { x: event.clientX, y: event.clientY };
+      flight.firing = true;
+      wake();
+    }, { capture: true }],
+    // Firing continues while either button is still held.
+    ['mouseup', event => { flight.firing = (event.buttons & 3) !== 0; }, { capture: true }],
+    // Clicks fire instead of following links or landing; Enter on the
+    // lander, which clicks without a pointer, still lands it.
+    ['click', event => {
+      if (!event.detail) return;
+      event.preventDefault();
+      event.stopPropagation();
+    }, { capture: true }],
+    ['contextmenu', event => event.preventDefault(), { capture: true }],
+    ['wheel', event => {
+      // Control-scroll still zooms the page.
+      if (event.ctrlKey) return;
+      event.preventDefault();
+      // A notch, or a trackpad's worth of scrolling, changes gun once.
+      wheel += event.deltaY * (event.deltaMode === 1 ? 40 : event.deltaMode === 2 ? 800 : 1);
+      if (Math.abs(wheel) < 50) return;
+      const step = Math.sign(wheel);
+      wheel = 0;
+      if (event.timeStamp - lastWheel < 60) return;
+      lastWheel = event.timeStamp;
+      chooseGun(step);
+    }, { passive: false }],
+  ];
+
   function takeControl() {
     if (!usable.matches) return;
+    sounds.start();
     pilot(flight);
     startGame(game);
+    startBest = game.best;
+    shownSecond = null;
+    hint.hidden = true;
+    try { window.localStorage.setItem(PLAYED, 'true'); } catch { /* The note still goes away for this visit. */ }
+    wheel = 0;
     button.setAttribute('aria-pressed', 'true');
+    root.classList.add('lander-aiming');
     showHelp(true);
     showScore();
-    window.clearTimeout(scoreTimer);
+    showTime();
+    showGun();
+    window.clearTimeout(endTimer);
     score.classList.add('is-shown');
+    bar.classList.add('is-shown');
+    results.classList.remove('is-shown');
     status.textContent = '';
+    for (const [name, listener, options] of mouse) window.addEventListener(name, listener, options);
     wake();
   }
-  // Landing ends the game; the final score stays up for a few seconds.
-  function letGo() {
+  // A round ends when time runs out or the visitor lands. The result stays up
+  // for a few seconds; mouse pilots get the page's keys back.
+  function finish(reason) {
     if (!flight.piloting) return;
     release(flight, { instant: reducedMotion.matches });
     endGame(game);
     saveBest();
+    sounds.laser(false);
+    if (reason === 'time') sounds.finish();
+    for (const [name, listener, options] of mouse) window.removeEventListener(name, listener, options);
+    root.classList.remove('lander-aiming');
     button.setAttribute('aria-pressed', 'false');
     showHelp(false);
-    status.textContent = `Landed with ${game.score} points. Best ${game.best}.`;
-    scoreTimer = window.setTimeout(() => score.classList.remove('is-shown'), 5000);
+    bar.classList.remove('is-shown');
+    showResults(reason);
+    endTimer = window.setTimeout(() => {
+      score.classList.remove('is-shown');
+      results.classList.remove('is-shown');
+    }, 6000);
+    if (byPointer) button.blur();
     place();
     wake();
   }
 
-  // Mouse pilots get the page's keys back on landing; keyboard pilots keep
-  // their place on the lander.
   let byPointer = false;
-  const land = () => { letGo(); if (byPointer) button.blur(); };
   button.addEventListener('click', event => {
     byPointer = event.detail > 0;
     // Safari does not focus clicked buttons; keys must reach the lander.
     button.focus({ preventScroll: true });
-    if (flight.piloting) land(); else takeControl();
+    if (flight.piloting) finish('landed');
+    else {
+      if (byPointer) flight.aim = { x: event.clientX, y: event.clientY };
+      takeControl();
+    }
   });
   button.addEventListener('focus', () => { if (!flight.piloting) idleHint(); });
   button.addEventListener('keydown', event => {
     if (!flight.piloting || event.altKey || event.ctrlKey || event.metaKey) return;
-    if (event.key === 'Escape') { event.preventDefault(); land(); return; }
+    if (event.key === 'Escape') { event.preventDefault(); finish('landed'); return; }
+    if (event.code === 'KeyM' || event.key === 'm' || event.key === 'M') {
+      event.preventDefault();
+      if (!event.repeat) toggleSound();
+      return;
+    }
+    // Space no longer fires; keep it from scrolling the page or landing.
+    if (isSpace(event)) { event.preventDefault(); return; }
     const control = controlFor(event);
     if (control) { event.preventDefault(); flight.input[control] = true; wake(); }
-    else if (isFire(event)) { event.preventDefault(); flight.firing = true; wake(); }
   });
   button.addEventListener('keyup', event => {
     const control = controlFor(event);
     if (control) flight.input[control] = false;
-    else if (isFire(event)) {
-      flight.firing = false;
-      // Keep a held fire button from also toggling the lander.
-      if (flight.piloting) event.preventDefault();
-    }
+    else if (isSpace(event) && flight.piloting) event.preventDefault();
   });
   // Clicking or tabbing elsewhere hands the keys back to the page. Switching
   // windows keeps the lander focused, so flying resumes on return.
-  button.addEventListener('blur', () => window.setTimeout(() => { if (document.activeElement !== button) letGo(); }, 0));
+  button.addEventListener('blur', () => window.setTimeout(() => { if (document.activeElement !== button) finish('landed'); }, 0));
   window.addEventListener('blur', () => {
     flight.firing = false;
     for (const key in flight.input) flight.input[key] = false;
+  });
+  // A hidden tab stops drawing frames, so silence the laser directly.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    flight.firing = false;
+    sounds.laser(false);
   });
   window.addEventListener('resize', () => {
     const parked = resize(flight, root.clientWidth, root.clientHeight);
@@ -535,7 +819,7 @@ export function installLander({ document, window }) {
   window.addEventListener('scroll', () => { if (flight.perch) wake(); }, { passive: true });
   usable.addEventListener('change', () => {
     if (usable.matches) return;
-    letGo();
+    finish('landed');
     park(flight);
     flight.shots = [];
     game.targets = [];

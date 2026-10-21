@@ -1,5 +1,5 @@
-// Space targets for the homepage lander game: what appears while a visitor
-// flies, how it moves, what a shot hits, and what each target is worth. Like
+// Space targets for the homepage lander game: what appears during a timed
+// round, how it moves, what a shot hits, and what each target is worth. Like
 // the flight model, the game state has no DOM dependencies and is tested
 // directly; drawTargets() paints it with the page's palette.
 
@@ -11,12 +11,14 @@ const KINDS = {
   comet: { radius: 9, points: 100 },
 };
 export const POINTS = Object.fromEntries(Object.entries(KINDS).map(([kind, { points }]) => [kind, points]));
-const APPEAR = 0.35, VANISH = 0.35, MAX_TARGETS = 6, TAU = Math.PI * 2;
+const APPEAR = 0.35, VANISH = 0.35, MAX_TARGETS = 8, TAU = Math.PI * 2;
+// Each round lasts a minute: score as much as possible before time runs out.
+export const ROUND = 60;
 
-export const createGame = () => ({ playing: false, time: 0, score: 0, best: 0, targets: [], spawnIn: 0 });
+export const createGame = () => ({ playing: false, time: 0, remaining: ROUND, score: 0, best: 0, targets: [], spawnIn: 0 });
 
 export function startGame(game) {
-  Object.assign(game, { playing: true, time: 0, score: 0, spawnIn: 0.6 });
+  Object.assign(game, { playing: true, time: 0, remaining: ROUND, score: 0, spawnIn: 0.2 });
 }
 
 // Targets still on screen warp out when the pilot lands.
@@ -73,14 +75,15 @@ export function updateGame(game, flight, dt, random = Math.random) {
   const events = [];
   if (game.playing) {
     game.time += dt;
+    game.remaining = Math.max(0, ROUND - game.time);
     game.spawnIn -= dt;
-    // Longer flights bring more targets, sooner.
-    const room = Math.min(MAX_TARGETS, 3 + Math.floor(game.time / 20)) - game.targets.filter(other => other.out === null).length;
+    // As the round goes on, more targets appear, sooner.
+    const room = Math.min(MAX_TARGETS, 4 + Math.floor(game.time / 15)) - game.targets.filter(other => other.out === null).length;
     if (game.spawnIn <= 0 && room > 0) {
       const spawned = spawn(game, flight, random);
       game.targets.push(spawned);
       events.push({ type: 'spawn', target: spawned });
-      game.spawnIn = (0.8 + random() * 1.2) * Math.max(0.5, 1 - game.time / 180);
+      game.spawnIn = (0.45 + random() * 0.8) * Math.max(0.5, 1 - game.time / 120);
     }
   }
   for (const each of game.targets) {
@@ -91,14 +94,12 @@ export function updateGame(game, flight, dt, random = Math.random) {
     if (each.out !== null) each.out += dt;
     else if (each.age > each.life) each.out = 0;
   }
-  flight.shots = flight.shots.filter(shot => {
-    const x0 = shot.x - shot.vx * dt, y0 = shot.y - shot.vy * dt;
-    const struck = game.targets.find(each => each.out === null && each.age >= each.appear * 0.4 && reach(each.x, each.y, x0, y0, shot.x, shot.y) <= each.radius + 2);
-    if (!struck) return true;
+  const hittable = each => each.out === null && each.age >= each.appear * 0.4;
+  function destroy(struck, by) {
     game.targets.splice(game.targets.indexOf(struck), 1);
     game.score += struck.points;
     game.best = Math.max(game.best, game.score);
-    events.push({ type: 'hit', target: struck, points: struck.points });
+    events.push({ type: 'hit', target: struck, points: struck.points, by });
     if (struck.kind === 'asteroid') {
       // Big asteroids break into two smaller, faster rocks.
       const heading = random() * TAU;
@@ -107,8 +108,33 @@ export function updateGame(game, flight, dt, random = Math.random) {
         game.targets.push(target('rock', struck.x, struck.y, struck.vx + Math.cos(heading + turn) * speed, struck.vy + Math.sin(heading + turn) * speed, random, { appear: 0, life: 6 + random() * 2, ...rocky(random, 7, 1) }));
       }
     }
+  }
+  flight.shots = flight.shots.filter(shot => {
+    const x0 = shot.px ?? shot.x - shot.vx * dt, y0 = shot.py ?? shot.y - shot.vy * dt;
+    const struck = game.targets.find(each => hittable(each) && reach(each.x, each.y, x0, y0, shot.x, shot.y) <= each.radius + (shot.splash ? 4 : 2));
+    if (!struck) return true;
+    if (!shot.splash) destroy(struck, shot.gun);
+    else {
+      // A missile bursts, taking out every target within its blast.
+      events.push({ type: 'explode', x: shot.x, y: shot.y, radius: shot.splash });
+      for (const each of game.targets.filter(each => hittable(each) && Math.hypot(each.x - shot.x, each.y - shot.y) <= shot.splash + each.radius)) destroy(each, shot.gun);
+    }
     return false;
   });
+  const { beam } = flight;
+  const length = beam ? Math.hypot(beam.x1 - beam.x0, beam.y1 - beam.y0) : 0;
+  if (length > 0) {
+    // The laser burns through every target its width touches.
+    const ux = (beam.x1 - beam.x0) / length, uy = (beam.y1 - beam.y0) / length;
+    for (const each of game.targets.filter(hittable)) {
+      const along = (each.x - beam.x0) * ux + (each.y - beam.y0) * uy, across = Math.abs((each.x - beam.x0) * uy - (each.y - beam.y0) * ux);
+      if (along >= -each.radius && along <= length + each.radius && across <= each.radius + beam.width) destroy(each, 'laser');
+    }
+  }
+  if (game.playing && game.remaining === 0) {
+    endGame(game);
+    events.push({ type: 'timeup' });
+  }
   const margin = 60;
   game.targets = game.targets.filter(each => (each.out === null || each.out < VANISH) && each.x > -margin && each.x < flight.width + margin && each.y > -margin && each.y < flight.height + margin);
   return events;
@@ -129,7 +155,7 @@ export function targetPalette(read) {
   return {
     ink, paper, accent, surface: read('--surface', '#fafafa'), smoke: read('--muted', '#888888'),
     foil: blend(read('--badge-ink', '#856315'), paper, 0.4), panel: withAlpha(accent, 0.35),
-    tail: withAlpha(accent, 0.55), clear: withAlpha(accent, 0),
+    tail: withAlpha(accent, 0.55), clear: withAlpha(accent, 0), hot: blend('#ffffff', accent, 0.7),
   };
 }
 

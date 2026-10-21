@@ -17,7 +17,7 @@ const year = new Date().getUTCFullYear();
 // local modules it imports, whose import URLs are versioned in the output.
 const localImports = source => [...source.toString().matchAll(/from '\.\/([\w-]+\.js)'/g)].map(match => match[1]);
 const assetVersions = Object.fromEntries(await Promise.all(
-  ['style.css', 'cv.css', 'writing.css', 'callouts.css', 'lander.css', 'theme.js', 'supernova.js', 'writing.js', 'lander.js', 'space-targets.js'].map(async name => {
+  ['style.css', 'cv.css', 'writing.css', 'callouts.css', 'lander.css', 'theme.js', 'supernova.js', 'writing.js', 'lander.js', 'space-targets.js', 'guns.js', 'lander-sound.js'].map(async name => {
     const source = await readFile(path.join(root, 'assets', name));
     const hash = createHash('sha256').update(source);
     for (const dependency of localImports(source)) hash.update(await readFile(path.join(root, 'assets', dependency)));

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createFlight, step, pilot, release, resize, resting, home, surfaceAt, installLander, SIZE, SAFE_LANDING, SHOT_INTERVAL } from '../assets/lander.js';
+import { createFlight, step, pilot, release, resize, resting, home, surfaceAt, installLander, SIZE, SAFE_LANDING } from '../assets/lander.js';
 
 const HALF = SIZE / 2;
 const run = (flight, seconds, each, platforms = []) => {
@@ -60,21 +60,6 @@ test('Hard landings bounce and soft landings settle', () => {
   Object.assign(flight, { y: home(flight).y - 10, vy: 60, landed: false });
   const soft = run(flight, 1);
   assert.deepEqual(soft.map(event => event.type), ['touchdown']);
-});
-
-test('Space fires steadily from the nose, and shots leave the page', () => {
-  const flight = createFlight(1280, 800);
-  pilot(flight);
-  flight.firing = true;
-  const shots = run(flight, 1).filter(event => event.type === 'shot');
-  assert.ok(Math.abs(shots.length - 1 / SHOT_INTERVAL) <= 1.5, `${shots.length} shots in a second`);
-  assert.ok(shots.every(({ shot }) => shot.vy < -600), 'shots travel upward');
-  flight.firing = false;
-  run(flight, 2);
-  assert.equal(flight.shots.length, 0);
-  release(flight);
-  flight.firing = true;
-  assert.equal(run(flight, 1).filter(event => event.type === 'shot').length, 0, 'only a pilot can fire');
 });
 
 test('Letting go flies the lander home from anywhere and parks it on the pad', () => {
@@ -187,58 +172,77 @@ test('The autopilot flies home through platforms', () => {
   assert.deepEqual([flight.x, flight.y, flight.returning], [home(flight).x, home(flight).y, false]);
 });
 
-function page({ usable = true, reduced = false } = {}) {
+function page({ usable = true, reduced = false, stored = {} } = {}) {
   let frames = [], now = 0;
   const media = query => ({ matches: query.includes('reduced-motion') ? reduced : usable, addEventListener() {} });
-  const nodes = [];
+  const nodes = [], windowListeners = {};
   const gradient = { addColorStop() {} };
   const context = new Proxy({}, { get: (target, name) => name in target ? target[name] : () => gradient });
+  const event = (type, init) => ({ type, defaultPrevented: false, timeStamp: now, preventDefault() { this.defaultPrevented = true; }, stopPropagation() { this.stopped = true; }, ...init });
   const document = {
-    documentElement: { clientWidth: 1280, clientHeight: 800, dataset: { theme: 'light' } },
+    documentElement: { clientWidth: 1280, clientHeight: 800, dataset: { theme: 'light' }, classList: classes() },
     body: { append: (...children) => nodes.push(...children) },
     elementFromPoint: () => null,
     querySelectorAll: () => [],
+    addEventListener() {},
     createElement(tag) {
-      const listeners = {}, classes = new Set();
+      const listeners = {}, list = classes();
       const node = {
-        tag, style: {}, attributes: {}, children: [], width: 0, height: 0, textContent: '',
+        tag, style: {}, attributes: {}, children: [], width: 0, height: 0, textContent: '', innerHTML: '', classList: list,
         setAttribute(name, value) { this.attributes[name] = String(value); },
-        set className(value) { value.split(' ').forEach(name => classes.add(name)); },
+        set className(value) { value.split(' ').forEach(name => list.add(name)); },
         append(...children) { this.children.push(...children); },
         addEventListener(name, fn) { (listeners[name] ??= []).push(fn); },
         dispatch(type, init = {}) {
-          const event = { type, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, ...init };
-          (listeners[type] || []).forEach(fn => fn(event));
-          return event;
+          const fired = event(type, init);
+          (listeners[type] || []).forEach(fn => fn(fired));
+          return fired;
         },
+        matches: () => false,
+        getBoundingClientRect: () => ({ left: 0, right: 0, top: 0, bottom: 0, width: 0 }),
         focus() { document.activeElement = node; },
         blur() { if (document.activeElement === node) document.activeElement = null; },
         getContext: () => context,
-        classList: {
-          add: name => classes.add(name), remove: name => classes.delete(name), contains: name => classes.has(name),
-          toggle: (name, on) => (on ? classes.add(name) : classes.delete(name)),
-        },
       };
       return node;
     },
   };
+  function classes() {
+    const names = new Set();
+    return { add: name => names.add(name), remove: name => names.delete(name), contains: name => names.has(name), toggle: (name, on) => (on ? names.add(name) : names.delete(name)) };
+  }
   const window = {
     devicePixelRatio: 1, matchMedia: media,
     requestAnimationFrame: fn => frames.push(fn), cancelAnimationFrame() {},
     getComputedStyle: () => ({ getPropertyValue: () => '#3b6a86', colorScheme: 'light' }),
     MutationObserver: class { observe() {} },
-    addEventListener() {}, clearTimeout() {},
+    addEventListener(name, fn) { (windowListeners[name] ??= new Set()).add(fn); },
+    removeEventListener(name, fn) { windowListeners[name]?.delete(fn); },
+    clearTimeout() {},
     setTimeout: (fn, delay) => { if (delay === 0) fn(); return 0; },
+    localStorage: { getItem: name => stored[name] ?? null, setItem: (name, value) => { stored[name] = String(value); } },
   };
   const { flight, game } = installLander({ document, window });
   const find = name => nodes.find(node => node.classList.contains(name));
-  const button = find('lander'), score = find('lander-score'), status = find('lander-status');
+  const button = find('lander'), hint = find('lander-hint'), score = find('lander-score'), bar = find('lander-guns'), results = find('lander-results'), status = find('lander-status');
   // Tests name keys by their physical code, as the lander reads them.
-  const keyOf = { Space: ' ', KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
+  const keyOf = { Space: ' ', KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', KeyM: 'm' };
   const key = (type, code, init) => button.dispatch(type, { code, key: keyOf[code] ?? code, ...init }).defaultPrevented;
   return {
-    flight, game, button, document, score, status, pending: () => frames.length,
+    flight, game, button, document, stored, root: document.documentElement, hint, score, bar, results, status, pending: () => frames.length,
     press: (code, init) => key('keydown', code, init), lift: code => key('keyup', code),
+    // Mouse and wheel events reach the window, as in a browser.
+    mouse(type, init = {}) {
+      const fired = event(type, { button: 0, buttons: 0, clientX: 0, clientY: 0, ...init });
+      for (const fn of windowListeners[type] ?? []) fn(fired);
+      return fired.defaultPrevented;
+    },
+    click(init = {}) {
+      const fired = event('click', { detail: 1, ...init });
+      for (const fn of windowListeners.click ?? []) fn(fired);
+      return fired;
+    },
+    current: () => bar.children.findIndex(slot => slot.classList.contains('is-current')),
     advance(seconds) {
       for (let i = 0; i < Math.round(seconds * 60) && frames.length; i++) {
         const due = frames; frames = []; now += 1000 / 60;
@@ -248,58 +252,160 @@ function page({ usable = true, reduced = false } = {}) {
   };
 }
 
-test('WASD and Space keep working on the page until a visitor chooses to fly', () => {
+test('Flight keys and the mouse keep working on the page until a visitor chooses to fly', () => {
   const p = page();
   assert.equal(p.pending(), 0, 'a parked lander does not animate');
   assert.equal(p.press('KeyW'), false);
   assert.equal(p.press('Space'), false);
+  assert.deepEqual([p.mouse('mousedown', { button: 2 }), p.mouse('mousedown'), p.mouse('contextmenu'), p.mouse('wheel', { deltaY: 100 })], [false, false, false, false]);
+  assert.equal(p.click().defaultPrevented, false, 'links still follow clicks');
   p.lift('Space');
   assert.equal(p.flight.piloting, false);
   p.button.dispatch('click');
   assert.equal(p.button.attributes['aria-pressed'], 'true');
+  assert.equal(p.root.classList.contains('lander-aiming'), true, 'the crosshair replaces the cursor');
   assert.equal(p.press('KeyW'), true);
   assert.equal(p.press('ArrowUp'), false, 'the arrow keys stay with the page');
-  assert.equal(p.press('Space'), true);
   p.advance(0.5);
   assert.ok(p.flight.y < home(p.flight).y - 20);
-  assert.ok(p.flight.shots.length > 0);
-  assert.equal(p.lift('Space'), true, 'releasing Space does not toggle the lander');
   p.lift('KeyW');
   assert.equal(p.press('Escape'), true);
   assert.equal(p.button.attributes['aria-pressed'], 'false');
+  assert.equal(p.root.classList.contains('lander-aiming'), false);
   assert.equal(p.press('KeyS'), false, 'keys return to the page');
+  assert.deepEqual([p.mouse('mousedown', { button: 2 }), p.mouse('mousedown'), p.mouse('contextmenu'), p.mouse('wheel', { deltaY: 100 })], [false, false, false, false], 'and so does the mouse');
+  assert.equal(p.click().defaultPrevented, false);
   p.advance(20);
   assert.equal(p.pending(), 0, 'the animation sleeps once the lander is parked and targets are gone');
   assert.deepEqual([p.flight.x, p.flight.y, p.game.targets.length], [home(p.flight).x, home(p.flight).y, 0]);
 });
 
-test('Other keyboard layouts fly by key position', () => {
+test('The mouse aims, either button fires, and Space does not', () => {
   const p = page();
   p.button.dispatch('click');
-  assert.equal(p.press('KeyW', { key: 'z' }), true, 'AZERTY Z sits where W is');
-  assert.equal(p.flight.input.up, true);
-  assert.equal(p.press('', { key: 'D' }), true, 'falls back to the character when no position is reported');
-  assert.equal(p.flight.input.right, true);
+  p.game.spawnIn = Infinity;
+  assert.equal(p.press('Space'), true, 'Space neither scrolls nor lands');
+  assert.equal(p.lift('Space'), true);
+  p.advance(0.3);
+  assert.equal(p.flight.shots.length, 0);
+  p.mouse('mousemove', { clientX: p.flight.x - 400, clientY: p.flight.y });
+  assert.equal(p.mouse('contextmenu'), true, 'no context menu while flying');
+  assert.equal(p.mouse('mousedown', { button: 2, clientX: p.flight.x - 400, clientY: p.flight.y }), true, 'focus stays on the lander');
+  p.advance(0.3);
+  assert.ok(p.flight.shots.length > 1);
+  assert.ok(p.flight.shots.every(shot => shot.vx < -700), 'shots fly toward the mouse');
+  p.mouse('mouseup', { button: 2 });
+  const fired = p.flight.shots.length;
+  p.advance(0.3);
+  assert.ok(p.flight.shots.length <= fired, 'releasing the button stops firing');
+  // The left button fires too, and keeps firing while either button is held.
+  assert.equal(p.mouse('mousedown', { button: 0, clientX: p.flight.x + 400, clientY: p.flight.y }), true, 'no text selection or focus change');
+  p.mouse('mousedown', { button: 2 });
+  p.mouse('mouseup', { button: 2, buttons: 1 });
+  assert.equal(p.flight.firing, true);
+  p.mouse('mouseup', { button: 0, buttons: 0 });
+  assert.equal(p.flight.firing, false);
+  // A click while flying fires instead of following a link or landing.
+  const click = p.click();
+  assert.deepEqual([click.defaultPrevented, click.stopped, p.flight.piloting], [true, true, true]);
+  assert.equal(p.click({ detail: 0 }).defaultPrevented, false, 'Enter on the lander still lands it');
 });
 
-test('Flying starts a game: hits score in the top-right counter, and the best score outlasts landing', () => {
+test('The wheel changes guns once per notch, and the gun bar shows the choice', () => {
   const p = page();
-  assert.equal(p.score.classList.contains('is-shown'), false);
+  assert.equal(p.bar.classList.contains('is-shown'), false);
+  p.button.dispatch('click');
+  assert.equal(p.bar.classList.contains('is-shown'), true);
+  assert.deepEqual(p.bar.children.map(slot => slot.innerHTML.match(/<span>(.*)<\/span>/)[1]), ['Blaster', 'Scatter', 'Rapid', 'Laser', 'Missiles']);
+  assert.equal(p.current(), 0);
+  assert.equal(p.mouse('wheel', { deltaY: 100 }), true, 'the page does not scroll');
+  assert.equal(p.current(), 1);
+  p.advance(0.1);
+  p.mouse('wheel', { deltaY: -100 });
+  p.advance(0.1);
+  p.mouse('wheel', { deltaY: -100 });
+  assert.equal(p.current(), 4, 'wraps around to the last gun');
+  assert.match(p.status.textContent, /Missiles selected/);
+  p.advance(0.1);
+  for (let i = 0; i < 4; i++) p.mouse('wheel', { deltaY: 12 });
+  assert.equal(p.current(), 4, 'small trackpad movements add up first');
+  p.mouse('wheel', { deltaY: 12 });
+  assert.equal(p.current(), 0);
+  assert.equal(p.mouse('wheel', { deltaY: 100, ctrlKey: true }), false, 'Control-scroll still zooms');
+  assert.equal(p.mouse('wheel', { deltaMode: 1, deltaY: 3 }), true, 'line-based wheels count too');
+  assert.equal(p.current(), 0, 'but not twice within a moment');
+  p.advance(0.1);
+  p.mouse('wheel', { deltaMode: 1, deltaY: 3 });
+  assert.equal(p.current(), 1);
+});
+
+test('The laser fires with the right button and drains its meter in the gun bar', () => {
+  const p = page();
+  p.button.dispatch('click');
+  for (let i = 0; i < 3; i++) { p.mouse('wheel', { deltaY: 100 }); p.advance(0.1); }
+  assert.equal(p.current(), 3);
+  p.mouse('mousedown', { button: 2, clientX: p.flight.x, clientY: 0 });
+  p.advance(1);
+  assert.ok(p.flight.beam, 'the laser fires');
+  const meter = p.bar.children[3].children[0].children[0];
+  assert.match(meter.style.width, /^\d+%$/);
+  assert.ok(parseInt(meter.style.width) < 70);
+  p.mouse('mouseup', { button: 2 });
+  p.advance(0.1);
+  assert.equal(p.flight.beam, null);
+});
+
+test('Each round lasts a minute; the result and best score follow', () => {
+  const p = page();
   p.button.dispatch('click');
   p.game.spawnIn = Infinity;
   assert.equal(p.score.classList.contains('is-shown'), true);
-  assert.equal(p.score.children[1].textContent, '0');
+  assert.deepEqual(p.score.children.map(child => child.textContent), ['Score', '0', '', '1:00']);
   p.game.targets.push({ kind: 'satellite', x: p.flight.x, y: p.flight.y - 150, vx: 0, vy: 0, radius: 15, points: 25, age: 1, angle: 0, spin: 0, appear: 0, life: Infinity, out: null });
-  p.press('Space');
+  p.mouse('mousedown', { button: 2, clientX: p.flight.x, clientY: p.flight.y - 300 });
   p.advance(0.5);
-  p.lift('Space');
+  p.mouse('mouseup', { button: 2 });
   assert.equal(p.game.score, 25);
-  assert.deepEqual([p.score.children[1].textContent, p.score.children[2].textContent], ['25', 'Best 25']);
-  p.press('Escape');
-  assert.match(p.status.textContent, /25 points\. Best 25/);
-  assert.equal(p.score.classList.contains('is-shown'), true, 'the final score stays up after landing');
+  assert.deepEqual(p.score.children.slice(1, 3).map(child => child.textContent), ['25', 'Best 25']);
+  p.advance(51);
+  assert.equal(p.score.children[3].textContent, '0:09');
+  assert.equal(p.score.children[3].classList.contains('is-ending'), true, 'the last seconds stand out');
+  p.advance(9);
+  assert.equal(p.flight.piloting, false, 'time is up');
+  assert.match(p.results.innerHTML, /Time’s up!.*<strong>25<\/strong>.*New best!/);
+  assert.equal(p.results.classList.contains('is-shown'), true);
+  assert.equal(p.bar.classList.contains('is-shown'), false);
+  assert.match(p.status.textContent, /Time’s up\. 25 points, a new best\./);
   p.button.dispatch('click');
-  assert.deepEqual([p.game.score, p.score.children[1].textContent, p.score.children[2].textContent], [0, '0', 'Best 25']);
+  assert.deepEqual([p.game.score, p.game.remaining, p.score.children[2].textContent], [0, 60, 'Best 25']);
+  p.press('Escape');
+  assert.match(p.results.innerHTML, /Landed.*<strong>0<\/strong>.*Best 25/);
+});
+
+test('A note points first-time visitors at the lander until they fly', () => {
+  const p = page();
+  assert.equal(p.hint.hidden, false);
+  assert.match(p.hint.innerHTML, /<svg viewBox="0 0 150 80"/);
+  assert.equal(p.hint.attributes['aria-hidden'], 'true', 'the lander itself is labeled for screen readers');
+  p.button.dispatch('click');
+  assert.equal(p.hint.hidden, true);
+  assert.equal(p.stored['jordan-bailey-lander-played'], 'true');
+  p.press('Escape');
+  assert.equal(p.hint.hidden, true, 'it does not come back');
+  assert.equal(page({ stored: { 'jordan-bailey-lander-played': 'true' } }).hint.hidden, true, 'nor on later visits');
+});
+
+test('M mutes and unmutes the sound, and the choice is remembered', () => {
+  const p = page();
+  p.button.dispatch('click');
+  assert.equal(p.press('KeyM'), true);
+  assert.match(p.status.textContent, /Sound off/);
+  assert.equal(p.press('KeyM', { repeat: true }), true, 'holding M does not flip it back');
+  assert.match(p.status.textContent, /Sound off/);
+  assert.equal(p.stored['jordan-bailey-lander-muted'], 'true');
+  p.press('KeyM');
+  assert.match(p.status.textContent, /Sound on/);
+  assert.equal(p.stored['jordan-bailey-lander-muted'], 'false');
 });
 
 test('Focus leaving the lander or a second click hands control back', () => {
@@ -340,10 +446,11 @@ test('Browser shortcuts with modifier keys still work while flying', () => {
   assert.equal(p.press('KeyD', { altKey: true }), false);
 });
 
-test('Touch-only or narrow screens never take the keyboard', () => {
+test('Touch-only or narrow screens never take the keyboard or mouse', () => {
   const p = page({ usable: false });
   p.button.dispatch('click');
   assert.equal(p.flight.piloting, false);
   assert.equal(p.press('KeyW'), false);
+  assert.equal(p.mouse('contextmenu'), false);
   assert.equal(p.pending(), 0);
 });

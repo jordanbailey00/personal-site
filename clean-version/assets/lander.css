@@ -1,20 +1,46 @@
 /* Homepage lunar lander. It appears only where a keyboard and a fine pointer can
    fly it, and where the window leaves room beside the text column. */
-.lander,.lander-pad,.lander-help,.lander-effects,.lander-score{display:none}
+.lander,.lander-pad,.lander-help,.lander-hint,.lander-effects,.lander-score,.lander-guns,.lander-results{display:none}
 @media (hover:hover) and (pointer:fine) and (min-width:900px){
 .lander{position:fixed;left:0;top:0;z-index:81;display:block;width:44px;height:44px;margin:0;padding:0;border:0;border-radius:50%;background:none;color:var(--ink);cursor:pointer;transform-origin:50% 50%;will-change:transform;-webkit-tap-highlight-color:transparent}
 .lander svg{display:block;width:100%;height:100%;overflow:visible}
 .lander:focus-visible{outline-offset:3px;border-radius:50%}
+/* The hand-drawn note writes itself in, then steps aside while the lander
+   is hovered, focused, or flying. */
+.lander-hint path{stroke-dasharray:1 2;stroke-dashoffset:1.02;animation:lander-hint-draw .3s ease-out forwards;animation-delay:calc(.8s + var(--stroke) * .11s)}
+.lander:hover~.lander-hint,.lander:focus-visible~.lander-hint,.lander-aiming .lander-hint{opacity:0}
+/* While flying, the game draws its own crosshair. */
+.lander-aiming,.lander-aiming *{cursor:none!important}
 .lander-effects:not([hidden]){position:fixed;inset:0;z-index:80;display:block;width:100%;height:100%;pointer-events:none}
 .lander-pad{position:fixed;left:0;top:0;z-index:79;display:block;width:56px;height:3px;border-radius:2px;background:var(--tag-border);pointer-events:none}
 .lander-help{position:fixed;right:16px;bottom:62px;z-index:82;display:block;margin:0;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--paper);box-shadow:0 4px 16px #0001;color:var(--muted);font-size:.75rem;line-height:1.5;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .2s ease,transform .2s ease}
-.lander:hover+.lander-help,.lander:focus-visible+.lander-help,.lander-help.is-shown{opacity:1;transform:none}
+.lander:hover+.lander-help:not(.is-flying),.lander:focus-visible+.lander-help:not(.is-flying),.lander-help.is-shown{opacity:1;transform:none}
+/* At the start of a flight, the controls show above the gun bar. */
+.lander-help.is-flying{right:auto;left:50%;bottom:104px;transform:translate(-50%,4px)}
+.lander-help.is-flying.is-shown{transform:translate(-50%,0)}
 .lander-help kbd{font:inherit;font-size:.7rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:0 4px}
 .lander-help kbd+kbd{margin-left:2px}
 .lander-score{position:fixed;top:16px;right:16px;z-index:82;display:flex;align-items:baseline;gap:8px;margin:0;padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--paper);box-shadow:0 4px 16px #0001;color:var(--muted);font-size:.75rem;line-height:1.4;font-variant-numeric:tabular-nums;pointer-events:none;opacity:0;transform:translateY(-4px);transition:opacity .2s ease,transform .2s ease}
 .lander-score.is-shown{opacity:1;transform:none}
 .lander-score-value{display:inline-block;min-width:2ch;color:var(--ink);font-size:1.05rem;font-weight:600}
-.lander-score-best:not(:empty){padding-left:8px;border-left:1px solid var(--line)}
+.lander-score-best:not(:empty),.lander-score-time{padding-left:8px;border-left:1px solid var(--line)}
+.lander-score-time{min-width:4.5ch;color:var(--ink);font-weight:500;transition:color .2s ease}
+.lander-score-time.is-ending{color:var(--focus);font-weight:700}
+/* The gun bar: every gun, with the chosen one raised and outlined. */
+.lander-guns{position:fixed;left:50%;bottom:14px;z-index:82;display:flex;gap:4px;margin:0;padding:5px;list-style:none;border:1px solid var(--line);border-radius:10px;background:var(--paper);box-shadow:0 6px 24px #0002;pointer-events:none;opacity:0;transform:translate(-50%,10px);transition:opacity .2s ease,transform .2s ease}
+.lander-guns.is-shown{opacity:1;transform:translate(-50%,0)}
+.lander-gun{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;width:64px;padding:7px 4px 6px;border:1px solid transparent;border-radius:7px;color:var(--muted);font-size:.68rem;line-height:1.2;transition:color .15s ease,background .15s ease,border-color .15s ease,transform .15s ease}
+.lander-gun svg{width:20px;height:20px}
+.lander-gun.is-current{color:var(--ink);background:var(--surface);border-color:var(--focus);transform:translateY(-4px)}
+.lander-gun.is-current svg{color:var(--focus)}
+.lander-gun-energy{position:absolute;left:10px;right:10px;bottom:2px;height:2px;border-radius:1px;background:var(--line);overflow:hidden}
+.lander-gun-charge{display:block;width:100%;height:100%;background:var(--focus)}
+.lander-gun.is-overheated .lander-gun-charge{background:var(--muted)}
+/* A round's result, where the gun bar was. */
+.lander-results{position:fixed;left:50%;bottom:14px;z-index:82;display:flex;flex-direction:column;align-items:center;min-width:180px;margin:0;padding:8px 18px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper);box-shadow:0 6px 24px #0002;color:var(--muted);font-size:.75rem;line-height:1.4;font-variant-numeric:tabular-nums;pointer-events:none;opacity:0;transform:translate(-50%,10px);transition:opacity .25s ease,transform .25s ease}
+.lander-results.is-shown{opacity:1;transform:translate(-50%,0)}
+.lander-results strong{color:var(--ink);font-size:1.7rem;font-weight:600;line-height:1.2}
+.lander-results em{color:var(--focus);font-style:normal;font-weight:600}
 }
 .lander-status{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .lander-foil{fill:var(--badge-bg);fill:color-mix(in srgb,var(--badge-ink) 40%,var(--paper))}
@@ -23,4 +49,11 @@
 .lander-window{fill:currentColor}
 .lander-beacon{fill:var(--paper);transition:fill .2s ease,stroke .2s ease}
 .lander[aria-pressed="true"] .lander-beacon{fill:var(--focus);stroke:var(--focus)}
-@media print{.lander,.lander-pad,.lander-help,.lander-effects,.lander-score{display:none!important}}
+/* The note needs a margin wide enough to sit beside the text column. */
+@media (hover:hover) and (pointer:fine) and (min-width:1240px){
+.lander-hint:not([hidden]){position:fixed;right:66px;bottom:38px;z-index:78;display:block;width:150px;height:80px;color:var(--focus);pointer-events:none;transition:opacity .2s ease}
+.lander-hint svg{display:block;width:100%;height:100%;overflow:visible}
+}
+@keyframes lander-hint-draw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.lander-hint path{animation:none;stroke-dashoffset:0}}
+@media print{.lander,.lander-pad,.lander-help,.lander-hint,.lander-effects,.lander-score,.lander-guns,.lander-results{display:none!important}}

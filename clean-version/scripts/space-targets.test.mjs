@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createGame, startGame, endGame, updateGame, targetPalette, POINTS } from '../assets/space-targets.js';
+import { createGame, startGame, endGame, updateGame, targetPalette, POINTS, ROUND } from '../assets/space-targets.js';
 
 // Small deterministic generator for repeatable games.
 const random = seed => () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32);
@@ -19,17 +19,33 @@ const still = (kind, x, y, details = {}) => ({ kind, x, y, vx: 0, vy: 0, radius:
 // A shot fired straight up from below a point, as the lander fires it.
 const shotBelow = (x, y, distance = 60) => ({ x, y: y + distance, vx: 0, vy: -760, age: 0 });
 
-test('Targets appear only during a game, up to a limit that grows with time', () => {
+test('Targets appear only during a round, up to a limit that grows with time', () => {
   const game = createGame(), flight = flightAt();
   run(game, flight, 5);
   assert.equal(game.targets.length, 0, 'nothing appears before the visitor flies');
   startGame(game);
   let most = 0;
-  run(game, flight, 15, random(9), () => { most = Math.max(most, game.targets.filter(each => each.out === null).length); });
-  assert.ok(most > 0 && most <= 3, `${most} targets in the first 15 seconds`);
-  run(game, flight, 120, random(11), () => { most = Math.max(most, game.targets.filter(each => each.out === null).length); });
-  assert.ok(most > 3 && most <= 6, `${most} targets at most`);
+  run(game, flight, 14.9, random(9), () => { most = Math.max(most, game.targets.filter(each => each.out === null).length); });
+  assert.ok(most > 2 && most <= 4, `${most} targets in the first 15 seconds`);
+  run(game, flight, 45, random(11), () => { most = Math.max(most, game.targets.filter(each => each.out === null).length); });
+  assert.ok(most > 4 && most <= 7, `${most} targets at most`);
   assert.ok(game.targets.every(each => each.x > -60 && each.x < 1340 && each.y > -60 && each.y < 860));
+});
+
+test('A round lasts a minute, then its targets leave', () => {
+  const game = createGame(), flight = flightAt();
+  startGame(game);
+  assert.equal(game.remaining, ROUND);
+  assert.equal(ROUND, 60);
+  run(game, flight, 59.9);
+  assert.equal(game.playing, true);
+  assert.ok(game.remaining > 0 && game.remaining < 0.2);
+  const ending = run(game, flight, 0.2);
+  assert.deepEqual(ending.filter(event => event.type === 'timeup').length, 1);
+  assert.deepEqual([game.playing, game.remaining], [false, 0]);
+  assert.ok(game.targets.every(each => each.out !== null), 'every target is leaving');
+  run(game, flight, 1);
+  assert.equal(game.targets.length, 0);
 });
 
 test('New targets warp in clear of the lander', () => {
