@@ -1,10 +1,9 @@
 {
-  "description": "Evidence used in Reinforcement Learning for Runescape. Rates are fractions unless the key says percent. Training entries are bin averages, not checkpoint evaluations.",
-  "baseline_snapshot": "2026-09-14",
-  "baseline_run": "sweep_1789246135940_0024",
-  "baseline_training_seed": 73,
-  "baseline_training_seconds_excluding_evaluation": 434.08,
-  "baseline_training": [
+  "description": "Data behind “Reinforcement Learning for RuneScape”. The main run is the highest-scoring of 90 runs in a hyperparameter search; its settings are labeled \"0024\" below, and main_run_id is its run ID. Rates are fractions unless a key says percent. Training entries are averages over each quarter of training, not separate evaluations of saved checkpoints.",
+  "main_run_id": "sweep_1789246135940_0024",
+  "main_run_seed": 73,
+  "main_run_training_seconds_excluding_evaluation": 434.08,
+  "main_run_training": [
     {
       "agent_steps": 63438848.0,
       "env/episode_length": 1214.4603773214048,
@@ -38,7 +37,7 @@
       "env/wave_reached": 62.22980835858513
     }
   ],
-  "baseline_evaluation": {
+  "main_run_evaluation": {
     "agent_steps": 499122176.0,
     "env/episode_length": 4930.81640625,
     "env/jad_kill_rate": 0.8861111402511597,
@@ -46,8 +45,8 @@
     "env/reached_wave_63": 0.8924999833106995,
     "env/wave_reached": 62.315093994140625
   },
-  "baseline_checkpoint_sha256": "963d9949a3c1d954fb2c746860a226c0c34915f1f19b1b2f4ffb15e56a97d568",
-  "baseline_seed_confirmations": [
+  "main_run_checkpoint_sha256": "963d9949a3c1d954fb2c746860a226c0c34915f1f19b1b2f4ffb15e56a97d568",
+  "main_run_settings_with_four_seeds": [
     {
       "recipe": "0024",
       "seed": 73,
@@ -77,7 +76,7 @@
       "jad_reach_percent": 84.40959453582764
     }
   ],
-  "september_17_same_seed_reproductions": [
+  "best_ten_runs_retrained_with_same_seed": [
     {
       "name": "top01_seed303_trial0073",
       "wandb_id": "d544df7738a408a3",
@@ -209,5 +208,5 @@
       "status": "complete"
     }
   ],
-  "figure_snapshot_sha256": "1fe43d4271f475160f0723c3ba4240fd0f79ddef8c586b36bfa3d9ff558ebc88"
+  "figure_data_sha256": "1fe43d4271f475160f0723c3ba4240fd0f79ddef8c586b36bfa3d9ff558ebc88"
 }
