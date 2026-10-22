@@ -46,6 +46,20 @@ export function inboxAt(root) {
       await writeFile(fileFor(id), json({ id, received: now.toISOString(), ...message }));
       return { id };
     },
+    // Saves a message pulled from the live inbox if it is well formed. True
+    // when it is safely here, so the live copy can be cleared.
+    async save(message) {
+      if (!ID.test(message?.id ?? '') || Number.isNaN(Date.parse(message.received))) return false;
+      const { message: clean, error } = checkMessage(message);
+      if (error) return false;
+      await mkdir(folder, { recursive: true });
+      try {
+        await writeFile(fileFor(message.id), json({ id: message.id, received: message.received, ...clean }), { flag: 'wx' });
+      } catch (error) {
+        if (error.code !== 'EEXIST') throw error;
+      }
+      return true;
+    },
     async publish(id, answer, now = new Date()) {
       const message = await waiting(id);
       if (!message) return { error: 'That message is not in the inbox.' };

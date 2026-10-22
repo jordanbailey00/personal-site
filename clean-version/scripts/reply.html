@@ -10,7 +10,10 @@
 <link rel="stylesheet" href="/assets/messages.css">
 <style>
 /* The local reply tool: the inbox, then what is published. Served only by scripts/dev.mjs. */
-.reply-status{min-height:1.4em;margin:0 0 24px;font-size:.9rem;color:var(--muted)}
+.reply-check{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 24px}
+.reply-check button{padding:6px 16px;border:1px solid var(--ink);border-radius:999px;background:var(--ink);color:var(--paper);font:inherit;font-weight:600;cursor:pointer}
+.reply-check button:disabled{opacity:.5;cursor:default}
+.reply-status{min-height:1.4em;margin:0;font-size:.9rem;color:var(--muted)}
 .reply-status.is-error{color:var(--badge-ink)}
 .reply-section{margin-bottom:3rem}
 .reply-list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
@@ -32,7 +35,7 @@
   <a class="back-link" href="/message/">← Back to the message page</a>
   <h1 class="page-title">Reply to messages</h1>
   <p class="page-subtitle">This page runs only on your computer. Publishing adds a message and your answer to <code>content/messages.json</code> and rebuilds the local site, so you can check it before you deploy. Nothing reaches the live site until you deploy.</p>
-  <p class="reply-status" id="status" role="status"></p>
+  <div class="reply-check"><button type="button" id="check">Check for new messages</button><p class="reply-status" id="status" role="status"></p></div>
   <section class="reply-section" aria-labelledby="new-title"><h2 class="section-title" id="new-title">New messages</h2><ol class="reply-list" id="new"></ol></section>
   <section class="reply-section" aria-labelledby="published-title"><h2 class="section-title" id="published-title">Published</h2><ol class="reply-list" id="published"></ol></section>
 </main>
@@ -107,7 +110,22 @@ async function load() {
     list.replaceChildren(...(messages.length ? messages.map(message => card(message, isPublished)) : [element('li', 'reply-empty', empty)]));
   }
 }
-load().catch(error => say(`Could not read the inbox: ${error.message}`, true));
+// Brings new messages from the live site's inbox, on opening and on request.
+const check = document.getElementById('check');
+async function pull() {
+  check.disabled = true;
+  say('Checking for new messages…');
+  try {
+    const { pulled } = await call('pull', {});
+    say(pulled ? `${pulled} new message${pulled === 1 ? '' : 's'}.` : 'No new messages.');
+  } catch (error) {
+    say(error.message, true);
+  }
+  check.disabled = false;
+  await load();
+}
+check.addEventListener('click', pull);
+load().then(pull).catch(error => say(`Could not read the inbox: ${error.message}`, true));
 </script>
 </body>
 </html>

@@ -158,9 +158,9 @@ export function installMessages({ document, window }) {
   const form = document.querySelector('[data-message-form]');
   if (!form) return null;
   // On the live site the form sends to the inbox service named in the page;
-  // on this computer it sends to the development server's inbox.
+  // on this computer it always sends to the development server's inbox.
   const local = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
-  const endpoint = form.dataset.endpoint || (local ? '/api/messages' : '');
+  const endpoint = local ? '/api/messages' : form.dataset.endpoint;
   const text = form.querySelector('#message-text'), name = form.querySelector('#message-name'), trap = form.querySelector('#message-website');
   const pad = form.querySelector('[data-message-pad]'), canvas = pad.querySelector('canvas'), context = canvas.getContext('2d');
   const switcher = form.querySelector('[data-message-modes]'), modes = [...switcher.querySelectorAll('[data-mode]')], pens = [...pad.querySelectorAll('[data-pen]')];

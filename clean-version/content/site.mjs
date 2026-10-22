@@ -7,10 +7,9 @@ export const profile = {
   twitter: 'https://x.com/jordansb_',
 };
 
-// Where the "message me" page sends messages on the live site: an inbox
-// service's address. Empty until one is chosen; the page then says messages
-// open soon. Local development always uses the dev server's inbox.
-export const messageEndpoint = '';
+// Where the "message me" page sends messages on the live site: the inbox
+// Worker in worker/. Local development always uses the dev server's inbox.
+export const messageEndpoint = 'https://message-me-inbox.jordanbailey.workers.dev/messages';
 
 export const projects = [
   {

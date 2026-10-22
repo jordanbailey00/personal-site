@@ -3,3 +3,5 @@ oracle/
 node_modules/
 # Messages visitors send while testing locally; never published as-is.
 inbox/
+# The live inbox's address and the reply tool's private key.
+.message-inbox.json

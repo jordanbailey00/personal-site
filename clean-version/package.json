@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node scripts/check.mjs && node --test scripts/theme.test.mjs scripts/supernova.test.mjs scripts/starfield.test.mjs scripts/writing.test.mjs scripts/lander.test.mjs scripts/space-targets.test.mjs scripts/guns.test.mjs scripts/messages.test.mjs",
+    "check": "node scripts/check.mjs && node --test scripts/theme.test.mjs scripts/supernova.test.mjs scripts/starfield.test.mjs scripts/writing.test.mjs scripts/lander.test.mjs scripts/space-targets.test.mjs scripts/guns.test.mjs scripts/messages.test.mjs scripts/worker.test.mjs",
     "dev": "npm run build && node scripts/dev.mjs"
   },
   "engines": {

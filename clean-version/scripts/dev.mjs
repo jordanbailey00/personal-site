@@ -62,6 +62,21 @@ async function file(pathname, response) {
   }
 }
 
+// Messages sent on the live site wait in the live inbox (worker/). This
+// brings them here, then clears the copies it saved. .message-inbox.json
+// (ignored by Git) holds the inbox's address and the reply tool's key.
+async function pull() {
+  let remote;
+  try { remote = JSON.parse(await readFile(path.join(root, '.message-inbox.json'), 'utf8')); } catch { return { error: 'The live inbox is not set up on this computer yet.' }; }
+  const auth = { Authorization: `Bearer ${remote.token}` };
+  const response = await fetch(`${remote.url}/inbox`, { headers: auth });
+  if (!response.ok) return { error: `The live inbox answered ${response.status}.` };
+  const saved = [];
+  for (const message of (await response.json()).messages) if (await inbox.save(message)) saved.push(message.id);
+  if (saved.length) await fetch(`${remote.url}/inbox/clear`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: saved }) });
+  return { ok: true, pulled: saved.length };
+}
+
 const ACTIONS = { publish: ({ id, answer }) => inbox.publish(id, answer), update: ({ id, answer }) => inbox.update(id, answer), unpublish: ({ id }) => inbox.unpublish(id), archive: ({ id }) => inbox.archive(id) };
 
 const server = http.createServer(async (request, response) => {
@@ -79,6 +94,11 @@ const server = http.createServer(async (request, response) => {
       return response.end(await readFile(path.join(root, 'scripts/reply.html')));
     }
     if (pathname === '/inbox/messages.json') return reply(response, 200, await inbox.list());
+    if (pathname === '/inbox/pull' && request.method === 'POST') {
+      if (!trusted(request)) return reply(response, 403, { error: 'Forbidden' });
+      const result = await pull();
+      return reply(response, result.error ? 502 : 200, result);
+    }
     const action = pathname.match(/^\/inbox\/(publish|update|unpublish|archive)$/)?.[1];
     if (action && request.method === 'POST') {
       if (!trusted(request)) return reply(response, 403, { error: 'Forbidden' });

@@ -1,0 +1,12 @@
+# The live inbox for "message me". Deploy with: npx wrangler@4.151.3 deploy
+# (from this folder). Secrets, set with `wrangler secret put`: INBOX_TOKEN
+# (the reply tool's key), and optionally RESEND_API_KEY and ALERT_EMAIL for
+# an email on each new message.
+name = "message-me-inbox"
+main = "index.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "MESSAGES"
+id = "a110092842b74f28a07416555f71c272"
