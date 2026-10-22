@@ -42,7 +42,7 @@ export async function writingPages({ root, escape, appearanceControls }) {
   <div class="reader-controls" role="group" aria-label="Reading controls"><button class="reader-button" type="button" data-contents-toggle aria-label="Toggle contents" aria-expanded="false" aria-controls="writing-sidebar" hidden>${menuIcon}</button>${appearanceControls()}</div>
   <main class="book-main ${current ? 'book-article' : 'book-index'}" id="main" tabindex="-1">${body}
   ${current ? `<nav class="chapter-navigation" aria-label="Essay navigation">${previous ? `<a href="${linkTo(previous)}"><small>Previous essay</small>← ${escape(previous.title)}</a>` : '<a href="/writing/"><small>Contents</small>← All writing</a>'}${next ? `<a href="${linkTo(next)}"><small>Next essay</small>${escape(next.title)} →</a>` : '<a href="#main"><small>Return</small>Back to top ↑</a>'}</nav>` : ''}
-  <footer class="book-footer"><span>Jordan Bailey</span><span>Reading design inspired by <a href="https://sitp.ai/">SITP</a></span></footer></main>
+  <footer class="book-footer"><span>Jordan Bailey</span></footer></main>
 </div><span class="reader-status" role="status" aria-live="polite" data-reader-status></span>`;
   }
 
