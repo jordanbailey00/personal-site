@@ -186,7 +186,8 @@ export function step(flight, dt, platforms = []) {
   return events;
 }
 
-const SPRITE = `<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+// The lander in line art. The message page marks Jordan's answers with it.
+export const SPRITE = `<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M12 28 5 47m31-19 7 19M14.5 36 7.5 39.5m26-3.5 7 3.5M2.5 47.2h5m33 0h5"/>
 <path class="lander-foil" d="M13 26h22l2 2v7l-2 2H13l-2-2v-7z"/><path d="M19 26v11m10-11v11" stroke-width=".8"/>
 <path class="lander-engine" d="M21 37h6l2 5H19z"/>

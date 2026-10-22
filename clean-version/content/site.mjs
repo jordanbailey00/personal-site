@@ -7,6 +7,11 @@ export const profile = {
   twitter: 'https://x.com/jordansb_',
 };
 
+// Where the "message me" page sends messages on the live site: an inbox
+// service's address. Empty until one is chosen; the page then says messages
+// open soon. Local development always uses the dev server's inbox.
+export const messageEndpoint = '';
+
 export const projects = [
   {
     slug: 'visualiz3r', repo: 'visualiz3r', title: 'visualiz3r',
@@ -33,6 +38,15 @@ export const projects = [
     description: 'An Old School RuneScape-style world implemented in C. A modular, deterministic simulation powers both a playable Raylib client and fast headless environments.',
     detail: 'A RuneScape-inspired world to explore and build on.',
     tools: 'C · Raylib · Python · CMake',
+  },
+  {
+    slug: 'terminal4dummies', repo: 'terminal4dummies', title: 'terminal4dummies',
+    category: 'Education', badge: '',
+    image: 'terminal4dummies.webp', alt: 'A terminal4dummies lesson on tests and loops beside a live terminal running if and for commands',
+    description: 'Learn the terminal by using one, right in the browser. Step-by-step lessons sit beside a simulated Linux shell, so every command is safe to try.',
+    detail: 'A friendly way to learn the command line.',
+    tools: 'TypeScript · React · Vite · xterm.js',
+    demo: 'https://terminal4dummies.vercel.app/',
   },
   {
     slug: 'byte-world', repo: 'byte_world_ai', title: 'Byte World',

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Reply to messages | Jordan Bailey</title>
+<script src="/assets/theme.js"></script>
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/messages.css">
+<style>
+/* The local reply tool: the inbox, then what is published. Served only by scripts/dev.mjs. */
+.reply-status{min-height:1.4em;margin:0 0 24px;font-size:.9rem;color:var(--muted)}
+.reply-status.is-error{color:var(--badge-ink)}
+.reply-section{margin-bottom:3rem}
+.reply-list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.reply-card{display:grid;gap:10px;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.reply-card .message-meta{margin:0;font-size:.8rem;color:var(--muted)}
+.reply-card .message-text p{white-space:pre-line}
+.reply-card .message-text p+p{margin-top:.5rem}
+.reply-card textarea{width:100%;min-height:5.5rem;resize:vertical;padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font:inherit;line-height:1.5}
+.reply-card label{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.reply-actions{display:flex;flex-wrap:wrap;gap:8px}
+.reply-actions button{padding:5px 14px;border:1px solid var(--tag-border);border-radius:999px;background:var(--paper);color:var(--ink);font:inherit;font-size:.85rem;cursor:pointer}
+.reply-actions button.is-primary{border-color:var(--ink);background:var(--ink);color:var(--paper);font-weight:600}
+.reply-actions button:disabled{opacity:.5;cursor:default}
+.reply-empty{margin:0;color:var(--muted)}
+</style>
+</head>
+<body>
+<main class="page" id="main">
+  <a class="back-link" href="/message/">← Back to the message page</a>
+  <h1 class="page-title">Reply to messages</h1>
+  <p class="page-subtitle">This page runs only on your computer. Publishing adds a message and your answer to <code>content/messages.json</code> and rebuilds the local site, so you can check it before you deploy. Nothing reaches the live site until you deploy.</p>
+  <p class="reply-status" id="status" role="status"></p>
+  <section class="reply-section" aria-labelledby="new-title"><h2 class="section-title" id="new-title">New messages</h2><ol class="reply-list" id="new"></ol></section>
+  <section class="reply-section" aria-labelledby="published-title"><h2 class="section-title" id="published-title">Published</h2><ol class="reply-list" id="published"></ol></section>
+</main>
+<script type="module">
+import { drawingSvg } from '/assets/messages.js';
+
+const status = document.getElementById('status');
+const say = (text, error = false) => { status.textContent = text; status.classList.toggle('is-error', error); };
+const element = (tag, className, text) => {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+};
+
+async function call(action, payload) {
+  const response = await fetch(`/inbox/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'Something went wrong.');
+  return result;
+}
+
+// A message as visitors wrote or drew it. Their text is set as text, never as markup.
+function card(message, published) {
+  const item = element('li', 'reply-card');
+  const when = published ? new Date(`${message.date}T12:00:00`).toLocaleDateString() : new Date(message.received).toLocaleString();
+  item.append(element('p', 'message-meta', `${message.name || 'Someone'} · ${when}`));
+  if (message.text) {
+    const text = element('div', 'message-text');
+    for (const part of message.text.split(/\n{2,}/)) text.append(element('p', '', part));
+    item.append(text);
+  }
+  if (message.drawing) item.insertAdjacentHTML('beforeend', drawingSvg(message.drawing, 'Their drawing'));
+  const field = `answer-${message.id}`;
+  const label = element('label', '', published ? 'Your answer' : 'Your answer (shown with the message when published)');
+  label.htmlFor = field;
+  const answer = element('textarea');
+  answer.id = field;
+  answer.value = message.answer ?? '';
+  const actions = element('div', 'reply-actions');
+  const act = (name, text, primary, done) => {
+    const button = element('button', primary ? 'is-primary' : '', text);
+    button.type = 'button';
+    button.addEventListener('click', async () => {
+      for (const each of actions.children) each.disabled = true;
+      say(`${text}…`);
+      try {
+        await call(name, { id: message.id, answer: answer.value });
+        say(done);
+        await load();
+      } catch (error) {
+        say(error.message, true);
+        for (const each of actions.children) each.disabled = false;
+      }
+    });
+    actions.append(button);
+  };
+  if (published) {
+    act('update', 'Save answer', true, 'Answer saved, and the local site rebuilt. Deploy when you’re ready.');
+    act('unpublish', 'Unpublish', false, 'Taken off the site and back in the inbox. The local site rebuilt.');
+  } else {
+    act('publish', 'Publish with answer', true, 'Published to the local site. Check it, then deploy when you’re ready.');
+    act('archive', 'Archive', false, 'Archived. It is kept in inbox/archived.');
+  }
+  item.append(label, answer, actions);
+  return item;
+}
+
+async function load() {
+  const { inbox, published } = await (await fetch('/inbox/messages.json', { cache: 'no-store' })).json();
+  for (const [list, messages, empty, isPublished] of [[document.getElementById('new'), inbox, 'No new messages.', false], [document.getElementById('published'), published, 'Nothing published yet.', true]]) {
+    list.replaceChildren(...(messages.length ? messages.map(message => card(message, isPublished)) : [element('li', 'reply-empty', empty)]));
+  }
+}
+load().catch(error => say(`Could not read the inbox: ${error.message}`, true));
+</script>
+</body>
+</html>

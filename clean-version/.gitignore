@@ -1,3 +1,5 @@
 dist/
 oracle/
 node_modules/
+# Messages visitors send while testing locally; never published as-is.
+inbox/

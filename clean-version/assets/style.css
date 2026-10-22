@@ -47,6 +47,10 @@ svg{width:1em;height:1em;vertical-align:-.1em}
 .social a:hover,.theme-picker summary:hover{background:var(--hover);color:var(--ink)}
 .social svg{width:17px;height:17px}
 .social .cv-icon{font-size:.75rem;font-weight:700;letter-spacing:-.02em}
+/* The way to the message page, under the social links and styled like them. */
+.message-link{position:absolute;right:0;top:76px;display:inline-flex;align-items:center;gap:7px;padding:5px 13px 5px 11px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:.8rem;line-height:1.4;white-space:nowrap}
+.message-link:hover{background:var(--hover);color:var(--ink)}
+.message-link svg{width:15px;height:15px}
 .appearance-controls{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .appearance-controls:has(.theme-picker[hidden]):not(:has(.theme-picker:not([hidden]))){display:none}
 .theme-picker{position:relative;flex-shrink:0;z-index:70}
@@ -154,12 +158,12 @@ svg{width:1em;height:1em;vertical-align:-.1em}
 .prose pre code{background:none;padding:0;overflow-wrap:normal}
 .article-end{border-top:1px solid var(--line);padding-top:24px;margin-top:48px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;font-size:.9rem}
 .simple-page{min-height:65vh}
-@media(max-width:760px){.top{flex-wrap:wrap}.social{position:static;margin-left:140px;margin-top:16px}.identity{width:100%}.project{grid-template-columns:220px minmax(0,1fr);gap:24px}.project-image img{width:220px}}
+@media(max-width:760px){.top{flex-wrap:wrap}.social{position:static;margin-left:140px;margin-top:16px}.message-link{position:static;margin:16px 0 0 auto}.identity{width:100%}.project{grid-template-columns:220px minmax(0,1fr);gap:24px}.project-image img{width:220px}}
 @media(max-width:700px){.contents{padding-top:2rem}.info{padding:0}.top{margin-bottom:24px}.name{font-size:2.2rem}.subtitle{font-size:.85rem}.portrait{width:100px;height:100px}.identity{gap:16px}.social{margin-left:116px;margin-top:12px;gap:12px}.project-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:36px 24px}.project{display:flex;flex-direction:column;align-items:stretch;gap:16px}.project-image img{width:100%}.now-row{grid-template-columns:80px 1fr}.notes{gap:24px}.metrics{grid-template-columns:repeat(2,1fr)}.footer{padding-top:48px}}
 @media(max-width:500px){.project-list{grid-template-columns:1fr;gap:36px}.project-image img{aspect-ratio:2/1}.project{gap:14px}.now-row{display:block}.now-label{display:block;margin-bottom:4px}.notes{grid-template-columns:1fr;gap:24px}.portrait{width:86px;height:86px}.social{margin-left:102px}.contents{padding-left:20px;padding-right:20px}.page{padding-left:20px;padding-right:20px}}
 @media(max-width:500px){.social{margin-left:0;width:100%;justify-content:flex-end}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
-@media print{:root[data-theme],:root:not([data-theme]){color-scheme:light;--ink:#262626;--muted:#0006;--line:#0000001a;--paper:#fff;--surface:#fafafa;--underline:#aaa;--note-bg:#f7f7f5;--note-border:#c9c9c1;--code-bg:#f5f5f5;--tag-border:#cecece;--tag-ink:#646464;--badge-bg:#fff7de;--badge-ink:#856315;--icon:#888}.social,.footer,.back-link,.skip-link,.theme-picker,.page-tools{display:none}.page,.contents{padding:0;max-width:none}body{font-size:11pt}.prose pre{white-space:pre-wrap}.project,.prose section{break-inside:avoid}}
+@media print{:root[data-theme],:root:not([data-theme]){color-scheme:light;--ink:#262626;--muted:#0006;--line:#0000001a;--paper:#fff;--surface:#fafafa;--underline:#aaa;--note-bg:#f7f7f5;--note-border:#c9c9c1;--code-bg:#f5f5f5;--tag-border:#cecece;--tag-ink:#646464;--badge-bg:#fff7de;--badge-ink:#856315;--icon:#888}.social,.message-link,.footer,.back-link,.skip-link,.theme-picker,.page-tools{display:none}.page,.contents{padding:0;max-width:none}body{font-size:11pt}.prose pre{white-space:pre-wrap}.project,.prose section{break-inside:avoid}}
 
 /* Shared side-footnote apparatus. A symmetric gutter keeps the text centered. */
 .with-margin{display:flow-root}

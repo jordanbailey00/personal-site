@@ -1,0 +1,144 @@
+/* "message me": the message page, made from the homepage's own pieces: a
+   handwritten note like "play here", drawings as line art, a rocket that
+   launches with the lander's flame, and Jordan's answers in the gold of the
+   lander's foil. */
+/* Reenie Beanie, for the handwritten note; licence in reenie-beanie-OFL.txt. */
+@font-face{font-family:'Reenie Beanie';src:url('/assets/fonts/reenie-beanie.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}
+/* Pen colors besides ink, bright enough for dark and light themes alike. */
+:root{--pen-red:#ef4444;--pen-orange:#f97316;--pen-green:#22c55e;--pen-blue:#3b82f6;--pen-purple:#a855f7}
+.visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.message-intro{max-width:34rem}
+.message-fallback[hidden],.message-form[hidden]{display:none}
+.message-form{position:relative;margin-top:92px}
+
+/* The note writes itself in, then its arrow draws toward the sheet. It sits
+   above the sheet's left side, or beside the sheet where the window leaves
+   room. Its words end where the arrow begins, whatever they say. */
+.message-note{position:absolute;left:0;bottom:calc(100% - 14px);width:260px;height:84px;margin:0;color:var(--ink);pointer-events:none;transition:opacity .2s ease}
+.message-note:not(.is-ready){opacity:0}
+.message-note-text{position:absolute;right:52px;top:-4px;font:400 34px/1 'Reenie Beanie',cursive;white-space:nowrap;text-align:right;-webkit-text-stroke:.35px currentColor;transform:rotate(-4deg);transform-origin:100% 100%}
+.message-note-arrow{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.message-note-arrow.is-side{display:none}
+.message-note.is-ready .message-note-text{animation:message-note-write .5s ease-out .1s both}
+.message-note.is-ready path{stroke-dasharray:1 2;stroke-dashoffset:1.02;animation:message-note-draw .25s ease-out forwards;animation-delay:calc(.6s + var(--stroke) * .2s)}
+
+/* The sheet: a window onto the page, so the stars show faintly through. */
+.message-sheet{position:relative;border:1px solid var(--line);border-radius:8px;background:var(--paper);background:color-mix(in srgb,var(--paper) 86%,transparent);transition:border-color .15s ease}
+.message-sheet:focus-within{border-color:var(--focus)}
+#message-text{display:block;width:100%;min-height:200px;aspect-ratio:5/2;resize:none;margin:0;padding:18px 20px 30px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:1.05rem;line-height:1.6}
+#message-text[hidden]{display:none}
+#message-text:focus{outline:none}
+#message-text::placeholder{color:var(--muted)}
+.message-count{position:absolute;right:14px;bottom:8px;font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums;pointer-events:none}
+.message-canvas{display:block;width:100%;aspect-ratio:5/2;border-radius:8px 8px 0 0;cursor:crosshair;touch-action:none}
+.message-pad[data-tool="eraser"] .message-canvas{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Ccircle cx='14' cy='14' r='12' fill='none' stroke='%23999' stroke-width='1.5'/%3E%3C/svg%3E") 14 14,cell}
+
+/* Pens: color swatches, the eraser, and Clear, along the sheet's foot. */
+.message-pens{display:flex;flex-wrap:wrap;align-items:center;gap:8px 11px;padding:9px 12px;border-top:1px solid var(--line)}
+.message-pen{width:22px;height:22px;padding:0;border:0;border-radius:50%;background:currentColor;cursor:pointer;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 20%,transparent);transition:transform .15s ease,box-shadow .15s ease}
+.message-pen:hover{transform:scale(1.15)}
+.message-pen[aria-pressed="true"]{transform:scale(1.1);box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px currentColor}
+.message-pen:focus-visible{outline-offset:4px;border-radius:50%}
+.message-pens-gap{width:1px;height:20px;margin:0 3px;background:var(--line)}
+.message-eraser{display:inline-flex;align-items:center;gap:6px;padding:4px 12px 4px 9px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);font:inherit;font-size:.8rem;line-height:1.4;cursor:pointer;transition:color .15s ease,border-color .15s ease,box-shadow .15s ease}
+.message-eraser svg{width:16px;height:16px;transition:transform .2s ease}
+.message-eraser:hover{color:var(--ink)}
+.message-eraser:hover svg{transform:rotate(-14deg)}
+.message-eraser[aria-pressed="true"]{border-color:var(--focus);color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 16%,transparent)}
+.message-clear{margin-left:auto;padding:4px 6px;border:0;background:none;color:var(--muted);font:inherit;font-size:.8rem;cursor:pointer}
+.message-clear:hover{color:var(--ink)}
+
+/* Type and Draw: a switch whose highlight slides to the chosen side. */
+.message-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-top:16px}
+.message-modes{position:relative;display:inline-grid;grid-template-columns:1fr 1fr;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.message-modes::before{content:'';position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border:1px solid var(--focus);border-radius:999px;background:var(--paper);background:color-mix(in srgb,var(--focus) 12%,var(--paper));box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 12%,transparent),0 4px 14px #0003;transition:transform .35s cubic-bezier(.3,1.4,.55,1)}
+.message-modes[data-current="draw"]::before{transform:translateX(100%)}
+.message-mode{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:7px 18px;border:0;border-radius:999px;background:none;color:var(--muted);font:inherit;font-size:.88rem;font-weight:500;cursor:pointer;transition:color .2s ease}
+.message-mode:hover,.message-mode[aria-pressed="true"]{color:var(--ink)}
+.message-mode svg{width:17px;height:17px;transition:transform .2s ease}
+.message-mode[aria-pressed="true"] svg{color:var(--focus)}
+.message-mode[data-mode="draw"]:hover svg{transform:rotate(-12deg)}
+.message-cursor{opacity:0}
+.message-mode[aria-pressed="true"] .message-cursor{animation:message-blink 1.1s steps(1,end) infinite}
+.message-squiggle{stroke-dasharray:1 2;stroke-dashoffset:1.02}
+.message-mode[aria-pressed="true"] .message-squiggle{animation:message-note-draw .5s ease-out .2s forwards}
+
+.message-name{flex:1 1 160px;min-width:0;padding:6px 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;color:var(--ink);font:inherit;transition:border-color .15s ease}
+.message-name:focus{border-bottom-color:var(--focus)}
+.message-name::placeholder{color:var(--muted)}
+
+/* Send: its rocket lifts and lights on hover, and launches when a message
+   goes out, then comes back once the form is ready again. */
+.message-send{display:inline-flex;align-items:center;gap:9px;padding:9px 16px 9px 20px;border:1px solid var(--ink);border-radius:999px;background:var(--ink);color:var(--paper);font:inherit;font-weight:600;cursor:pointer;box-shadow:0 8px 22px -12px var(--ink);transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease}
+.message-send:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 12px 26px -12px var(--ink)}
+.message-send:active:not(:disabled){transform:translateY(1px)}
+.message-send:disabled{opacity:.45;cursor:default;box-shadow:none}
+.message-send.is-sent:disabled{opacity:.8}
+.message-rocket{display:block;width:19px;height:19px}
+.message-rocket svg{display:block;width:100%;height:100%;overflow:visible;transition:transform .2s ease}
+.message-flame{fill:url(#message-flame);stroke:none;opacity:0;transform-box:fill-box;transform-origin:100% 0;transform:scale(.3);transition:opacity .15s ease,transform .15s ease}
+.message-send:hover:not(:disabled) .message-rocket svg{transform:translate(1.5px,-1.5px)}
+.message-send:hover:not(:disabled) .message-flame,.message-send.is-sent .message-flame{opacity:1;transform:scale(1);animation:message-flicker .14s ease-in-out infinite alternate}
+.message-send.is-sent .message-rocket svg{animation:message-launch .9s cubic-bezier(.5,0,.8,.3) forwards}
+.message-send.is-back .message-rocket svg{animation:message-return .45s ease-out}
+.message-status{min-height:1.4em;margin:10px 0 0;font-size:.85rem;color:var(--muted)}
+/* A field only bots fill in. */
+.message-trap{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+
+/* Answers: each message as it was written or drawn, then Jordan's answer. */
+.message-answers{margin-top:4rem}
+.message-list{display:grid;gap:3rem;margin:0;padding:0;list-style:none}
+.message-text{font-size:1.05rem;overflow-wrap:anywhere}
+.message-text p,.message-answer-text p{margin:0}
+.message-text p+p,.message-answer-text p+p{margin-top:.6rem}
+.message-drawing{display:block;max-width:100%;height:auto;overflow:visible}
+.message-text+.message-drawing{margin-top:12px}
+.message-drawing path{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.message-drawing .pen-red{stroke:var(--pen-red)}
+.message-drawing .pen-orange{stroke:var(--pen-orange)}
+.message-drawing .pen-green{stroke:var(--pen-green)}
+.message-drawing .pen-blue{stroke:var(--pen-blue)}
+.message-drawing .pen-purple{stroke:var(--pen-purple)}
+.message-meta{margin:8px 0 0;font-size:.8rem;color:var(--muted)}
+.message-answer{display:grid;grid-template-columns:32px minmax(0,1fr);gap:14px;align-items:start;margin:20px 0 0 clamp(0px,5vw,40px);color:var(--badge-ink);overflow-wrap:anywhere}
+.message-answer-mark svg{display:block;width:32px;height:32px}
+.message-answer-text{padding-top:5px}
+.message-empty{margin:0;color:var(--muted)}
+.message-more{margin-top:3rem}
+.message-more summary{padding:.75rem 0;font-size:.85rem;color:var(--muted);cursor:pointer}
+.message-more summary:hover{color:var(--ink)}
+.message-more[open] summary{margin-bottom:2rem}
+
+@keyframes message-note-write{from{clip-path:inset(-30% 100% -30% 0)}to{clip-path:inset(-30% 0 -30% 0)}}
+@keyframes message-note-draw{to{stroke-dashoffset:0}}
+@keyframes message-blink{50%{opacity:1}}
+@keyframes message-flicker{from{transform:scale(.82);opacity:.85}to{transform:scale(1.06);opacity:1}}
+@keyframes message-launch{0%{transform:none}15%{transform:translate(-1px,1px)}100%{transform:translate(40px,-40px);opacity:0}}
+@keyframes message-return{from{transform:translate(-8px,8px);opacity:0}}
+@media(min-width:1240px){
+  .message-form{margin-top:36px}
+  .message-note{left:auto;right:calc(100% + 4px);bottom:auto;top:22px;width:170px;height:100px}
+  .message-note-line{display:block}
+  .message-note-text{right:56px;top:0;line-height:.92;transform:rotate(-6deg)}
+  .message-note-arrow.is-down{display:none}
+  .message-note-arrow.is-side{display:block}
+}
+@media(max-width:600px){
+  .message-form{margin-top:84px}
+  .message-note{left:10px;transform:scale(.85);transform-origin:0 100%}
+  .message-name{order:-1;flex-basis:100%}
+  .message-send{margin-left:auto}
+  /* One row of pens: tighter swatches, and the eraser as just its icon. */
+  .message-pens{gap:8px;padding:9px 10px}
+  .message-pen{width:20px;height:20px}
+  .message-eraser{padding:5px 7px}
+  .message-eraser span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+}
+@media(prefers-reduced-motion:reduce){
+  .message-note.is-ready .message-note-text,.message-note.is-ready path{animation:none;stroke-dashoffset:0}
+  .message-mode[aria-pressed="true"] .message-cursor{animation:none;opacity:1}
+  .message-mode[aria-pressed="true"] .message-squiggle{animation:none;stroke-dashoffset:0}
+  .message-send .message-flame,.message-send .message-rocket svg{animation:none!important}
+  .message-send.is-sent .message-rocket svg{opacity:0}
+}
+@media print{.message-form,.message-fallback{display:none}}

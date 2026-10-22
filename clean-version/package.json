@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node scripts/check.mjs && node --test scripts/theme.test.mjs scripts/supernova.test.mjs scripts/starfield.test.mjs scripts/writing.test.mjs scripts/lander.test.mjs scripts/space-targets.test.mjs scripts/guns.test.mjs",
-    "dev": "npm run build && python3 -m http.server 4173 --bind 127.0.0.1 --directory dist"
+    "check": "node scripts/check.mjs && node --test scripts/theme.test.mjs scripts/supernova.test.mjs scripts/starfield.test.mjs scripts/writing.test.mjs scripts/lander.test.mjs scripts/space-targets.test.mjs scripts/guns.test.mjs scripts/messages.test.mjs",
+    "dev": "npm run build && node scripts/dev.mjs"
   },
   "engines": {
     "node": ">=20"
