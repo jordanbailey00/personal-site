@@ -436,43 +436,23 @@ print(f"{damage:+.3f}, {healing:+.3f}, {damage + healing:+.3f}")</code></pre></d
     <li><a href="/writing/reinforcement-learning-for-runescape/results.json">Results data</a>: the main run’s metrics, the four-seed retraining results, and the record of the exact 93.40% retraining, in one JSON file.</li>
   </ol>
   <h3 id="reproduce">Reproduce the results</h3>
-  <p>These steps train the main run again from scratch, then evaluate it. Trained checkpoints aren’t published, so training is how you get the agent.</p>
-  <p><strong>What you need:</strong> Linux and an NVIDIA graphics card; the trainer does not run without one. You also need PufferLib 5.0’s build tools: NVIDIA’s CUDA toolkit, NCCL (NVIDIA’s library for GPU communication), the Clang compiler with OpenMP support, ccache, and Python 3. The simplest way to get them is <a href="https://github.com/PufferAI/PufferTank/tree/5.0">PufferTank 5.0</a>, PufferLib’s ready-made Docker environment. On an RTX 5070 Ti, training and evaluation together take about 8½ minutes. Training uses about 4 GB of graphics memory, on top of whatever your desktop and other programs already use.</p>
+  <p>These steps train the main run again from scratch and then evaluate it. Trained checkpoints aren’t published, so training is how you get the agent.</p>
+  <p><strong>What you need:</strong> Linux and an NVIDIA graphics card; the trainer does not run without one. The build also needs NVIDIA’s CUDA toolkit, NCCL, the Clang compiler with OpenMP, ccache, and Python 3. <a href="https://github.com/PufferAI/PufferTank/tree/5.0">PufferTank 5.0</a>, PufferLib’s ready-made Docker environment, includes all of them.</p>
   <ol class="reproduce-steps">
-    <li><p><strong>Download the code at the exact version used.</strong> The project has changed since, so check out this commit rather than the latest code.</p>
-      <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>git clone https://github.com/jordanbailey00/PufferLib.git fight-caves
-cd fight-caves
-git checkout 9ad3633d3563a8e467026160e90209146d2a733c</code></pre></div></figure></li>
-    <li><p><strong>Download the game files and check your tools (optional).</strong> The first command downloads the game’s maps and graphics; the second reports any missing compiler or library before you build.</p>
-      <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>python3 ocean/fight_caves/tools.py setup --all
-python3 ocean/fight_caves/tools.py preflight --mode native</code></pre></div></figure></li>
-    <li><p><strong>Build.</strong> This compiles the simulation and the trainer into one program, <code>./puffer</code>. If you skipped step 2, the build also downloads the game’s maps and graphics, so it needs an internet connection.</p>
+    <li><p><strong>Download the code.</strong> This branch holds the exact code behind these results, commit <code>9ad3633d</code>, with the main run’s settings saved in <code>config/fight_caves.ini</code>.</p>
+      <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>git clone --depth 1 --branch fight-caves-main-run \
+  https://github.com/jordanbailey00/PufferLib.git fight-caves
+cd fight-caves</code></pre></div></figure></li>
+    <li><p><strong>Build.</strong> This downloads the game’s maps and graphics, then compiles everything into one program, <code>./puffer</code>.</p>
       <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>./build.sh fight_caves</code></pre></div></figure></li>
-    <li><p><strong>Train and evaluate.</strong> The repository’s settings file, <code>config/fight_caves.ini</code>, holds a different starting configuration; these flags change it to the main run’s settings. Training stops after 499,122,176 steps, then automatically evaluates the agent on at least 10,000 caves.</p>
-      <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>./puffer train --base.run_id=main-run --base.seed=73 \
-  --base.async=0 --base.reset_every_horizon=1 \
-  --train.total_timesteps=500000000 \
-  --train.learning_rate=0.00123960734 --train.momentum=0.991584122 \
-  --train.ent_coef=0.00026363763 --train.replay_ratio=2.20972681 \
-  --train.clip_coef=0.0250000004 --train.vf_coef=0.275081992 \
-  --train.vf_clip_coef=0.0884169564 --train.max_grad_norm=0.217330709</code></pre></div></figure>
-      <p>When it finishes, <code>jad_kill_rate</code> in the final summary is the share of caves completed: 0.886 means 88.61%. The full results are saved in <code>logs/fight_caves/main-run.ini</code>, and the trained agent in <code>checkpoints/fight_caves/main-run/</code>.</p></li>
-    <li><p><strong>Check that it matches (optional).</strong> If your setup matches the one tested (an RTX 5070 Ti with CUDA 13.3 or 13.4), the final checkpoint should be identical to the original, byte for byte. Compare its fingerprint with the original’s, <code class="hash-value">963d9949a3c1d954fb2c746860a226c0c34915f1f19b1b2f4ffb15e56a97d568</code>:</p>
-      <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>sha256sum checkpoints/fight_caves/main-run/0000000499122176.bin</code></pre></div></figure></li>
-    <li><p><strong>Watch it play.</strong> This opens the viewer and replays the trained agent, so it needs a display. The first line clears a graphics setting that can force slow software rendering on some systems. Press 1, 2, 4, or 0 for 1×, 2×, 4×, or 10× speed, and Q to quit.</p>
-      <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>unset __GLX_VENDOR_LIBRARY_NAME
-./puffer eval checkpoints/fight_caves/main-run/0000000499122176.bin</code></pre></div></figure></li>
+    <li><p><strong>Train and evaluate.</strong> Training stops after 499,122,176 steps, then evaluates the agent on at least 10,000 caves. In the final summary, <code>jad_kill_rate</code> is the share of caves completed: 0.886 means 88.6%. The full results are saved in <code>logs/fight_caves/</code>.</p>
+      <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>./puffer train</code></pre></div></figure></li>
+    <li><p><strong>Watch it play.</strong> This opens the viewer with the agent you just trained, so it needs a display. Press 1, 2, 4, or 0 for 1×, 2×, 4×, or 10× speed, and Q to quit. If the viewer is slow inside PufferTank, run <code>unset __GLX_VENDOR_LIBRARY_NAME</code> first.</p>
+      <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>./puffer eval latest</code></pre></div></figure></li>
   </ol>
-  <p>To reproduce the 93.40% run instead, use these settings in step 4. Its final checkpoint’s fingerprint is <code class="hash-value">1e56ff00be95c40a0edcf287ca94c310373f215c67930f1933493bcdc985603e</code>, and it is saved under <code>best-run</code>.</p>
-  <figure class="notebook"><figcaption><span>Terminal</span><button type="button" data-copy-code hidden>Copy code</button></figcaption><div class="notebook-input"><pre><code>./puffer train --base.run_id=best-run --base.seed=303 \
-  --base.async=0 --base.reset_every_horizon=1 \
-  --train.total_timesteps=500000000 \
-  --train.learning_rate=0.000800000038 --train.momentum=0.994000018 \
-  --train.ent_coef=0.000228018078 --train.replay_ratio=2.02618027 \
-  --train.clip_coef=0.0423117206 --train.vf_coef=0.211620271 \
-  --train.vf_clip_coef=0.160560042 --train.max_grad_norm=0.400000006</code></pre></div></figure>
-  <aside class="callout" data-callout="warning">
-    <p><strong>What to expect.</strong> I followed these steps from a fresh copy of the repository on an NVIDIA RTX 5070 Ti with CUDA 13.4 and driver 595.99. The newly built program reproduced the original checkpoint byte for byte, though the original was built with CUDA 13.3. Other graphics cards and CUDA versions, including PufferTank’s CUDA 13.0, haven’t been tested. Tiny numerical differences can grow over 499 million steps, so your result may land above or below 88.61%. That spread is real: the same settings with other seeds completed between 38.51% and 81.07% of caves (see the seed table above). The game’s maps and graphics come from Old School RuneScape and aren’t covered by the code’s open-source license.</p>
+  <p>To train the 93.40% run instead, use <code>fight-caves-best-run</code> in step 1. Everything else is the same.</p>
+  <aside class="callout" data-callout="note">
+    <p><strong>The setup behind these results.</strong> Ubuntu 24.04 with an NVIDIA GeForce RTX 5070 Ti (16 GB), driver 595.99, CUDA 13.4, and Clang 18. On that machine, training and evaluation take about 8½ minutes and use about 4 GB of graphics memory, plus whatever the desktop already uses. Results may differ on other hardware or software. The game’s maps and graphics come from Old School RuneScape and aren’t covered by the code’s open-source license.</p>
   </aside>
   <details class="reading-details"><summary>Keeping a result reproducible</summary>
     <p>A result needs more than a settings file. Keep the simulation’s source code, the compiled program, the game assets, the starting gear, the training settings, the random seed, and the checkpoint together.</p>
