@@ -23,12 +23,11 @@ export const projects = [
   },
   {
     slug: 'fight-caves', repo: 'fight-caves-rl', title: 'Fight Caves RL',
-    category: 'Reinforcement learning', badge: '94.9% peak Jad kill rate',
+    category: 'Reinforcement learning', badge: '',
     image: 'fight-caves.png', alt: 'The Fight Caves simulator and its Old School RuneScape game interface',
     description: 'Training an agent to clear all 63 waves of the Old School RuneScape Fight Caves. A deterministic C simulator, PPO training with PufferLib, and a playable 3D viewer.',
     detail: 'Learning to complete the Fight Caves from scratch.',
     tools: 'C · Python · PPO · PufferLib · Raylib',
-    note: 'The 94.9% result is the published v35.1 peak evaluation in the simulator.',
   },
   {
     slug: 'runec', repo: 'RuneC', title: 'RuneC',
