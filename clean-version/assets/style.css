@@ -69,6 +69,8 @@ svg{width:1em;height:1em;vertical-align:-.1em}
 .page-tools .back-link{margin-bottom:0}
 .info{padding:1rem 1rem 0}
 .info p+p{margin-top:1rem}
+.info a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:var(--muted)}
+.info a:hover{text-decoration-color:currentColor}
 .info a:hover,.now a:hover,.prose a:hover,.contact-copy a:hover{text-decoration:underline;text-underline-offset:3px}
 /* Section underlines and 3rem gaps distinguish the main sections. */
 .section-title,.prose h2{font-family:var(--font-body);font-size:1.4rem;font-weight:500;line-height:1.6;margin:0 0 1rem;border-bottom:1px solid var(--line)}

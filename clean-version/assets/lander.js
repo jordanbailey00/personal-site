@@ -743,7 +743,6 @@ export function installLander({ document, window }) {
     else idleHint();
     help.classList.toggle('is-flying', flying);
     help.classList.toggle('is-shown', flying);
-    if (flying) helpTimer = window.setTimeout(() => help.classList.remove('is-shown'), 6000);
   }
   function showResults(reason) {
     const best = game.score > startBest;
