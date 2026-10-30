@@ -22,12 +22,19 @@
 .reply-card .message-text p{white-space:pre-line}
 .reply-card .message-text p+p{margin-top:.5rem}
 .reply-card textarea{width:100%;min-height:5.5rem;resize:vertical;padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font:inherit;line-height:1.5}
-.reply-card label{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.reply-card label,.reply-label{margin:0;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .reply-actions{display:flex;flex-wrap:wrap;gap:8px}
 .reply-actions button{padding:5px 14px;border:1px solid var(--tag-border);border-radius:999px;background:var(--paper);color:var(--ink);font:inherit;font-size:.85rem;cursor:pointer}
 .reply-actions button.is-primary{border-color:var(--ink);background:var(--ink);color:var(--paper);font-weight:600}
 .reply-actions button:disabled{opacity:.5;cursor:default}
 .reply-empty{margin:0;color:var(--muted)}
+/* An optional drawn answer, on the same sheet visitors use. */
+.reply-sheet{border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.reply-sheet:focus-within{border-color:var(--focus)}
+.reply-tools{display:flex;gap:6px;align-items:center}
+.reply-tools button{padding:3px 12px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);font:inherit;font-size:.8rem;cursor:pointer}
+.reply-tools button[aria-pressed="true"]{border-color:var(--focus);color:var(--ink)}
+.reply-card .message-drawing{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -40,7 +47,7 @@
   <section class="reply-section" aria-labelledby="published-title"><h2 class="section-title" id="published-title">Published</h2><ol class="reply-list" id="published"></ol></section>
 </main>
 <script type="module">
-import { drawingSvg } from '/assets/messages.js';
+import { drawingSvg, installSheet, sheetMarkup } from '/assets/messages.js';
 
 const status = document.getElementById('status');
 const say = (text, error = false) => { status.textContent = text; status.classList.toggle('is-error', error); };
@@ -69,12 +76,19 @@ function card(message, published) {
     item.append(text);
   }
   if (message.drawing) item.insertAdjacentHTML('beforeend', drawingSvg(message.drawing, 'Their drawing'));
-  const field = `answer-${message.id}`;
-  const label = element('label', '', published ? 'Your answer' : 'Your answer (shown with the message when published)');
-  label.htmlFor = field;
-  const answer = element('textarea');
-  answer.id = field;
-  answer.value = message.answer ?? '';
+  // One sheet for the answer: type anywhere on it, draw on it, or both.
+  const label = element('p', 'reply-label', published ? 'Your answer' : 'Your answer (shown with the message when published)');
+  const tools = element('div', 'reply-tools');
+  const pad = element('div', 'message-pad reply-sheet');
+  pad.innerHTML = sheetMarkup('Your answer. Choose Type, then click anywhere to write there; or choose Draw to draw.');
+  const toolButtons = [['type', 'Type'], ['draw', 'Draw']].map(([tool, text]) => {
+    const button = element('button', '', text);
+    button.type = 'button';
+    button.dataset.tool = tool;
+    button.setAttribute('aria-pressed', String(tool === 'type'));
+    tools.append(button);
+    return button;
+  });
   const actions = element('div', 'reply-actions');
   const act = (name, text, primary, done) => {
     const button = element('button', primary ? 'is-primary' : '', text);
@@ -83,7 +97,8 @@ function card(message, published) {
       for (const each of actions.children) each.disabled = true;
       say(`${text}…`);
       try {
-        await call(name, { id: message.id, answer: answer.value });
+        sheet.finish();
+        await call(name, { id: message.id, answer: '', drawing: sheet.drawing });
         say(done);
         await load();
       } catch (error) {
@@ -100,15 +115,25 @@ function card(message, published) {
     act('publish', 'Publish with answer', true, 'Published to the local site. Check it, then deploy when you’re ready.');
     act('archive', 'Archive', false, 'Archived. It is kept in inbox/archived.');
   }
-  item.append(label, answer, actions);
+  item.append(label, tools, pad, actions);
+  const sheet = installSheet({ document, window, pad, placeholder: 'Your answer… (click anywhere to type)', say, onTool: tool => toolButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.tool === tool))) });
+  for (const button of toolButtons) button.addEventListener('click', () => sheet.setTool(button.dataset.tool));
+  // An answer written before answers were sheets opens as words on the sheet.
+  const drawing = message.answerDrawing ?? { strokes: [] };
+  sheet.load(message.answer?.trim() ? { ...drawing, words: [{ x: 18, y: 12, text: message.answer.trim() }, ...(drawing.words ?? [])] } : drawing);
+  sheets.push(sheet);
   return item;
 }
 
+// Sheets size themselves once their cards are on the page.
+const sheets = [];
 async function load() {
+  sheets.length = 0;
   const { inbox, published } = await (await fetch('/inbox/messages.json', { cache: 'no-store' })).json();
   for (const [list, messages, empty, isPublished] of [[document.getElementById('new'), inbox, 'No new messages.', false], [document.getElementById('published'), published, 'Nothing published yet.', true]]) {
     list.replaceChildren(...(messages.length ? messages.map(message => card(message, isPublished)) : [element('li', 'reply-empty', empty)]));
   }
+  for (const sheet of sheets) sheet.fit();
 }
 // Brings new messages from the live site's inbox, on opening and on request.
 const check = document.getElementById('check');

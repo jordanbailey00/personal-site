@@ -3,7 +3,7 @@ import test from 'node:test';
 import { mkdtemp, mkdir, readFile, readdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { checkMessage, drawingBounds, drawingPath, drawingSvg, eraseAt, LIMITS, penRuns } from '../assets/messages.js';
+import { checkDrawing, checkMessage, drawingBounds, drawingPath, drawingSvg, eraseAt, LIMITS, penRuns, wrapLines } from '../assets/messages.js';
 import { messagePage, validateMessages } from './messages.mjs';
 import { inboxAt } from './inbox.mjs';
 
@@ -117,8 +117,8 @@ test('The inbox keeps messages private until one is published with an answer', a
     assert.equal((await inbox.list()).inbox.length, 1);
     assert.deepEqual(JSON.parse(await readFile(path.join(root, 'content/messages.json'), 'utf8')), [], 'nothing is published automatically');
 
-    assert.match((await inbox.publish(id, '  ')).error, /Write an answer/);
-    assert.deepEqual(await inbox.publish(id, ' Hello Alex! ', new Date(2026, 9, 22, 9)), { ok: true });
+    assert.match((await inbox.publish(id, '  ')).error, /Write or draw an answer/);
+    assert.deepEqual(await inbox.publish(id, ' Hello Alex! ', null, new Date(2026, 9, 22, 9)), { ok: true });
     let site = JSON.parse(await readFile(path.join(root, 'content/messages.json'), 'utf8'));
     assert.deepEqual(site, [{ id, date: '2026-10-21', name: 'Alex', text: 'Hi Jordan', drawing: doodle, answer: 'Hello Alex!', answered: '2026-10-22' }], 'an evening message keeps its own day');
     assert.doesNotThrow(() => validateMessages(site));
@@ -136,6 +136,53 @@ test('The inbox keeps messages private until one is published with an answer', a
     assert.deepEqual((await inbox.list()).inbox, []);
     assert.deepEqual(await readdir(path.join(root, 'inbox/archived')), [`${id}.json`]);
     assert.match((await inbox.publish('../../content/messages', 'x')).error, /not in the inbox/, 'ids cannot reach other files');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Typed words sit on the sheet beside drawings, and render as real text', () => {
+  const words = [{ x: 20, y: 10, text: 'hi <there>\nsecond line  ' }, { x: 300, y: 100, text: 'blue', pen: 'blue' }, { x: 5, y: 5, text: '   ' }];
+  const { message } = checkMessage({ text: '', drawing: { strokes: [[200, 30, 260, 40]], words } });
+  assert.deepEqual(message.drawing.words, [{ x: 20, y: 10, text: 'hi <there>\nsecond line' }, { x: 300, y: 100, text: 'blue', pen: 'blue' }], 'blank notes drop; trailing space trims');
+  assert.deepEqual(checkMessage({ drawing: { words: [{ x: 1, y: 1, text: 'only words' }] } }).message.drawing, { strokes: [], words: [{ x: 1, y: 1, text: 'only words' }] });
+  assert.match(checkMessage({ drawing: { words: [{ x: 700, y: 1, text: 'off the page' }] } }).error, /could not be read/);
+  assert.match(checkMessage({ drawing: { words: [{ x: 1, y: 1, text: 'x', pen: 'gold' }] } }).error, /could not be read/);
+  assert.match(checkMessage({ drawing: { words: [{ x: 1, y: 1, text: 'x'.repeat(LIMITS.text + 1) }] } }).error, /up to/);
+  assert.equal(checkDrawing({ strokes: [], words: [] }).drawing, null);
+  const svg = drawingSvg(message.drawing, 'A drawing');
+  assert.match(svg, /<text font-size="20"><tspan x="20" y="29">hi &#60;there&#62;<\/tspan><tspan x="20" y="55">second line<\/tspan><\/text>/);
+  assert.match(svg, /<text font-size="20" class="pen-blue">/);
+  assert.match(svg, /aria-label="A drawing: hi &#60;there&#62; second line blue"/);
+  assert.ok(drawingBounds(message.drawing).height >= 100 + 26, 'bounds include typed lines');
+});
+
+test('Typed lines wrap at the sheet’s edge, between words where they can', () => {
+  const measure = value => value.length * 10;
+  assert.deepEqual(wrapLines('one two three', 80, measure), ['one two', 'three']);
+  assert.deepEqual(wrapLines('abcdefghijkl', 50, measure), ['abcde', 'fghij', 'kl']);
+  assert.deepEqual(wrapLines('a\n\nb', 80, measure), ['a', '', 'b']);
+});
+
+test('Answers can be drawn, typed, or both', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'answers-'));
+  try {
+    await mkdir(path.join(root, 'content'), { recursive: true });
+    const inbox = inboxAt(root);
+    const { id } = await inbox.receive({ text: 'Draw me a cat', elapsed: 5000 });
+    const sketch = { strokes: [[10, 10, 40, 40]], words: [{ x: 50, y: 20, text: 'meow' }] };
+    assert.match((await inbox.publish(id, '', { strokes: [[999, 1]] })).error, /could not be read/);
+    assert.deepEqual(await inbox.publish(id, '', sketch), { ok: true });
+    const [entry] = JSON.parse(await readFile(path.join(root, 'content/messages.json'), 'utf8'));
+    assert.deepEqual(entry.answerDrawing, { strokes: [[10, 10, 40, 40]], words: [{ x: 50, y: 20, text: 'meow' }] });
+    assert.equal(entry.answer, '');
+    validateMessages([entry]);
+    const html = messagePage({ escape: value => String(value).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`), messages: [entry], email: 'a@b.c', back: '' });
+    assert.match(html, /class="message-answer-text">.*aria-label="Jordan’s drawing: meow"/s);
+    assert.deepEqual(await inbox.update(id, 'Here you go', null), { ok: true });
+    const [updated] = JSON.parse(await readFile(path.join(root, 'content/messages.json'), 'utf8'));
+    assert.equal(updated.answerDrawing, undefined);
+    assert.throws(() => validateMessages([{ ...updated, answer: '' }]), /needs an answer/);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

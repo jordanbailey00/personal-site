@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, readdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { checkMessage } from '../assets/messages.js';
+import { checkDrawing, checkMessage } from '../assets/messages.js';
 
 // The private inbox behind "message me": each message a visitor sends
 // is a JSON file in inbox/, which never ships with the site. Publishing copies
@@ -60,21 +60,28 @@ export function inboxAt(root) {
       }
       return true;
     },
-    async publish(id, answer, now = new Date()) {
+    // An answer is words, a drawing, or both.
+    async publish(id, answer, drawing, now = new Date()) {
       const message = await waiting(id);
       if (!message) return { error: 'That message is not in the inbox.' };
-      if (!answer?.trim()) return { error: 'Write an answer first.' };
+      const reply = checkDrawing(drawing);
+      if (reply.error) return { error: reply.error };
+      if (!answer?.trim() && !reply.drawing) return { error: 'Write or draw an answer first.' };
       const list = await published();
-      list.unshift({ id, date: day(new Date(message.received)), name: message.name, text: message.text, drawing: message.drawing, answer: answer.trim(), answered: day(now) });
+      list.unshift({ id, date: day(new Date(message.received)), name: message.name, text: message.text, drawing: message.drawing, answer: answer?.trim() ?? '', ...(reply.drawing && { answerDrawing: reply.drawing }), answered: day(now) });
       await writeFile(publishedFile, json(list));
       await rm(fileFor(id));
       return { ok: true };
     },
-    async update(id, answer) {
+    async update(id, answer, drawing) {
       const list = await published(), message = list.find(each => each.id === id);
       if (!message) return { error: 'That message is not published.' };
-      if (!answer?.trim()) return { error: 'An answer cannot be empty.' };
-      message.answer = answer.trim();
+      const reply = checkDrawing(drawing);
+      if (reply.error) return { error: reply.error };
+      if (!answer?.trim() && !reply.drawing) return { error: 'An answer cannot be empty.' };
+      message.answer = answer?.trim() ?? '';
+      if (reply.drawing) message.answerDrawing = reply.drawing;
+      else delete message.answerDrawing;
       await writeFile(publishedFile, json(list));
       return { ok: true };
     },
@@ -84,7 +91,7 @@ export function inboxAt(root) {
       if (!message || !ID.test(id)) return { error: 'That message is not published.' };
       await mkdir(folder, { recursive: true });
       // Noon on its day, by the same clock, so publishing it again keeps the date.
-      await writeFile(fileFor(id), json({ id, received: new Date(`${message.date}T12:00:00`).toISOString(), name: message.name, text: message.text, drawing: message.drawing, answer: message.answer }));
+      await writeFile(fileFor(id), json({ id, received: new Date(`${message.date}T12:00:00`).toISOString(), name: message.name, text: message.text, drawing: message.drawing, answer: message.answer, answerDrawing: message.answerDrawing }));
       await writeFile(publishedFile, json(list.filter(each => each.id !== id)));
       return { ok: true };
     },

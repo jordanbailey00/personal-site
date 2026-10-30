@@ -77,7 +77,7 @@ async function pull() {
   return { ok: true, pulled: saved.length };
 }
 
-const ACTIONS = { publish: ({ id, answer }) => inbox.publish(id, answer), update: ({ id, answer }) => inbox.update(id, answer), unpublish: ({ id }) => inbox.unpublish(id), archive: ({ id }) => inbox.archive(id) };
+const ACTIONS = { publish: ({ id, answer, drawing }) => inbox.publish(id, answer, drawing), update: ({ id, answer, drawing }) => inbox.update(id, answer, drawing), unpublish: ({ id }) => inbox.unpublish(id), archive: ({ id }) => inbox.archive(id) };
 
 const server = http.createServer(async (request, response) => {
   try {
