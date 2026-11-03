@@ -2,11 +2,11 @@ import { readFile, writeFile, mkdir, cp, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { profile, projects, messageEndpoint } from '../content/site.mjs';
+import { profile, projects, photos, messageEndpoint } from '../content/site.mjs';
 import { renderCV } from './cv.mjs';
 import { writingPages, writingList } from './writing.mjs';
 import { appearanceControls } from './appearance.mjs';
-import { recommendationSections } from './recommendations.mjs';
+import { bookList, softwareList, recommendationSections } from './recommendations.mjs';
 import { messagePage, validateMessages } from './messages.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -20,7 +20,7 @@ const year = new Date().getUTCFullYear();
 const MODULE_IMPORT = /(from |import\()'\.\/([\w-]+\.js)'/g;
 const localImports = source => [...source.toString().matchAll(MODULE_IMPORT)].map(match => match[2]);
 const assetVersions = Object.fromEntries(await Promise.all(
-  ['style.css', 'cv.css', 'writing.css', 'callouts.css', 'lander.css', 'messages.css', 'theme.js', 'supernova.js', 'starfield.js', 'writing.js', 'lander.js', 'space-targets.js', 'guns.js', 'lander-sound.js', 'messages.js'].map(async name => {
+  ['style.css', 'cv.css', 'writing.css', 'callouts.css', 'lander.css', 'messages.css', 'theme.js', 'supernova.js', 'starfield.js', 'writing.js', 'lander.js', 'space-targets.js', 'guns.js', 'lander-sound.js', 'messages.js', 'home.js'].map(async name => {
     const source = await readFile(path.join(root, 'assets', name));
     const hash = createHash('sha256').update(source);
     for (const dependency of localImports(source)) hash.update(await readFile(path.join(root, 'assets', dependency)));
@@ -64,6 +64,20 @@ const footer = pathname => {
 const intro = `<p>I work on the infrastructure team at PayPal. Previously, I worked at PayPal AI and Venmo. I'm also getting my MSCS from Georgia Tech, specializing in computing systems.</p><p>I really love games, reinforcement learning, and tooling. Weird combination of interests, I know. You'll find that a lot of my projects and contributions reflect this :)</p><p>Feel free to <a href="/message/">message me</a>, read some of my <a href="/writing/">writing</a>, or play the rocket game in the bottom corner of your screen. My hiscore is 2300 (the laser is OP).</p>`;
 const projectLinks = (project, includeArticle = true) => `<div class="project-links">${includeArticle ? `<a href="${projectPath(project)}">${icon('project')} Project</a>` : ''}${project.demo ? `<a href="${project.demo}">${icon('play')} Play</a>` : ''}<a href="${profile.github}/${project.repo}">${icon('code')} Code</a></div>`;
 const projectRows = () => `<div class="project-list">${projects.map(p => `<article class="project"><a class="project-image" href="${projectPath(p)}" aria-label="Read about ${escape(p.title)}"><img src="/assets/${p.image}" alt="${escape(p.alt)}" width="486" height="243" loading="lazy" decoding="async"></a><div><div class="project-meta"><span class="tag">${p.category}</span>${p.badge ? `<span class="badge" title="${escape(p.note)}">${p.badge}</span>` : ''}</div><h3 class="project-title"><a href="${projectPath(p)}">${p.title}</a></h3><p class="project-description">${p.description}</p>${projectLinks(p)}</div></article>`).join('')}</div>`;
+const photoGrid = () => `<ul class="photo-grid">${photos.map(photo => `<li><figure><img src="/photos/${escape(photo.file)}" alt="${escape(photo.alt)}" width="${photo.width}" height="${photo.height}" loading="lazy" decoding="async">${photo.caption ? `<figcaption>${escape(photo.caption)}</figcaption>` : ''}</figure></li>`).join('')}</ul>`;
+// The homepage shows one collection at a time under the intro, chosen with tabs (assets/home.js).
+// Each panel's id is its tab's address, so /#writing opens Writing. Without JavaScript every panel shows.
+const homeTabs = () => {
+  const tabs = [
+    ['projects', 'Projects', `${projectRows()}<a class="more-link" href="${profile.github}?tab=repositories">More on GitHub ↗</a>`],
+    ['writing', 'Writing', `${writingList({ escape, limit: 5 })}<a class="more-link" href="/writing/">All writing →</a>`],
+    ['books', 'Books', `<p class="section-intro">A few favorites from my bookshelf.</p>${bookList({ escape })}`],
+    ...(photos.length ? [['photos', 'Photos', photoGrid()]] : []),
+    ['software', 'Cool software', `<p class="section-intro">Tools and projects I like.</p>${softwareList({ escape })}`],
+  ];
+  return `<section class="hub" aria-label="Browse"><nav class="hub-tabs" role="tablist" aria-label="Sections">${tabs.map(([key, label], index) => `<a class="hub-tab" href="#${key}" id="tab-${key}" role="tab" aria-controls="${key}" aria-selected="${index === 0}"${index ? ' tabindex="-1"' : ''}>${label}</a>`).join('')}<span class="hub-indicator" aria-hidden="true"></span></nav>`
+    + tabs.map(([key, , content], index) => `<div class="hub-panel" id="${key}" role="tabpanel" aria-labelledby="tab-${key}"${index ? ' hidden' : ''}>${content}</div>`).join('') + '</section>';
+};
 function document(title, description, pathname, body, options = {}) {
   const writing = pathname.startsWith('/writing/');
   const reader = writing && pathname !== '/writing/';
@@ -72,7 +86,7 @@ function document(title, description, pathname, body, options = {}) {
     body = body.replace(/<a class="back-link"[^>]*>.*?<\/a>/, link => `<div class="page-tools">${link}${appearanceControls()}</div>`);
   }
   return versionLinks(`<!doctype html>
-<html lang="en"${reader ? ' data-page="writing" class="no-writing-js contents-hidden"' : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>${escape(title)}</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${domain}${pathname}">${options.noindex ? '<meta name="robots" content="noindex,follow">' : ''}<meta property="og:type" content="${options.article ? 'article' : 'website'}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${domain}${pathname}"><meta property="og:image" content="${domain}/assets/jordan.jpg"><meta name="twitter:card" content="summary"><link rel="icon" href="/favicon.png" type="image/png"><script src="/assets/theme.js"></script><script type="module" src="/assets/supernova.js"></script><link rel="modulepreload" href="/assets/starfield.js"><link rel="stylesheet" href="/assets/style.css">${pathname === "/cv/" ? '<link rel="stylesheet" href="/assets/cv.css">' : ""}${writing ? '<link rel="stylesheet" href="/assets/writing.css">' : ''}<link rel="stylesheet" href="/assets/callouts.css">${options.lander ? '<link rel="stylesheet" href="/assets/lander.css"><script type="module" src="/assets/lander.js"></script>' : ''}${options.messages ? '<link rel="stylesheet" href="/assets/messages.css"><script type="module" src="/assets/messages.js"></script>' : ''}<link rel="preload" href="/assets/fonts/akzidenz-bold.otf" as="font" type="font/otf" crossorigin><link rel="preload" href="/assets/fonts/ubuntu-sans-variable.woff2" as="font" type="font/woff2" crossorigin>${reader ? '<script src="/assets/writing.js" defer></script>' : ''}</head><body${reader ? ' class="writing-site"' : ''}><a class="skip-link" href="#main">Skip to content</a>${body}${pathname === "/cv/" || reader ? "" : footer(title.startsWith('Page not found') ? '' : pathname)}</body></html>\n`);
+<html lang="en"${reader ? ' data-page="writing" class="no-writing-js contents-hidden"' : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>${escape(title)}</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${domain}${pathname}">${options.noindex ? '<meta name="robots" content="noindex,follow">' : ''}<meta property="og:type" content="${options.article ? 'article' : 'website'}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${domain}${pathname}"><meta property="og:image" content="${domain}/assets/jordan.jpg"><meta name="twitter:card" content="summary"><link rel="icon" href="/favicon.png" type="image/png"><script src="/assets/theme.js"></script><script type="module" src="/assets/supernova.js"></script><link rel="modulepreload" href="/assets/starfield.js"><link rel="stylesheet" href="/assets/style.css">${pathname === "/cv/" ? '<link rel="stylesheet" href="/assets/cv.css">' : ""}${writing ? '<link rel="stylesheet" href="/assets/writing.css">' : ''}<link rel="stylesheet" href="/assets/callouts.css">${options.lander ? '<link rel="stylesheet" href="/assets/lander.css"><script type="module" src="/assets/lander.js"></script>' : ''}${options.home ? '<script type="module" src="/assets/home.js"></script><noscript><style>.hub-panel[hidden]{display:block}</style></noscript>' : ''}${options.messages ? '<link rel="stylesheet" href="/assets/messages.css"><script type="module" src="/assets/messages.js"></script>' : ''}<link rel="preload" href="/assets/fonts/akzidenz-bold.otf" as="font" type="font/otf" crossorigin><link rel="preload" href="/assets/fonts/ubuntu-sans-variable.woff2" as="font" type="font/woff2" crossorigin>${reader ? '<script src="/assets/writing.js" defer></script>' : ''}</head><body${reader ? ' class="writing-site"' : ''}><a class="skip-link" href="#main">Skip to content</a>${body}${pathname === "/cv/" || reader ? "" : footer(title.startsWith('Page not found') ? '' : pathname)}</body></html>\n`);
 }
 const pages = new Map();
 const noindexPages = new Set();
@@ -85,7 +99,7 @@ const cv = JSON.parse(await readFile(path.join(root, 'content/cv.json'), 'utf8')
 const messages = JSON.parse(await readFile(path.join(root, 'content/messages.json'), 'utf8'));
 validateMessages(messages);
 pages.set('/cv/', document('CV | Jordan Bailey', 'Jordan Bailey’s curriculum vitae: education, experience, honors, teaching, and technology skills.', '/cv/', renderCV(cv, { escape, icon, appearanceControls })));
-pages.set('/', document('Jordan Bailey', 'Software engineer and MSCS student at Georgia Tech. Reinforcement learning, simulations, and games.', '/', `<main id="main" class="contents"><section aria-labelledby="name"><header class="top"><div class="identity"><img class="portrait" src="/assets/jordan.jpg" alt="Jordan Bailey" width="120" height="120" fetchpriority="high"><div><h1 id="name" class="name">Jordan Bailey</h1></div></div>${socials()}${messageLink}</header><div class="info">${intro}</div></section><section aria-labelledby="projects"><h2 class="section-title" id="projects">Projects</h2>${projectRows()}<a class="more-link" href="${profile.github}?tab=repositories">More on GitHub ↗</a></section><section aria-labelledby="writing"><div class="writing-heading"><h2 class="section-title" id="writing"><a href="/writing/">Writing</a></h2><a href="/writing/">All writing →</a></div>${writingList({ escape, limit: 3 })}</section>${recommendationSections({ escape })}</main>`, { lander: true }));
+pages.set('/', document('Jordan Bailey', 'Software engineer and MSCS student at Georgia Tech. Reinforcement learning, simulations, and games.', '/', `<main id="main" class="contents"><section aria-labelledby="name"><header class="top"><div class="identity"><img class="portrait" src="/assets/jordan.jpg" alt="Jordan Bailey" width="120" height="120" fetchpriority="high"><div><h1 id="name" class="name">Jordan Bailey</h1></div></div>${socials()}${messageLink}</header><div class="info">${intro}</div></section>${homeTabs()}</main>`, { lander: true, home: true }));
 pages.set('/message/', document('message me | Jordan Bailey', 'Say hello, ask Jordan a question, or draw something. Answered messages appear here for everyone to read.', '/message/', messagePage({ escape, messages, endpoint: messageEndpoint, email: profile.email, back: icon('arrow') }), { messages: true }));
 for (const project of projects) {
   const article = await readFile(path.join(root, 'content', `${project.slug}.html`), 'utf8');

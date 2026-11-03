@@ -57,6 +57,10 @@ export const projects = [
   },
 ];
 
+// Photos for the homepage's Photos tab, which appears once this list has any.
+// Put each image in public/photos/: { file: 'name.jpg', alt: 'What it shows', width: 1600, height: 1200, caption: 'Optional' }.
+export const photos = [];
+
 export const books = [
   {
     title: 'Operating Systems: Three Easy Pieces',
