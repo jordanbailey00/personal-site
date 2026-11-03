@@ -59,7 +59,6 @@ test('The message page renders answers safely, newest first', () => {
     published({ id: '20261020-090000-beef', date: '2026-10-20', name: '', text: '', drawing: doodle }),
   ] });
   assert.match(html, /<h1 class="page-title">message me<\/h1>/);
-  assert.match(html, /Feel free to say hello, ask a question, or draw something\. I read and respond to every message :\)/);
   assert.match(html, /<span class="message-note-line">write or<\/span> <span class="message-note-line">draw here<\/span>/);
   assert.match(html, /data-mode="type" aria-pressed="true"/);
   assert.equal(html.match(/class="message-pen"/g).length, 6, 'a swatch for each pen');

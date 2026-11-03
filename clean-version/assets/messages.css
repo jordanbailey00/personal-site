@@ -7,7 +7,6 @@
 /* Pen colors besides ink, bright enough for dark and light themes alike. */
 :root{--pen-red:#ef4444;--pen-orange:#f97316;--pen-green:#22c55e;--pen-blue:#3b82f6;--pen-purple:#a855f7}
 .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-.message-intro{max-width:34rem}
 .message-fallback[hidden],.message-form[hidden]{display:none}
 .message-form{position:relative;margin-top:92px}
 
@@ -23,11 +22,11 @@
 .message-note.is-ready path{stroke-dasharray:1 2;stroke-dashoffset:1.02;animation:message-note-draw .25s ease-out forwards;animation-delay:calc(.6s + var(--stroke) * .2s)}
 
 /* The sheet: a window onto the page, so the stars show faintly through. */
-.message-sheet{position:relative;border:1px solid var(--line);border-radius:8px;background:var(--paper);background:color-mix(in srgb,var(--paper) 86%,transparent);transition:border-color .15s ease}
-.message-sheet:focus-within{border-color:var(--focus)}
+.message-sheet{position:relative;border-radius:12px;background:color-mix(in srgb,var(--surface) 74%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--line) 55%,transparent);transition:box-shadow .2s ease}
+.message-sheet:focus-within{box-shadow:inset 0 0 0 1px var(--line)}
 .message-count{position:absolute;right:14px;bottom:8px;font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums;pointer-events:none}
 .message-pad{position:relative}
-.message-canvas{display:block;width:100%;aspect-ratio:5/2;border-radius:8px 8px 0 0;cursor:crosshair;touch-action:none}
+.message-canvas{display:block;width:100%;aspect-ratio:5/2;border-radius:12px 12px 0 0;cursor:crosshair;touch-action:none}
 .message-canvas:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .message-pad[data-tool="type"] .message-canvas{cursor:text}
 /* Typing floats a text field over the sheet, in the sheet's own font and scale, where the cursor went. */
@@ -35,28 +34,31 @@
 .message-pad[data-tool="eraser"] .message-canvas{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Ccircle cx='14' cy='14' r='12' fill='none' stroke='%23999' stroke-width='1.5'/%3E%3C/svg%3E") 14 14,cell}
 
 /* Pens: color swatches, the eraser, and Clear, along the sheet's foot. */
-.message-pens{display:flex;flex-wrap:wrap;align-items:center;gap:8px 11px;padding:9px 12px;border-top:1px solid var(--line)}
+.message-pens{display:flex;flex-wrap:wrap;align-items:center;gap:8px 11px;padding:10px 12px;border-top:1px solid var(--line)}
 .message-pen{width:22px;height:22px;padding:0;border:0;border-radius:50%;background:currentColor;cursor:pointer;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 20%,transparent);transition:transform .15s ease,box-shadow .15s ease}
 .message-pen:hover{transform:scale(1.15)}
 .message-pen[aria-pressed="true"]{transform:scale(1.1);box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px currentColor}
 .message-pen:focus-visible{outline-offset:4px;border-radius:50%}
-.message-pens-gap{width:1px;height:20px;margin:0 3px;background:var(--line)}
-.message-eraser{display:inline-flex;align-items:center;gap:6px;padding:4px 12px 4px 9px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);font:inherit;font-size:.8rem;line-height:1.4;cursor:pointer;transition:color .15s ease,border-color .15s ease,box-shadow .15s ease}
+/* Eraser and Clear are the homepage's soft pills, like "message me". */
+.message-pens-gap{display:none}
+.message-eraser,.message-clear{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:0;border-radius:999px;background:var(--hover);color:var(--muted);font:inherit;font-size:.8rem;line-height:1.4;cursor:pointer;transition:color .15s ease,background-color .15s ease}
 .message-eraser svg{width:16px;height:16px;transition:transform .2s ease}
 .message-eraser:hover{color:var(--ink)}
 .message-eraser:hover svg{transform:rotate(-14deg)}
-.message-eraser[aria-pressed="true"]{border-color:var(--focus);color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 16%,transparent)}
-.message-clear{margin-left:auto;padding:4px 6px;border:0;background:none;color:var(--muted);font:inherit;font-size:.8rem;cursor:pointer}
+.message-eraser[aria-pressed="true"]{color:var(--ink);background:color-mix(in srgb,var(--focus) 18%,var(--hover))}
+.message-eraser[aria-pressed="true"] svg{color:var(--focus)}
+.message-clear{margin-left:auto}
 .message-clear:hover{color:var(--ink)}
 
-/* Type and Draw: a switch whose highlight slides to the chosen side. */
-.message-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-top:16px}
-.message-modes{position:relative;display:inline-grid;grid-template-columns:1fr 1fr;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
-.message-modes::before{content:'';position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border:1px solid var(--focus);border-radius:999px;background:var(--paper);background:color-mix(in srgb,var(--focus) 12%,var(--paper));box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 12%,transparent),0 4px 14px #0003;transition:transform .35s cubic-bezier(.3,1.4,.55,1)}
-.message-modes[data-current="draw"]::before{transform:translateX(100%)}
-.message-mode{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:7px 18px;border:0;border-radius:999px;background:none;color:var(--muted);font:inherit;font-size:.88rem;font-weight:500;cursor:pointer;transition:color .2s ease}
+/* Type and Draw: the homepage's tabs, marked by the sliding horizon line. */
+.message-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:18px}
+.message-modes{position:relative;display:inline-grid;grid-template-columns:1fr 1fr;padding:0 0 8px}
+.message-modes::before,.message-modes::after{content:'';position:absolute;left:0;bottom:-1px;width:50%;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--focus) 18%,var(--focus) 82%,transparent);transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+.message-modes::after{bottom:-3px;height:5px;background:radial-gradient(50% 50% at 50% 50%,color-mix(in srgb,var(--focus) 45%,transparent) 0 72%,transparent)}
+.message-modes[data-current="draw"]::before,.message-modes[data-current="draw"]::after{transform:translateX(100%)}
+.message-mode{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:4px 12px;border:0;background:none;color:var(--muted);font:inherit;font-size:.95rem;cursor:pointer;transition:color .2s ease}
 .message-mode:hover,.message-mode[aria-pressed="true"]{color:var(--ink)}
-.message-mode svg{width:17px;height:17px;transition:transform .2s ease}
+.message-mode svg{width:15px;height:15px;transition:transform .2s ease}
 .message-mode[aria-pressed="true"] svg{color:var(--focus)}
 .message-mode[data-mode="draw"]:hover svg{transform:rotate(-12deg)}
 .message-cursor{opacity:0}
@@ -64,16 +66,16 @@
 .message-squiggle{stroke-dasharray:1 2;stroke-dashoffset:1.02}
 .message-mode[aria-pressed="true"] .message-squiggle{animation:message-note-draw .5s ease-out .2s forwards}
 
-.message-name{flex:1 1 160px;min-width:0;padding:6px 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;color:var(--ink);font:inherit;transition:border-color .15s ease}
-.message-name:focus{border-bottom-color:var(--focus)}
+.message-name{flex:1 1 160px;min-width:0;padding:8px 16px;border:0;border-radius:999px;background:color-mix(in srgb,var(--surface) 74%,transparent);color:var(--ink);font:inherit;font-size:.92rem}
+.message-name:focus{outline:2px solid var(--focus);outline-offset:2px}
 .message-name::placeholder{color:var(--muted)}
 
 /* Send: its rocket lifts and lights on hover, and launches when a message
    goes out, then comes back once the form is ready again. */
-.message-send{display:inline-flex;align-items:center;gap:9px;padding:9px 16px 9px 20px;border:1px solid var(--ink);border-radius:999px;background:var(--ink);color:var(--paper);font:inherit;font-weight:600;cursor:pointer;box-shadow:0 8px 22px -12px var(--ink);transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease}
-.message-send:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 12px 26px -12px var(--ink)}
+.message-send{display:inline-flex;align-items:center;gap:9px;padding:8px 16px 8px 18px;border:0;border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-weight:500;cursor:pointer;transition:background-color .15s ease,opacity .15s ease}
+.message-send:hover:not(:disabled){background:var(--hover)}
 .message-send:active:not(:disabled){transform:translateY(1px)}
-.message-send:disabled{opacity:.45;cursor:default;box-shadow:none}
+.message-send:disabled{opacity:.45;cursor:default}
 .message-send.is-sent:disabled{opacity:.8}
 .message-rocket{display:block;width:19px;height:19px}
 .message-rocket svg{display:block;width:100%;height:100%;overflow:visible;transition:transform .2s ease}
@@ -88,7 +90,9 @@
 
 /* Answers: each message as it was written or drawn, then Jordan's answer. */
 .message-answers{margin-top:4rem}
-.message-list{display:grid;gap:3rem;margin:0;padding:0;list-style:none}
+.message-list{display:grid;margin:0;padding:0;list-style:none}
+.message-entry{padding:1.6rem 0;border-bottom:1px solid var(--line)}
+.message-entry:first-child{padding-top:.4rem}
 .message-text{font-size:1.05rem;overflow-wrap:anywhere}
 .message-text p,.message-answer-text p{margin:0}
 .message-text p+p,.message-answer-text p+p{margin-top:.6rem}

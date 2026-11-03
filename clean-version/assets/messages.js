@@ -556,7 +556,6 @@ export function installMessages({ document, window }) {
   }
   const sheet = installSheet({
     document, window, pad, say, onChange: () => update(),
-    placeholder: 'Hi Jordan… (click anywhere to type)',
     onTool: tool => {
       switcher.dataset.current = tool;
       for (const button of modes) button.setAttribute('aria-pressed', String(button.dataset.mode === tool));
