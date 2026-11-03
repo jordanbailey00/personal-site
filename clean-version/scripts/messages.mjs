@@ -1,7 +1,6 @@
 import { LIMITS, checkMessage, checkDrawing, drawingSvg, sheetMarkup } from '../assets/messages.js';
 import { SPRITE } from '../assets/lander.js';
 
-const formatDate = value => new Intl.DateTimeFormat('en', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`));
 const paragraphs = (value, escape) => value.trim().split(/\n{2,}/).map(part => `<p>${escape(part).replaceAll('\n', '<br>')}</p>`).join('');
 // The page shows this many answered messages before a "show more" fold.
 const SHOWN = 10;
@@ -46,7 +45,7 @@ export function validateMessages(messages) {
 // lander's gold, marked with the lander itself.
 function entry(message, escape) {
   const drawing = message.drawing ? drawingSvg(message.drawing, message.name ? `A drawing from ${message.name}` : 'A visitor’s drawing') : '';
-  return `<li class="message-entry" id="message-${escape(message.id)}"><div class="message-from">${message.text ? `<div class="message-text">${paragraphs(message.text, escape)}</div>` : ''}${drawing}<p class="message-meta">— ${message.name ? escape(message.name) : 'Someone'} <span aria-hidden="true">·</span> <time datetime="${message.date}">${formatDate(message.date)}</time></p></div>`
+  return `<li class="message-entry" id="message-${escape(message.id)}"><div class="message-from">${message.text ? `<div class="message-text">${paragraphs(message.text, escape)}</div>` : ''}${drawing}<p class="message-meta">— ${message.name ? escape(message.name) : 'Someone'}</p></div>`
     + `<div class="message-answer"><span class="message-answer-mark">${SPRITE}</span><div class="message-answer-text"><span class="visually-hidden">Jordan’s answer: </span>${message.answer?.trim() ? paragraphs(message.answer, escape) : ''}${message.answerDrawing ? drawingSvg(message.answerDrawing, 'Jordan’s drawing') : ''}</div></div></li>`;
 }
 

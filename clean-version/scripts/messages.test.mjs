@@ -71,7 +71,8 @@ test('The message page renders answers safely, newest first', () => {
   assert.match(html, /<span class="message-answer-mark"><svg viewBox="0 0 48 48"/, 'answers are marked with the lander');
   assert.match(html, /aria-label="A visitor’s drawing"><path d="M10 10L20 20L30 15M100 100h0\.01"\/>/);
   assert.ok(html.indexOf('message-20261021') < html.indexOf('message-20261020'));
-  assert.match(html, /— Someone <span aria-hidden="true">·<\/span> <time datetime="2026-10-20">October 20, 2026<\/time>/);
+  assert.match(html, /<p class="message-meta">— Someone<\/p>/);
+  assert.doesNotMatch(html, /<time|October 20, 2026/, 'published answers show no dates');
   assert.match(html, /data-endpoint=""/);
   assert.ok(!html.includes('message-more'));
   assert.match(drawingSvg(doodle, 'A drawing from "Al" <b>'), /aria-label="A drawing from &#34;Al&#34; &#60;b&#62;"/);

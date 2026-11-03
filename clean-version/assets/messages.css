@@ -90,13 +90,17 @@
 
 /* Answers: each message as it was written or drawn, then Jordan's answer. */
 .message-answers{margin-top:4rem}
-.message-list{display:grid;margin:0;padding:0;list-style:none}
-.message-entry{padding:1.6rem 0;border-bottom:1px solid var(--line)}
-.message-entry:first-child{padding-top:.4rem}
+.message-list{display:grid;gap:16px;margin:0;padding:0;list-style:none}
+/* Each conversation is a soft card, and the cards alternate sides so neighbours are easy to tell apart.
+   Inside a card everything lines up on the left, and the lander starts Jordan's answer. */
+.message-entry{width:86%;padding:20px 22px;border-radius:14px;background:color-mix(in srgb,var(--surface) 72%,transparent)}
+.message-entry:nth-child(even){margin-left:auto}
 .message-text{font-size:1.05rem;overflow-wrap:anywhere}
 .message-text p,.message-answer-text p{margin:0}
 .message-text p+p,.message-answer-text p+p{margin-top:.6rem}
-.message-drawing{display:block;max-width:100%;height:auto;overflow:visible}
+/* A drawing is cropped with a small margin (6 of the pad's 600 units); pulling it left by that much lines
+   its strokes and typed words up with the text around it. */
+.message-drawing{display:block;max-width:100%;height:auto;overflow:visible;margin-left:calc(-1 * min(1%,4.6px))}
 .message-text+.message-drawing{margin-top:12px}
 .message-drawing path{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .message-drawing text{fill:currentColor;font-family:var(--font-body)}
@@ -112,7 +116,7 @@
 .message-drawing path.pen-purple{stroke:var(--pen-purple)}
 .message-drawing text.pen-purple{fill:var(--pen-purple)}
 .message-meta{margin:8px 0 0;font-size:.8rem;color:var(--muted)}
-.message-answer{display:grid;grid-template-columns:32px minmax(0,1fr);gap:14px;align-items:start;margin:20px 0 0 clamp(0px,5vw,40px);color:var(--badge-ink);overflow-wrap:anywhere}
+.message-answer{display:grid;grid-template-columns:32px minmax(0,1fr);gap:14px;align-items:start;margin:20px 0 0;color:var(--badge-ink);overflow-wrap:anywhere}
 .message-answer-mark svg{display:block;width:32px;height:32px}
 .message-answer-text{padding-top:5px}
 .message-empty{margin:0;color:var(--muted)}
@@ -136,6 +140,7 @@
   .message-note-arrow.is-side{display:block}
 }
 @media(max-width:600px){
+  .message-entry{width:92%}
   .message-form{margin-top:84px}
   .message-note{left:10px;transform:scale(.85);transform-origin:0 100%}
   .message-name{order:-1;flex-basis:100%}
